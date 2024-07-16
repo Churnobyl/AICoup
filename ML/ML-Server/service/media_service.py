@@ -22,6 +22,11 @@ def capture_images():
         # 3장 반복 촬영
         photo_count = 3
         for i in range(photo_count):
+
+            # 버퍼에 있는 오래된 프레임 제거
+            for _ in range(5):  # 필요한 만큼 버퍼 프레임 제거 (기본적으로 5~10 프레임 정도)
+                cap.cap.grab()
+            
             # 촬영
             frame = cap.get_frame()
 
