@@ -1,3 +1,6 @@
+# For Security
+.env
+
 # Logs
 logs
 *.log
