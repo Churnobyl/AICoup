@@ -82,7 +82,7 @@
   "player_num": 4,
   "current_player": 3,
   "current_action": "foreign_aid",
-  "target": "none"
+  "target": "none",
   "playerinfo": [
     {
       "1": {
