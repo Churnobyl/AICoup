@@ -1,10 +1,13 @@
+import { RouterProvider } from "react-router-dom";
 import "./App.css";
-import clientData from "./apis/websocket";
+import router from "./routes/router";
 
 function App() {
-  clientData;
-
-  return <></>;
+  return (
+    <>
+      <RouterProvider router={router} />
+    </>
+  );
 }
 
 export default App;

@@ -1,0 +1,9 @@
+#root {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
