@@ -1,19 +1,20 @@
 package com.aicoup.app.domain.service;
 
-import com.aicoup.app.domain.game.GameGenerator;
+import com.aicoup.app.domain.game.RandomGameGenerator;
+import com.aicoup.app.domain.redisRepository.GameRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-@Service
 @RequiredArgsConstructor
 public class ProtoTypeGameService implements GameService {
-    private final GameGenerator gameGenerator;
+
+    private final GameRepository gameRepository;
+    private final RandomGameGenerator gameGenerator;
 
     @Transactional
     @Override
-    public Integer createNewGame(String gamename, Integer participants) {
-        gameGenerator.init(gamename, participants);
-        return 0;
+    public String createNewGame(String roomId, Integer participants) {
+        return gameGenerator.init(roomId, participants);
     }
+
 }

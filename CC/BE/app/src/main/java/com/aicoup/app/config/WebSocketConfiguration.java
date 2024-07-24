@@ -1,5 +1,6 @@
 package com.aicoup.app.config;
 
+import com.aicoup.app.interceptor.websocket.WebsocketHandShakeInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -11,15 +12,18 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 @Configuration
 public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer {
-
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic");
-        config.setApplicationDestinationPrefixes("/app");
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.setApplicationDestinationPrefixes("/pub");
+        registry.enableSimpleBroker("/sub");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/connect").setAllowedOrigins("*");
+        registry.addEndpoint("/game")
+                .addInterceptors(new WebsocketHandShakeInterceptor())
+                .setAllowedOrigins("*");
     }
+
+
 }

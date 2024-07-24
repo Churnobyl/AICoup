@@ -13,11 +13,9 @@ import lombok.Setter;
 @Getter @Setter
 @Table(name = "card_info")
 public class CardInfo {
-
     @Id
     @Column(name ="card_info_id")
     private Integer id;
     private String name;
-    private String description;
     private String imageUrl;
 }
