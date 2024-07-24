@@ -60,7 +60,12 @@ def run(
         source = check_file(source)  # download
 
     # Directories
-    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
+# --------------------------------------------------------------------------------------
+    # 객체 탐지할 때마다 결과를 exp에 저장할 필요가 없으므로, exp파일 중복 생성 방지
+    save_dir = Path(project)/name 
+    os.makedirs(Path(project), exist_ok=True)
+# --------------------------------------------------------------------------------------
+    # save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     # Load model
@@ -84,6 +89,13 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+
+# --------------------------------------------------------------------------------------
+    # main.py에 반환할 객체 탐지 결과 return값
+    results = []
+    print("run() 실행")
+# --------------------------------------------------------------------------------------
+
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
@@ -106,6 +118,7 @@ def run(
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
         # Process predictions
+        
         for i, det in enumerate(pred):  # per image
             seen += 1
             if webcam:  # batch_size >= 1
@@ -121,6 +134,8 @@ def run(
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
+
+
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
@@ -130,18 +145,41 @@ def run(
                     n = (det[:, 5] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
+# --------------------------------------------------------------------------------------
+                # 하나의 이미지에 복수 객체가 탐지될 경우, 이미지 별로 복수 객체 탐지 결과를 분류하여 담는다
+                img_det = []
+                print("이미지 탐색 시작")
+# --------------------------------------------------------------------------------------
+
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
+# --------------------------------------------------------------------------------------
+                    # 객체 탐지 결과를 list 변환해서 img_det에 담기
+                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    print("객체 탐지")
+                    list = []
+                    # 라벨 클래스
+                    list.append(cls.item()) 
+                    # xywh 위치좌표 
+                    for i in xywh:
+                        list.append(i) 
+                    # 정확도
+                    list.append(conf.item())
+                    print("객체 탐지 결과", list)
+                    img_det.append(list)
+# --------------------------------------------------------------------------------------
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(f'{txt_path}.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                        print("텍스트 저장")
 
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
+                        print("이미지 저장")
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
@@ -174,6 +212,13 @@ def run(
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                     vid_writer[i].write(im0)
 
+# --------------------------------------------------------------------------------------
+        # 이미지 별로 묶은 객체 탐지 결과 리스트를 results에 담기
+        results.append(img_det)
+# --------------------------------------------------------------------------------------
+
+        
+
         # Print time (inference-only)
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
@@ -186,6 +231,11 @@ def run(
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
+# --------------------------------------------------------------------------------------
+    # main.py에 객체 탐지 결과 반환
+    print("run() 종료")
+    return results
+# --------------------------------------------------------------------------------------
 
 def parse_opt():
     parser = argparse.ArgumentParser()
