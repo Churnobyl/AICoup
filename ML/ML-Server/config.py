@@ -10,7 +10,7 @@ IMG_FOLDER = ROOT / 'capture_img'
 os.makedirs(IMG_FOLDER, exist_ok=True)
 
 # 모델 가중치 파일 경로
-WEIGHTS = ROOT / 'yolov9-s.pt'  
+WEIGHTS = ROOT / 'coup-0719.pt'  
 DEVICE = ''
 
 # 사전 사진 촬영 체크 변수
