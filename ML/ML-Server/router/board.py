@@ -28,8 +28,14 @@ async def postImages():
     results = inference()
     return JSONResponse(content={"results": results})
 
-@router.get('labels')
+@router.get('/labels')
 async def getLabels():
+    results = makeDetectionsJsonResult(inference())
+    return JSONResponse(content={"results": results})
+
+@router.post('/labels')
+async def postLabels():
+    capture_photos()
     results = makeDetectionsJsonResult(inference())
     return JSONResponse(content={"results": results})
 
