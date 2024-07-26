@@ -11,11 +11,10 @@ import org.springframework.data.redis.core.index.Indexed;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @RedisHash("game_member")
-@NoArgsConstructor
 @Getter @Setter
+@NoArgsConstructor
 public class GameMember extends MutableBaseEntity {
 
     @Id
@@ -31,4 +30,9 @@ public class GameMember extends MutableBaseEntity {
     private CardInfo leftCardInfo;
     private CardInfo rightCardInfo;
     private List<Integer> actionHistory = new ArrayList<>();
+
+    public GameMember(String id, String name) {
+        this.id = id;
+        this.name = name;
+    }
 }

@@ -7,6 +7,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
+/**
+ * JPA관련 Config
+ */
 @Configuration
 @EnableJpaRepositories(
         basePackages = {"com.aicoup.app.domain.repository"},
@@ -18,5 +21,5 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
                                 GameRepository.class
                         })
         })
-public class JpaRepositoryConfiguration {
+public class JpaConfiguration {
 }

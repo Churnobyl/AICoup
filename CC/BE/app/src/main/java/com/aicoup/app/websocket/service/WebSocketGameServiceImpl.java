@@ -2,6 +2,7 @@ package com.aicoup.app.websocket.service;
 
 import com.aicoup.app.domain.entity.game.Game;
 import com.aicoup.app.domain.entity.game.card.CardInfo;
+import com.aicoup.app.domain.entity.game.history.History;
 import com.aicoup.app.domain.entity.game.member.GameMember;
 import com.aicoup.app.domain.game.GameGenerator;
 import com.aicoup.app.domain.redisRepository.GameMemberRepository;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,6 +41,31 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     @Override
     public boolean validate() {
         return true;
+    }
+
+    @Override
+    public String nextTurn() {
+        return "";
+    }
+
+    @Override
+    public String myChoice() {
+        return "";
+    }
+
+    @Override
+    public void recordHistory(String gameId, Integer actionNumber, Integer playerTrying, Integer playerTried) {
+        History history = new History(UUID.randomUUID().toString(), actionNumber, playerTrying, playerTried);
+
+        Optional<Game> gameOptional = gameRepository.findById(gameId);
+        if (gameOptional.isPresent()) {
+            Game game = gameOptional.get();
+            history.setTurn(game.getTurn());
+            game.addHistory(history);
+            gameRepository.save(game);
+        } else {
+            throw new RuntimeException("Game not found with ID: " + gameId);
+        }
     }
 
     public GameStateDto buildGameState(String message) {
@@ -74,6 +101,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             GameStateDto gameStateDto = new GameStateDto();
             gameStateDto.setTurn(game.getTurn());
             gameStateDto.setMembers(members);
+            gameStateDto.setHistory(game.getHistory());
             return gameStateDto;
         } else {
             throw new RuntimeException("Game not found with ID: " + gameId);

@@ -18,54 +18,48 @@ public class WebsocketController {
     private final SimpMessagingTemplate template;
     private final WebSocketGameServiceImpl webSocketGameService;
 
-    @MessageMapping(value = "/chat/enter")
-    public void enter(MessageDto message) {
-        message.setMessage(message.getWriter() + "님이 채팅방에 참여하였습니다.");
-        template.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
-    }
-
     @MessageMapping(value = "/chat/message")
-    public void message(MessageDto message) throws JsonProcessingException {
-        MessageDto newMessage = new MessageDto();
-        newMessage.setWriter("server");
-        newMessage.setRoomId(message.getRoomId());
-
+    public void message(MessageDto message) {
+        MessageDto newMessage = new MessageDto(message.getRoomId(), "server");
 
         // 서버와 현실 일치 검증
         if (!webSocketGameService.validate()) {
             newMessage.setState("validationFail");
-            newMessage.setMessage("검증 실패");
+            newMessage.setMainMessage("검증 실패");
             template.convertAndSend("/sub/chat/room/" + message.getRoomId(), newMessage);
             return;
         }
 
+        // state에 따라 분기 로직
         String state = message.getState();
-
         String returnState = null;
 
         switch (state) {
             case "gameInit":
                 String gameId = webSocketGameService.gameInit(message.getRoomId());
                 gameInitCookieSend(gameId);
+                webSocketGameService.recordHistory(gameId, 17, 0, 0);
                 returnState = "gameState";
                 break;
             case "nextTurn":
-//                returnState = webSocketGameService.nextTurn();
+                returnState = webSocketGameService.nextTurn();
                 break;
             case "myChoice":
-//                returnState = webSocketGameService.myChoice();
+                returnState = webSocketGameService.myChoice();
                 break;
             default:
                 throw new IllegalArgumentException("웹소켓 메시지 잘못 접근함");
         }
 
+        // 로직 이후 보낼 메시지에 state 설정
         newMessage.setState(returnState);
-        
+
+        // 만약 gameState라면
         if (returnState.equals("gameState")) {
             ObjectMapper objectMapper = new ObjectMapper();
-            GameStateDto gameStateDto = webSocketGameService.buildGameState("ㅎㅇ");
+            GameStateDto gameStateDto = webSocketGameService.buildGameState(null);
             // JSON 문자열이 아닌 객체를 직접 설정
-            newMessage.setMessage(objectMapper.convertValue(gameStateDto, Map.class));
+            newMessage.setMainMessage(objectMapper.convertValue(gameStateDto, Map.class));
         }
 
         template.convertAndSend("/sub/chat/room/" + newMessage.getRoomId(), newMessage);
@@ -73,10 +67,8 @@ public class WebsocketController {
 
     private void gameInitCookieSend(String gameId) {
         // cookie 설정
-        MessageDto cookieSetMessage = new MessageDto();
+        MessageDto cookieSetMessage = new MessageDto(gameId, "server");
         cookieSetMessage.setState("cookieSet");
-        cookieSetMessage.setWriter("server");
-        cookieSetMessage.setRoomId(gameId);
         template.convertAndSend("/sub/chat/room/" + cookieSetMessage.getRoomId(), cookieSetMessage);
     }
 }

@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
 
+/**
+ * Game 관련 REST api
+ */
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -24,16 +27,22 @@ public class GameController {
     @Value("${cookie.name}")
     private String cookieName;
 
+    /**
+     * 쿠키 기반 기존 게임 정보가 있는지 확인하는 api
+     * @param request
+     * @return 매치하는 게임 정보가 있으면 true / 없으면 false
+     */
     @GetMapping("/status-check")
     public ResponseEntity<?> statusCheck(HttpServletRequest request) {
+        // 쿠키 가져오기
         Cookie[] cookies = request.getCookies();
 
-        System.out.println("cookies = " + Arrays.toString(cookies));
-
+        // 쿠키 자체가 없으면 false 리턴
         if (cookies == null) return ResponseEntity.ok(false);
 
         Cookie cookie = null;
 
+        // coockieName에 해당하는 key 있으면 설정
         for (Cookie c : cookies) {
             if (cookieName.equals(c.getName())) {
                 cookie = c;
@@ -41,8 +50,10 @@ public class GameController {
             }
         }
 
+        // 해당하는 쿠키 없으면 false
         if (cookie == null) return ResponseEntity.ok(false);
-        System.out.println("cookie.getValue() = " + cookie.getValue());
+
+        // Redis에서 매당하는 value 체크
         boolean byNameExists = gameMemberRepository.existsGameMembersByName(cookie.getValue());
 
         log.info("[status-check] {}", byNameExists);

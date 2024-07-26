@@ -5,6 +5,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * ChatGPT단 연결 소켓 관련 Config
+ */
 @Configuration
 public class ChatGptConfiguration {
 

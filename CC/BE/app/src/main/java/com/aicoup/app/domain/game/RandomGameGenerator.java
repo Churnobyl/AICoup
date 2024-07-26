@@ -26,9 +26,8 @@ public class RandomGameGenerator implements GameGenerator {
 //        newGame.setId(UUID.randomUUID().toString());
 
         List<GameMember> participantList = new ArrayList<>();
-        GameMember player = new GameMember();
-        player.setId("1");
-        player.setName("userA");
+
+        GameMember player = new GameMember("1", "userA");
         player.setIsPlayer(true);
         participantList.add(player);
 
