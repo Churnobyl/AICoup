@@ -1,12 +1,12 @@
 import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
-import { clientData } from "../apis/websocketConnect";
+import { clientData } from "@/apis/websocketConnect";
+import Board from "@components/game/Board";
 
 const GamePage = () => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<object[]>([]);
 
   useEffect(() => {
-    // Connect to WebSocket when the component mounts
     clientData.onConnect = () => {
       console.log("Connected to WebSocket");
 
@@ -40,7 +40,6 @@ const GamePage = () => {
     clientData.activate();
 
     return () => {
-      // Disconnect from WebSocket when the component unmounts
       clientData.deactivate();
     };
   }, []);
@@ -49,10 +48,12 @@ const GamePage = () => {
     <div>
       <h1>Game Page</h1>
       <ul>
-        {messages.map((msg, index) => (
-          <li key={index}>{JSON.stringify(msg)}</li>
+        {messages.map((message, index) => (
+          <li key={index}>{JSON.stringify(message)}</li>
         ))}
+        ;
       </ul>
+      <Board />
     </div>
   );
 };

@@ -4,8 +4,7 @@ type Props = {
   text: string;
 };
 
-function Button({ text, onClick }: Props) {
-  console.log(onClick);
+function Button({ text }: Props) {
   return <button>{text}</button>;
 }
 

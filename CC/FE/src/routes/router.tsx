@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
-import GamePage from "./GamePage";
-import GameStatusPage from "./GameStatusPage";
+import GamePage from "../pages/GamePage";
+import GameStatusPage from "../pages/GameStatusPage";
 
 const router = createBrowserRouter([
   {
