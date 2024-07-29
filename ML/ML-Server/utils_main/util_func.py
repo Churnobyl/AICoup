@@ -1,4 +1,29 @@
-### 웹캠 사진 촬영 3장
+''' JSON 포멧
+[
+    {
+        "left_card": 4,
+        "right_card": 3,
+        "extra_card": []
+    },
+    {
+        "left_card": 1,
+        "right_card": 2,
+        "extra_card": []
+    },
+    {
+        'left_card': 5,
+        'right_card': 4,
+        'extra_card': []
+    },
+    {
+        'left_card': 1,
+        'right_card': 2,
+        'extra_card': []
+    }
+]
+'''
+
+### JSON 데이터 변환
 def makeDetectionsJsonResult(detections):
     #JSON으로 전달할 객체 탐지 결과를 담을 리스트
     results = [] 

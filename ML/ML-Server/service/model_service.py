@@ -3,12 +3,11 @@ import os
 
 from fastapi import HTTPException
 
-from config import *
+from core import *
 
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))), 'yolov9'))
 
 # from yolov9.models import common
-from utils.torch_utils import select_device
 from detect_dual import run
 
 def inference():
@@ -18,7 +17,10 @@ def inference():
         detections = run(
             weights=WEIGHTS,
             source=IMG_FOLDER,
-            nosave=True # txt, img 저장 안 함 
+            # nosave=True # txt, img 저장 안 함 
+            project = DET_FOLDER, #객체 탐지 결과 파일 저장 경로
+            save_txt=True,  # 객체 탐지 결과 txt 파일 저장
+            save_conf=True  # 객체 탐지 결과 img 파일 저장
         )
 
         if not detections:

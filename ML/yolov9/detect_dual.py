@@ -61,6 +61,7 @@ def run(
 
     # Directories
 # --------------------------------------------------------------------------------------
+    # 객체 탐지 결과 저장 경로 설정 : project 변수
     # 객체 탐지할 때마다 결과를 exp에 저장할 필요가 없으므로, exp파일 중복 생성 방지
     save_dir = Path(project)/name 
     os.makedirs(Path(project), exist_ok=True)
@@ -95,6 +96,7 @@ def run(
     results = []
     print("run() 실행")
 # --------------------------------------------------------------------------------------
+    print(0)
 
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
@@ -149,25 +151,29 @@ def run(
                 # 하나의 이미지에 복수 객체가 탐지될 경우, 이미지 별로 복수 객체 탐지 결과를 분류하여 담는다
                 img_det = []
                 print("이미지 탐색 시작")
+
+                open(f'{txt_path}.txt', 'w')
+                print("txt 파일 생성")
 # --------------------------------------------------------------------------------------
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
 # --------------------------------------------------------------------------------------
-                    # 객체 탐지 결과를 list 변환해서 img_det에 담기
+                    # 객체 탐지 결과를 obj_det 변환해서 img_det 리스트에 담기
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     print("객체 탐지")
-                    list = []
+                    obj_det = []
                     # 라벨 클래스
-                    list.append(cls.item()) 
+                    obj_det.append(cls.item()) 
                     # xywh 위치좌표 
                     for i in xywh:
-                        list.append(i) 
+                        obj_det.append(i) 
                     # 정확도
-                    list.append(conf.item())
-                    print("객체 탐지 결과", list)
-                    img_det.append(list)
+                    obj_det.append(conf.item())
+                    print("객체 탐지 결과", obj_det)
+                    img_det.append(obj_det)
 # --------------------------------------------------------------------------------------
+
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -214,10 +220,9 @@ def run(
 
 # --------------------------------------------------------------------------------------
         # 이미지 별로 묶은 객체 탐지 결과 리스트를 results에 담기
+        print("이미지 탐지 결과 results에 담기")
         results.append(img_det)
 # --------------------------------------------------------------------------------------
-
-        
 
         # Print time (inference-only)
         LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")

@@ -4,4 +4,4 @@ __pycache__/
 yolov9/runs/
 
 # ML-Server
-ML-Server/capture_img/
+ML-Server/media
