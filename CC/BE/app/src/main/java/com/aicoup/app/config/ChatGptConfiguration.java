@@ -3,10 +3,11 @@ package com.aicoup.app.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpHeaders;
 
+/**
+ * ChatGPT단 연결 소켓 관련 Config
+ */
 @Configuration
 public class ChatGptConfiguration {
 
