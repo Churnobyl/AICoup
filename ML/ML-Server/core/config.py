@@ -18,3 +18,6 @@ DEVICE = ''
 
 # 이미지 파일 목록
 IMG_FILES = ["photo_1.jpg", "photo_2.jpg", "photo_3.jpg"]
+
+# 텍스트 파일 목록
+TXT_FILES = ["photo_1.txt", "photo_2.txt", "photo_3.txt"]

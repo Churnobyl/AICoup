@@ -12,7 +12,7 @@ router = APIRouter(
 # 객체 클러스터링으로 데이터 정제 후, CC에 JSON 형태로 전송
 # 작업 중
 @router.get('/game-status')
-async def getGameStatus():
+async def get_game_status():
     pass
 
 # -----------------------------------------------------------
@@ -41,6 +41,6 @@ test = [
 ]
 
 @router.get('/game-status/test')
-async def getGameStatus():
+async def get_game_status():
     results = test
     return JSONResponse(content=results)
