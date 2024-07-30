@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse,StreamingResponse
 
 from service import *
@@ -21,9 +21,9 @@ async def capture_images():
 # -----------------------------------------------------------
 ### 이미지 스트리밍
 
-# 쿼리 파라미터로 cap, conf 구분
+# 경로 파라미터로 cap, conf 구분
 @router.get('/images/stream/{img_type}')
-async def stream_images(img_type: str = 'conf'): # 디폴트 conf
+async def stream_images(img_type: str = Path(default=..., regex='^(conf|cap)$')): # conf,cap 이외 유효성 검사
 
     # 추론 후 저장된 기존 모니터링 이미지 conf img
     if img_type == 'conf':
@@ -33,10 +33,8 @@ async def stream_images(img_type: str = 'conf'): # 디폴트 conf
     elif img_type == 'cap':
         folder_path = IMG_FOLDER
 
-    # 이외 쿼리문은 예외 처리
-    else:
-        raise HTTPException(status_code=400, detail="Invalid type parameter")
-    
+    # regex를 통해 유효하지 않은 값이 들어오면, FastAPI가 자동으로 422 Unprocessable Entity 에러 코드 반환
+
     # 이미지 스트리밍 생성
     image_stream = create_image_stream(folder_path)
 
@@ -48,9 +46,9 @@ async def stream_images(img_type: str = 'conf'): # 디폴트 conf
 # -----------------------------------------------------------
 ### 이미지 다운로드
 
-# 쿼리 파라미터로 cap, conf 구분
+# 경로 파라미터로 cap, conf 구분
 @router.get('/images/download/{img_type}')
-async def download_images(img_type: str = 'conf'): # 디폴트 conf
+async def download_images(img_type: str = Path(default=..., regex='^(conf|cap)$')): # conf,cap 이외 유효성 검사
 
     # 추론 후 저장된 기존 모니터링 이미지 conf img
     if img_type == 'conf':
@@ -60,9 +58,7 @@ async def download_images(img_type: str = 'conf'): # 디폴트 conf
     elif img_type == 'cap':
         folder_path = IMG_FOLDER
 
-    # 이외 쿼리문은 예외 처리
-    else:
-        raise HTTPException(status_code=400, detail="Invalid type parameter")
+    # regex를 통해 유효하지 않은 값이 들어오면, FastAPI가 자동으로 422 Unprocessable Entity 에러 코드 반환
     
     # 이미지 파일 압축
     zip_file = create_zip_file(folder_path)

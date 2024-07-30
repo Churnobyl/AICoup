@@ -58,7 +58,7 @@ def convert_list_to_json(all_files_data):
 async def get_image_data(image_path):
     try:
         with open(image_path, "rb") as image_file:
-            print("이미지 파일 읽기")
+            print(image_path, "이미지 파일 읽기")
             return image_file.read()
         
     except FileNotFoundError:
@@ -68,7 +68,7 @@ async def get_image_data(image_path):
 
 # -----------------------------------------------------------
 ### 텍스트 파일 불러오기 및 리스트 변환
-async def convert_txt_files_to_list():
+def convert_txt_files_to_list():
     print("텍스트 리스트 변환 시작")
     
     results = []
@@ -80,7 +80,7 @@ async def convert_txt_files_to_list():
         try:
             if txt_path.is_file():
                 with open(txt_path, 'r') as f: # read-only
-                    print("텍스트 파일 읽어오기")
+                    print(txt_path, "텍스트 파일 읽어오기")
                     for line in f:
                         txt_list.append(line.strip().split())
                 results.append(txt_list)

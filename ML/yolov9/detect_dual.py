@@ -150,10 +150,11 @@ def run(
 # --------------------------------------------------------------------------------------
                 # 하나의 이미지에 복수 객체가 탐지될 경우, 이미지 별로 복수 객체 탐지 결과를 분류하여 담는다
                 img_det = []
-                print("이미지 탐색 시작")
+                print("---")
+                print(f"{p.stem}.jpg 이미지 탐색 시작")
 
                 open(f'{txt_path}.txt', 'w')
-                print("txt 파일 생성")
+                print(f"{p.stem}.txt 파일 생성")
 # --------------------------------------------------------------------------------------
 
                 # Write results
@@ -185,9 +186,10 @@ def run(
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
-                        print("이미지 저장")
+                        print("B박스 설정")
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+                        print(f"{p.stem}.jpg B박스 이미지 저장")
 
             # Stream results
             im0 = annotator.result()
@@ -220,7 +222,7 @@ def run(
 
 # --------------------------------------------------------------------------------------
         # 이미지 별로 묶은 객체 탐지 결과 리스트를 results에 담기
-        print("이미지 탐지 결과 results에 담기")
+        print(f"{p.stem}.jpg 이미지 탐지 결과 results에 담기")
         results.append(img_det)
 # --------------------------------------------------------------------------------------
 

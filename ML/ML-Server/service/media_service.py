@@ -14,7 +14,7 @@ from utils_main import *
 
 # -----------------------------------------------------------
 ### 이미지 촬영
-async def capture_images():
+def capture_images():
     print("capture_images() 시작")
 
     # 기본 웹캠에 연결
@@ -33,8 +33,8 @@ async def capture_images():
             return {"error": "Failed to capture image."}
 
         # 촬영 사진을 지정된 경로 폴더에 저장
-        print("촬영 성공")
         img_path = os.path.join(IMG_FOLDER, f'photo_{i+1}.jpg')
+        print(f'photo_{i+1}.jpg 촬영 성공')
         cv2.imwrite(img_path, frame)
         time.sleep(0.5)  # Wait for a second before capturing the next image
 
@@ -72,7 +72,7 @@ async def create_image_stream(folder_path):
                 b"--frame\r\n"
                 b"Content-Type: image/jpeg\r\n\r\n" + image_data + b"\r\n"
             )
-        print("스트리밍 전송")
+        print(f"{img} 스트리밍 전송")
 
         await asyncio.sleep(1)  # 각 이미지 사이에 짧은 지연 추가
 
@@ -80,7 +80,8 @@ async def create_image_stream(folder_path):
     
 # -----------------------------------------------------------
 ### 이미지 파일 압축
-async def create_zip_file(folder_path) -> io.BytesIO:
+# 작은 작업이라 동기 방식으로 
+def create_zip_file(folder_path) -> io.BytesIO:
     print("이미지 압축 시작")
 
     s = io.BytesIO()
@@ -89,7 +90,7 @@ async def create_zip_file(folder_path) -> io.BytesIO:
     for img in IMG_FILES:
         image_path = folder_path / img
         zip_file.write(image_path, img)
-        print("압축")
+        print(f"{img} 압축 완료")
 
     zip_file.close()
     s.seek(0)
