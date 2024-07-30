@@ -65,9 +65,10 @@ def run(
     # 객체 탐지할 때마다 결과를 exp에 저장할 필요가 없으므로, exp파일 중복 생성 방지
     save_dir = Path(project)/name 
     os.makedirs(Path(project), exist_ok=True)
-# --------------------------------------------------------------------------------------
-    # save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
+
+    # save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run # 주석 처리
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+# --------------------------------------------------------------------------------------
 
     # Load model
     device = select_device(device)
@@ -136,9 +137,21 @@ def run(
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
+            
+# --------------------------------------------------------------------------------------
+            # 하나의 이미지에 복수 객체가 탐지될 경우, 이미지 별로 복수 객체 탐지 결과를 분류하여 담는다
+            print("---")
+            img_det = []
 
+            print(f"{p.stem}.jpg 이미지 탐색 시작")
+            open(f'{txt_path}.txt', 'w')
+            print(f"{p.stem}.txt 파일 생성")
+# --------------------------------------------------------------------------------------
 
-            if len(det):
+            # 탐지된 객체가 있을 때
+            if len(det): 
+                print("탐지될 객체가 있음.")
+
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
 
@@ -147,18 +160,9 @@ def run(
                     n = (det[:, 5] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-# --------------------------------------------------------------------------------------
-                # 하나의 이미지에 복수 객체가 탐지될 경우, 이미지 별로 복수 객체 탐지 결과를 분류하여 담는다
-                img_det = []
-                print("---")
-                print(f"{p.stem}.jpg 이미지 탐색 시작")
-
-                open(f'{txt_path}.txt', 'w')
-                print(f"{p.stem}.txt 파일 생성")
-# --------------------------------------------------------------------------------------
-
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
+
 # --------------------------------------------------------------------------------------
                     # 객체 탐지 결과를 obj_det 변환해서 img_det 리스트에 담기
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
