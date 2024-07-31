@@ -21,10 +21,8 @@ public class GameMember extends MutableBaseEntity {
     @Indexed
     private String id;
     private String name;
-    private Boolean isPlayer;
+    private boolean isPlayer;
     private Integer coin;
-    private Integer positionX;
-    private Integer positionY;
     private Integer leftCard;
     private Integer rightCard;
     private CardInfo leftCardInfo;

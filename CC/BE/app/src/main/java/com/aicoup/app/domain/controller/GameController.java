@@ -1,6 +1,7 @@
 package com.aicoup.app.domain.controller;
 
 import com.aicoup.app.domain.redisRepository.GameMemberRepository;
+import com.aicoup.app.domain.redisRepository.GameRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 public class GameController {
 
     private final GameMemberRepository gameMemberRepository;
+    private final GameRepository gameRepository;
 
     @Value("${cookie.name}")
     private String cookieName;
@@ -40,23 +42,23 @@ public class GameController {
         // 쿠키 자체가 없으면 false 리턴
         if (cookies == null) return ResponseEntity.ok(false);
 
-        Cookie cookie = null;
+        Cookie gameIdCookie = null;
 
         // coockieName에 해당하는 key 있으면 설정
         for (Cookie c : cookies) {
             if (cookieName.equals(c.getName())) {
-                cookie = c;
+                gameIdCookie = c;
                 break;
             }
         }
 
         // 해당하는 쿠키 없으면 false
-        if (cookie == null) return ResponseEntity.ok(false);
+        if (gameIdCookie == null) return ResponseEntity.ok(false);
 
         // Redis에서 매당하는 value 체크
-        boolean byNameExists = gameMemberRepository.existsGameMembersByName(cookie.getValue());
+        boolean byGameExists = gameRepository.existsById(gameIdCookie.getValue());
 
-        log.info("[status-check] {}", byNameExists);
-        return ResponseEntity.ok(byNameExists);
+        log.info("[status-check] {}", byGameExists);
+        return ResponseEntity.ok(byGameExists);
     }
 }
