@@ -1,9 +1,9 @@
 package com.aicoup.app.websocket.controller;
 
+import com.aicoup.app.domain.entity.game.member.GameMember;
 import com.aicoup.app.websocket.model.dto.GameStateDto;
 import com.aicoup.app.websocket.model.dto.MessageDto;
 import com.aicoup.app.websocket.service.WebSocketGameServiceImpl;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -23,9 +23,11 @@ public class WebsocketController {
         MessageDto newMessage = new MessageDto(message.getRoomId(), "server");
 
         // 서버와 현실 일치 검증
-        if (!webSocketGameService.validate()) {
+        Map<String, String> validateResult = webSocketGameService.validate(message);
+
+        if (!validateResult.get("result").equals("ok")) {
             newMessage.setState("validationFail");
-            newMessage.setMainMessage("검증 실패");
+            newMessage.setMainMessage(validateResult);
             template.convertAndSend("/sub/chat/room/" + message.getRoomId(), newMessage);
             return;
         }
@@ -35,17 +37,42 @@ public class WebsocketController {
         String returnState = null;
 
         switch (state) {
+            case "gameCheck":
+                boolean result = webSocketGameService.gameCheck(message);
+                returnState = result ? "exist" : "noExist";
+                break;
             case "gameInit":
-                String gameId = webSocketGameService.gameInit(message.getRoomId());
+                String gameId = webSocketGameService.gameInit(message);
                 gameInitCookieSend(gameId);
-                webSocketGameService.recordHistory(gameId, 17, 0, 0);
+                returnState = "gameMade";
+                break;
+
+            case "gameState":
+                ObjectMapper objectMapper = new ObjectMapper();
+                GameStateDto gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+
+                // 다른 사람 카드 가리기
+                for (GameMember member : gameStateDto.getMembers()) {
+                    if (!member.isPlayer()) {
+                        if (member.getLeftCard() > 0) {
+                            member.setLeftCard(0);
+                        }
+                        if (member.getRightCard() > 0) {
+                            member.setRightCard(0);
+                        }
+                    }
+                }
+
+                // JSON 문자열이 아닌 객체를 직접 설정
+                newMessage.setMainMessage(objectMapper.convertValue(gameStateDto, Map.class));
+
                 returnState = "gameState";
                 break;
             case "nextTurn":
-                returnState = webSocketGameService.nextTurn();
+                returnState = webSocketGameService.nextTurn(message);
                 break;
             case "myChoice":
-                returnState = webSocketGameService.myChoice();
+                returnState = webSocketGameService.myChoice(message);
                 break;
             default:
                 throw new IllegalArgumentException("웹소켓 메시지 잘못 접근함");
@@ -54,21 +81,18 @@ public class WebsocketController {
         // 로직 이후 보낼 메시지에 state 설정
         newMessage.setState(returnState);
 
-        // 만약 gameState라면
-        if (returnState.equals("gameState")) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            GameStateDto gameStateDto = webSocketGameService.buildGameState(null);
-            // JSON 문자열이 아닌 객체를 직접 설정
-            newMessage.setMainMessage(objectMapper.convertValue(gameStateDto, Map.class));
-        }
 
         template.convertAndSend("/sub/chat/room/" + newMessage.getRoomId(), newMessage);
     }
 
     private void gameInitCookieSend(String gameId) {
         // cookie 설정
-        MessageDto cookieSetMessage = new MessageDto(gameId, "server");
+        MessageDto cookieSetMessage = new MessageDto("1", "server");
+        ObjectMapper objectMapper = new ObjectMapper();
+        GameStateDto gameStateDto = new GameStateDto();
+        gameStateDto.setMessage(gameId);
+        cookieSetMessage.setMainMessage(objectMapper.convertValue(gameStateDto, Map.class));
         cookieSetMessage.setState("cookieSet");
-        template.convertAndSend("/sub/chat/room/" + cookieSetMessage.getRoomId(), cookieSetMessage);
+        template.convertAndSend("/sub/chat/room/" + 1, cookieSetMessage);
     }
 }

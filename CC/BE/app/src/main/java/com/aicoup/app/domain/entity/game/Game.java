@@ -1,6 +1,7 @@
 package com.aicoup.app.domain.entity.game;
 
 import com.aicoup.app.domain.entity.MutableBaseEntity;
+import com.aicoup.app.domain.entity.game.action.Action;
 import com.aicoup.app.domain.entity.game.history.History;
 import jakarta.persistence.Id;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.index.Indexed;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -32,8 +34,10 @@ public class Game extends MutableBaseEntity {
     private String id;
     private String name;
     private Integer turn;
+    private int whoseTurn;
+    private LinkedList<Action> actionList = new LinkedList<>();
     private List<String> memberIds = new ArrayList<>();
-    private Integer[] deck = new Integer[6];
+    private int[] deck = new int[6];
     private List<History> history = new ArrayList<>();
 
     /**
@@ -49,9 +53,6 @@ public class Game extends MutableBaseEntity {
      */
     public void setInitCards() {
         for (int i = 1; i < 6; i++) {
-            if (deck[i] == null) {
-                deck[i] = 0;
-            }
             deck[i] += 3;
         }
     }

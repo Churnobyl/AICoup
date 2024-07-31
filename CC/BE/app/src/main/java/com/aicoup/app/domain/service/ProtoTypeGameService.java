@@ -14,7 +14,7 @@ public class ProtoTypeGameService implements GameService {
     @Transactional
     @Override
     public String createNewGame(String roomId, Integer participants) {
-        return gameGenerator.init(roomId, participants);
+        return gameGenerator.init(roomId);
     }
 
 }

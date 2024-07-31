@@ -1,0 +1,16 @@
+.deck-cover {
+  position: relative;
+  width: 90px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.deck {
+  width: 90px;
+  height: 128px;
+  background-image: url("../../assets/cards.webp");
+  background-position: 0% 0%;
+}
