@@ -1,12 +1,23 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(os.path.dirname(__file__))), 'yolov9'))
 
 from router import *
+from core.capture_config import get_capture_manager
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Singleton
+    # 애플리케이션 시작 시 CaptureManager 인스턴스 생성
+    cap = get_capture_manager()
+    yield
+    # 애플리케이션 종료 시 저장된 인스턴스의 release 메서드 호출
+    cap.release()
+
+app = FastAPI(lifespan=lifespan)
 
 #---------------------------------------------------------------------
 app.include_router(debug.router)

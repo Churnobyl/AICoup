@@ -26,9 +26,8 @@ from core import *
 '''
 
 # -----------------------------------------------------------
-### JSON 데이터 변환
-def convert_list_to_json(all_files_data):
-    #JSON으로 전달할 객체 탐지 결과를 담을 리스트
+### 데이터 포멧 변환
+def convert_to_dict(all_files_data):
     results = [] 
 
     # 이미지 3장의 객체 탐지 결과 순차적으로 탐색
@@ -55,7 +54,7 @@ def convert_list_to_json(all_files_data):
 
 # -----------------------------------------------------------
 ### 이미지 파일 불러오기
-async def get_image_data(image_path):
+async def load_image(image_path):
     try:
         with open(image_path, "rb") as image_file:
             print(image_path, "이미지 파일 읽기")
@@ -67,9 +66,9 @@ async def get_image_data(image_path):
     
 
 # -----------------------------------------------------------
-### 텍스트 파일 불러오기 및 리스트 변환
-def convert_txt_files_to_list():
-    print("텍스트 리스트 변환 시작")
+### 텍스트 파일 불러오기 및 변환
+def convert_txt_file():
+    print("텍스트 파일 변환 시작")
     
     results = []
 
@@ -92,5 +91,5 @@ def convert_txt_files_to_list():
             print(f"Error reading file {txt_path}: {e}")
             results.append(txt_list)  # Append empty list if there is an error
 
-    print("텍스트 리스트 변환 종료")
+    print("텍스트 파일 변환 종료")
     return results    

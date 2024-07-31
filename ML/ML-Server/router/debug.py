@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from fastapi.responses import JSONResponse,StreamingResponse
 
 from service import *
@@ -13,7 +13,7 @@ router = APIRouter(
 ### 이미지 촬영
 @router.post('/images/capture')
 async def capture_images():
-    msg = media_service.capture_images() # 중복된 메서드명 변경해야 하는데 마땅한 게 생각이 안 난다요...
+    msg = media_service.capture_images()
     return JSONResponse(
         content=msg
     )
@@ -75,7 +75,7 @@ async def download_images(img_type: str = Path(default=..., regex='^(conf|cap)$'
 # 객체 재탐지 (결과 json 전송)
 @router.post('/labels/reprocess')
 async def reprocess_inference():
-    results = convert_list_to_json(inference())
+    results = convert_to_dict(inference())
     return JSONResponse(content=results)
 
 # -----------------------------------------------------------
@@ -84,5 +84,5 @@ async def reprocess_inference():
 # 객체 탐지 기존 텍스트 결과 JSON 전송
 @router.get('/labels')
 async def get_labels():
-    results = convert_list_to_json(convert_txt_files_to_list())
+    results = convert_to_dict(convert_txt_file())
     return JSONResponse(content=results)
