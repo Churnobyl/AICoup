@@ -1,7 +1,7 @@
+import { statusCheckApi } from "@/apis/statusCheckApi";
+import MainPage from "@/pages/MainPage";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { statusCheckApi } from "@/apis/statusCheckApi";
-import MainPage from "./MainPage";
 
 const GameStatusPage = () => {
   const [gameStarted, setGameStarted] = useState<boolean | null>(null);
@@ -10,6 +10,7 @@ const GameStatusPage = () => {
   useEffect(() => {
     statusCheckApi().then((response) => {
       if (response) {
+        console.log(response);
         navigate("/game");
       }
 
