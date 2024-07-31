@@ -9,4 +9,33 @@
   background-image: url("../../assets/cards.webp");
   background-position: 0% -100%;
   background-repeat: repeat;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  position: relative;
+
+  &.card-0 {
+    background-position: 0% 0%;
+  }
+
+  &.card-1 {
+    background-position: 0% -100%;
+  }
+
+  &.card-2 {
+    background-position: 0% -200%;
+  }
+
+  &.card-3 {
+    background-position: 0% -300%;
+  }
+
+  &.card-4 {
+    background-position: 0% -400%;
+  }
+
+  &.card-5 {
+    background-position: 0% -500%;
+  }
 }
