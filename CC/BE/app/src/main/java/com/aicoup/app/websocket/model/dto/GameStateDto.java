@@ -1,5 +1,6 @@
 package com.aicoup.app.websocket.model.dto;
 
+import com.aicoup.app.domain.entity.game.action.Action;
 import com.aicoup.app.domain.entity.game.history.History;
 import com.aicoup.app.domain.entity.game.member.GameMember;
 import lombok.Getter;
@@ -13,5 +14,8 @@ public class GameStateDto {
     private Integer turn;
     private List<GameMember> members = new ArrayList<>();
     private String message;
+    private int whoseTurn;
+    private Action lastAction;
     private List<History> history;
+    private int[] deck = new int[6];
 }

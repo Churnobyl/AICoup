@@ -38,8 +38,6 @@ CREATE TABLE IF NOT EXISTS game_member
     game_member_id INTEGER AUTO_INCREMENT,
     game_id        INTEGER,
     name           VARCHAR(255),
-    position_x     INTEGER,
-    position_y     INTEGER,
     left_card      INTEGER,
     right_card     INTEGER,
     coin           INTEGER,
