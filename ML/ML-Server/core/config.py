@@ -13,7 +13,7 @@ os.makedirs(IMG_FOLDER, exist_ok=True)
 DET_FOLDER = ROOT / 'media/detect'
 
 # 모델 가중치 파일 경로
-WEIGHTS = ROOT / 'core/coup-0719.pt'  
+WEIGHTS = ROOT / 'core/coup-0730.pt'  
 DEVICE = ''
 
 # 이미지 파일 목록
