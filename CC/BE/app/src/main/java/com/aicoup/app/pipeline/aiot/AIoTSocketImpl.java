@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @Component
+@PropertySource("classpath:application.yml")
 public class AIoTSocketImpl implements AIoTSocket {
 
     @Value("${aiot.url}")
