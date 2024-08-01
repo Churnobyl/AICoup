@@ -133,7 +133,7 @@ const GamePage = () => {
     return () => {
       clientData.deactivate();
     };
-  }, [turnMemo]);
+  }, [turnMemo, handleMessage]);
 
   const handleSelect = (option: string) => {
     console.log("Selected option:", option);
