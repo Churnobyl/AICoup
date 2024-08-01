@@ -7,11 +7,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.context.annotation.PropertySource;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 
 @Component
+@PropertySource("classpath:application.yaml")
 public class AIoTSocketImpl implements AIoTSocket {
 
     @Value("${aiot.url}")
