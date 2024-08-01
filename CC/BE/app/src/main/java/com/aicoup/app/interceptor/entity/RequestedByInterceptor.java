@@ -18,9 +18,7 @@ public class RequestedByInterceptor implements WebRequestInterceptor {
     @Override
     public void preHandle(WebRequest request) throws Exception {
         String requestedBy = request.getHeader(REQUESTED_BY_HEADER);
-
         RequestedBy requestUser = new RequestedBy(requestedBy);
-
         authenticationHolder.setAuthentication(requestUser);
     }
 
