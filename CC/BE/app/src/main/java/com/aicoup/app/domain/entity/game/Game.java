@@ -1,7 +1,6 @@
 package com.aicoup.app.domain.entity.game;
 
 import com.aicoup.app.domain.entity.MutableBaseEntity;
-import com.aicoup.app.domain.entity.game.action.Action;
 import com.aicoup.app.domain.entity.game.history.History;
 import jakarta.persistence.Id;
 import lombok.Getter;
@@ -24,7 +23,7 @@ import java.util.List;
  * @deck Integer[] 덱에 있는 남은 카드 수
  * @history List&lt;History&gt; 게임 히스토리
  */
-@RedisHash("game")
+@RedisHash(value = "game", timeToLive = 3600L)
 @NoArgsConstructor
 @Getter @Setter
 public class Game extends MutableBaseEntity {
@@ -35,7 +34,7 @@ public class Game extends MutableBaseEntity {
     private String name;
     private Integer turn;
     private int whoseTurn;
-    private LinkedList<Action> actionList = new LinkedList<>();
+    private LinkedList<History> actionContext = new LinkedList<>();
     private List<String> memberIds = new ArrayList<>();
     private int[] deck = new int[6];
     private List<History> history = new ArrayList<>();

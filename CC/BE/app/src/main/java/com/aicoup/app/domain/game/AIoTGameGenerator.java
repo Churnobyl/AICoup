@@ -37,6 +37,11 @@ public class AIoTGameGenerator implements GameGenerator {
         List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer();
         int participants = dataFromAIoTServer.size();
 
+        Random random = new Random();
+        
+        // 랜덤으로 플레이어 순서 세팅
+        newGame.setWhoseTurn(random.nextInt(participants));
+
         GPTPlayerCreate(participantList, participants);
 
         for (int i = 0; i < participants; i++) {
