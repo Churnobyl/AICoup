@@ -11,11 +11,11 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class ChallengeDataService {
+public class ChallengeDataService implements GameDataService {
     private final GameDataRepository gameDataRepository;
     private final ObjectMapper objectMapper;
 
-    public String getGameDataAsJson(Long gameId) {
+    public String getGameDataAsJson(String gameId) {
         Optional<GameData> gameDataOptional = gameDataRepository.findById(gameId);
 
         if (gameDataOptional.isEmpty()) {
@@ -31,7 +31,7 @@ public class ChallengeDataService {
         }
     }
 
-    public String getFormattedGameDataAsJson(Long gameId) {
+    public String getFormattedGameDataAsJson(String gameId) {
         Optional<GameData> gameDataOptional = gameDataRepository.findById(gameId);
 
         if (gameDataOptional.isEmpty()) {
