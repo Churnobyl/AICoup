@@ -19,13 +19,16 @@ def inference():
             source=IMG_FOLDER,
             # nosave=True # txt, img 저장 안 함 
             project = DET_FOLDER, #객체 탐지 결과 파일 저장 경로
-            save_txt=True,  # 객체 탐지 결과 txt 파일 저장
+            # save_txt=True,  # 객체 탐지 결과 txt 파일 저장
             save_conf=True  # 객체 탐지 결과 img 파일 저장
         )
 
         if not detections:
             raise HTTPException(status_code=404, detail="탐지 결과를 찾을 수 없습니다.")
 
+        DET_LOGS.append(detections)
+        print(f"전역 변수 DET_QUEUE에 탐지 결과값 저장. Current queue: {list(DET_LOGS)}")
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     

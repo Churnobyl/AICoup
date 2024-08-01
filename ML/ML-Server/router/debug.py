@@ -94,7 +94,7 @@ async def get_labels(
 ):
     if result_type == "det":
         # 저장된 객체 탐지 결과를 반환
-        detection_results = convert_to_dict(convert_txt_file())
+        detection_results = convert_queue()
         return JSONResponse(content=detection_results)
 
     elif result_type == "clst":

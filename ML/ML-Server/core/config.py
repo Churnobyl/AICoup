@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from collections import deque
 
 # ML-Server root directory
 FILE = Path(__file__).resolve()
@@ -30,3 +31,12 @@ test = {0: {'center': [0.5473437547683716, 0.15111111104488373], 'points': []},
             4: {'center': [0.46041667461395264, 0.5439814925193787], 'points': []}}
 
 CLST_DATA = test
+
+# 객체 탐지 결과값 최대 3턴 저장
+DET_LOGS = deque(maxlen=3)
+
+# 최신 촬영 이미지 3장 저장
+CAP_IMG_BUFFER = deque(maxlen=3)
+
+# 최신 탐지 결과 이미지 3장 저장
+CONF_IMG_BUFFER = deque(maxlen=3)
