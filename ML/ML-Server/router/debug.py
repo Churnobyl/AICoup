@@ -1,5 +1,6 @@
-from fastapi import APIRouter
-from fastapi.responses import JSONResponse,StreamingResponse
+from fastapi import APIRouter, Query
+from fastapi.responses import JSONResponse, StreamingResponse
+from typing import Optional
 
 from service import *
 from utils_main import *
@@ -10,8 +11,12 @@ router = APIRouter(
 )
 
 # -----------------------------------------------------------
-### 이미지 촬영
-@router.post('/images/capture')
+# images
+# -----------------------------------------------------------
+# 이미지 촬영
+
+
+@router.post('/images')
 async def capture_images():
     msg = media_service.capture_images()
     return JSONResponse(
@@ -19,70 +24,105 @@ async def capture_images():
     )
 
 # -----------------------------------------------------------
-### 이미지 스트리밍
+# 이미지 스트리밍
+# 이미지 다운로드
+'''
+쿼리 파라미터
+cap이미지와 conf이미지는 동일한 리소스,
+stream과 download는 리소스에 대한 행위
+'''
 
-# 경로 파라미터로 cap, conf 구분
-@router.get('/images/stream/{img_type}')
-async def stream_images(img_type: str = Path(default=..., regex='^(conf|cap)$')): # conf,cap 이외 유효성 검사
+# 이미지 요청
 
-    # 추론 후 저장된 기존 모니터링 이미지 conf img
+
+@router.get('/images')
+async def get_images(
+    # conf, cap 이외 유효성 검사
+    img_type: str = Query(default='cap', regex='^(conf|cap)$'),
+    # stream, download 이외 유효성 검사
+    action: str = Query(default="stream", regex="^(stream|download)$")
+):
+    # 추론 후 저장된 기존 모니터링 이미지 (conf img)
     if img_type == 'conf':
-        folder_path = DET_FOLDER/'exp'
-
-    # 저장된 기본 촬영 이미지 cap img
+        folder_path = DET_FOLDER / 'exp'
+    # 저장된 기본 촬영 이미지 (cap img)
     elif img_type == 'cap':
         folder_path = IMG_FOLDER
 
     # regex를 통해 유효하지 않은 값이 들어오면, FastAPI가 자동으로 422 Unprocessable Entity 에러 코드 반환
 
-    # 이미지 스트리밍 생성
-    image_stream = create_image_stream(folder_path)
-
-    return StreamingResponse(
-        image_stream,
-        media_type="multipart/x-mixed-replace; boundary=frame"
-    )
-
-# -----------------------------------------------------------
-### 이미지 다운로드
-
-# 경로 파라미터로 cap, conf 구분
-@router.get('/images/download/{img_type}')
-async def download_images(img_type: str = Path(default=..., regex='^(conf|cap)$')): # conf,cap 이외 유효성 검사
-
-    # 추론 후 저장된 기존 모니터링 이미지 conf img
-    if img_type == 'conf':
-        folder_path = DET_FOLDER/'exp'
-
-    # 저장된 기본 촬영 이미지 cap img
-    elif img_type == 'cap':
-        folder_path = IMG_FOLDER
-
-    # regex를 통해 유효하지 않은 값이 들어오면, FastAPI가 자동으로 422 Unprocessable Entity 에러 코드 반환
-    
-    # 이미지 파일 압축
-    zip_file = create_zip_file(folder_path)
-
-    return StreamingResponse(
-        zip_file, 
-        media_type="application/x-zip-compressed", 
-        headers={"Content-Disposition": "attachment;filename=images.zip"}
-    )
+    if action == "stream":
+        # 이미지 스트리밍 생성
+        image_stream = create_image_stream(folder_path)
+        return StreamingResponse(
+            image_stream,
+            media_type="multipart/x-mixed-replace; boundary=frame"
+        )
+    elif action == "download":
+        # 이미지 파일 압축
+        zip_file = create_zip_file(folder_path)
+        return StreamingResponse(
+            zip_file,
+            media_type="application/x-zip-compressed",
+            headers={"Content-Disposition": "attachment;filename=images.zip"}
+        )
 
 # -----------------------------------------------------------
-### 객체 탐지 재추론
+# labels
+# -----------------------------------------------------------
+# 객체 탐지 재추론
 
-# 객체 재탐지 (결과 json 전송)
-@router.post('/labels/reprocess')
+
+@router.post('/labels')
 async def reprocess_inference():
     results = convert_to_dict(inference())
     return JSONResponse(content=results)
 
 # -----------------------------------------------------------
-### 객체 탐지 텍스트 결과 JSON 전송
+# 객체 탐지 결과
+# 객체 탐지 클러스터링 결과
 
-# 객체 탐지 기존 텍스트 결과 JSON 전송
+# 객체 탐지 결과 JSON 전송
+
+
 @router.get('/labels')
-async def get_labels():
-    results = convert_to_dict(convert_txt_file())
-    return JSONResponse(content=results)
+async def get_labels(
+    result_type: str = Query(
+        default="det", regex="^(det|clst)$"),  # det, clst 이외 유효성 검사
+    step: Optional[int] = Query(default=None),  # step 파라미터는 선택적
+    plot: Optional[int] = Query(default=None)  # plot 파라미터는 선택적
+):
+    if result_type == "det":
+        # 저장된 객체 탐지 결과를 반환
+        detection_results = convert_to_dict(convert_txt_file())
+        return JSONResponse(content=detection_results)
+
+    elif result_type == "clst":
+        # 클러스터링 과정 반환
+        match step:
+            # 클러스터링 단계별 결과
+            case 1:
+                print('클러스터링 1단계')
+            case 2:
+                print('클러스터링 2단계')
+            case 3:
+                print('클러스터링 3단계')
+            case _:
+                print('Value is something else')
+                return JSONResponse(CLST_DATA)
+
+        match plot:
+            # 클러스터링 단계별 플롯 이미지
+            case 1:
+                print('클러스터링 1단계 이미지')
+            case 2:
+                print('클러스터링 2단계 이미지')
+            case 3:
+                print('클러스터링 3단계 이미지')
+            case _:
+                print('Value is something else')
+        pass
+
+    # regex를 통해 유효하지 않은 값이 들어오면, FastAPI가 자동으로 422 Unprocessable Entity 에러 코드 반환
+
+# -----------------------------------------------------------

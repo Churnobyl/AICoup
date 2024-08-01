@@ -8,10 +8,12 @@ import io
 from core import *
 from utils_main import *
 
-### 어플리케이션에서 생성된 이미지 파일은 .jpg 고정
+# 어플리케이션에서 생성된 이미지 파일은 .jpg 고정
 
 # -----------------------------------------------------------
-### 이미지 촬영
+# 이미지 촬영
+
+
 def capture_images():
     print("capture_images() 시작")
 
@@ -26,7 +28,7 @@ def capture_images():
             # 버퍼에 있는 오래된 프레임 제거
             for _ in range(5):  # 필요한 만큼 버퍼 프레임 제거 (기본적으로 5~10 프레임 정도)
                 cap.cap.grab()
-            
+
             # 촬영
             frame = cap.get_frame()
 
@@ -34,20 +36,23 @@ def capture_images():
             img_path = os.path.join(IMG_FOLDER, f'photo_{i+1}.jpg')
             print(f'photo_{i+1}.jpg 촬영 성공')
             cv2.imwrite(img_path, frame)
-            time.sleep(0.5)  # Wait for a second before capturing the next image
+            # Wait for a second before capturing the next image
+            time.sleep(0.5)
 
         print("capture_images() 종료")
         return {"message": "Photos captured successfully."}
-    
+
     except Exception as e:
         print(f"Error: {str(e)}")
         return {"error": str(e)}
 
 # -----------------------------------------------------------
-### 이미지 파일 스트리밍 만들기
+# 이미지 파일 스트리밍 만들기
+
+
 async def create_image_stream(folder_path):
     print("create_image_stream() 시작")
-    
+
     for img in IMG_FILES:
         image_path = folder_path / img
         image_data = await load_image(image_path)
@@ -62,10 +67,12 @@ async def create_image_stream(folder_path):
         await asyncio.sleep(1)  # 각 이미지 사이에 짧은 지연 추가
 
     print("create_image_stream() 종료")
-    
+
 # -----------------------------------------------------------
-### 이미지 파일 압축
-# 작은 작업이라 동기 방식으로 
+# 이미지 파일 압축
+# 작은 작업이라 동기 방식으로
+
+
 def create_zip_file(folder_path) -> io.BytesIO:
     print("이미지 압축 시작")
 
@@ -79,7 +86,7 @@ def create_zip_file(folder_path) -> io.BytesIO:
 
     zip_file.close()
     s.seek(0)
-    
+
     print("이미지 압축 완료")
     return s
 
