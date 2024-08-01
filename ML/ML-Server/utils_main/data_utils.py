@@ -1,3 +1,13 @@
+from PIL import Image
+import numpy as np
+import io
+import asyncio
+
+# import time
+
+import zipfile
+import cv2
+
 from core import *
 
 ''' JSON 포멧
@@ -91,15 +101,76 @@ def convert_queue():
     return results    
 
 # -----------------------------------------------------------
-### 이미지 파일 불러오기
-async def load_image(image_path):
+### 촬영 이미지 메모리 임시 저장
+def add_image(frame):
     try:
-        with open(image_path, "rb") as image_file:
-            print(image_path, "이미지 파일 읽기")
-            return image_file.read()
-        
-    except FileNotFoundError:
-        print(f"파일을 찾을 수 없습니다: {image_path}")
-        return None
+        # numpy 배열을 PIL 이미지로 변환
+        if isinstance(frame, np.ndarray):
+            # cv2의 BGR 배열을, RGB로 변환
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = Image.fromarray(frame)
+            
+        # 이미지를 메모리 버퍼에 저장
+        buffer = io.BytesIO()
+        frame.save(buffer, format='JPEG')
+        buffer.seek(0)
+        CAP_IMG_BUFFERS.append(buffer)
+        print("촬영 이미지 임시 저장 성공")
     
+    except Exception as e:
+        # 예외 발생 시 raise로 예외를 호출자에게 전달
+        raise RuntimeError(f"촬영 이미지 임시 저장 실패: {str(e)}")
 
+# -----------------------------------------------------------
+### 이미지 스트림 변환
+async def stream_images_from_buffers(save_buffers):
+
+    for i, buffer in enumerate(save_buffers):
+        buffer.seek(0)  # 버퍼의 시작으로 이동
+        img = buffer.read()
+
+        if img:
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" + img + b"\r\n"
+            )
+        print(f"{i+1} 이미지 스트리밍 전송")
+
+        await asyncio.sleep(1)  # 각 이미지 사이에 짧은 지연 추가
+        
+# ### 이미지 스트림 변환 동기방식
+# def stream_images_from_buffers(save_buffers):
+
+#     for i, buffer in enumerate(save_buffers):
+#         buffer.seek(0)  # 버퍼의 시작으로 이동
+#         img = buffer.read()
+
+#         if img:
+#             yield (
+#                 b"--frame\r\n"
+#                 b"Content-Type: image/jpeg\r\n\r\n" + img + b"\r\n"
+#             )
+#         print(f"{i+1} 이미지 스트리밍 전송")
+
+#         time.sleep(1)  # 각 이미지 사이에 짧은 지연 추가
+
+# -----------------------------------------------------------
+### 이미지 압축
+
+def zip_images_from_buffers(save_buffers) -> io.BytesIO:
+
+    s = io.BytesIO()
+    zip_file = zipfile.ZipFile(s, "w")
+
+    for i, buffer in enumerate(save_buffers):
+        buffer.seek(0)  # 버퍼의 시작으로 이동
+
+        # 버퍼 데이터를 ZIP 파일에 추가
+        img_name = f"photo_{i+1}.jpg"
+        zip_file.writestr(img_name, buffer.read())
+        print(f"{img_name} 압축 완료")
+
+    zip_file.close()
+    s.seek(0)
+
+    return s

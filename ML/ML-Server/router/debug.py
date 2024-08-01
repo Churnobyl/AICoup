@@ -38,29 +38,22 @@ stream과 download는 리소스에 대한 행위
 @router.get('/images')
 async def get_images(
     # conf, cap 이외 유효성 검사
-    img_type: str = Query(default='cap', regex='^(conf|cap)$'),
+    img_type: str = Query(default='cap', regex='^(cap|conf)$'),
     # stream, download 이외 유효성 검사
     action: str = Query(default="stream", regex="^(stream|download)$")
 ):
-    # 추론 후 저장된 기존 모니터링 이미지 (conf img)
-    if img_type == 'conf':
-        folder_path = DET_FOLDER / 'exp'
-    # 저장된 기본 촬영 이미지 (cap img)
-    elif img_type == 'cap':
-        folder_path = IMG_FOLDER
-
     # regex를 통해 유효하지 않은 값이 들어오면, FastAPI가 자동으로 422 Unprocessable Entity 에러 코드 반환
 
     if action == "stream":
         # 이미지 스트리밍 생성
-        image_stream = create_image_stream(folder_path)
+        image_stream = create_image_stream(img_type)
         return StreamingResponse(
             image_stream,
             media_type="multipart/x-mixed-replace; boundary=frame"
         )
     elif action == "download":
         # 이미지 파일 압축
-        zip_file = create_zip_file(folder_path)
+        zip_file = create_zip_file(img_type)
         return StreamingResponse(
             zip_file,
             media_type="application/x-zip-compressed",

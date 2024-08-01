@@ -36,7 +36,7 @@ CLST_DATA = test
 DET_LOGS = deque(maxlen=3)
 
 # 최신 촬영 이미지 3장 저장
-CAP_IMG_BUFFER = deque(maxlen=3)
+CAP_IMG_BUFFERS = deque(maxlen=3)
 
 # 최신 탐지 결과 이미지 3장 저장
-CONF_IMG_BUFFER = deque(maxlen=3)
+CONF_IMG_BUFFERS = deque(maxlen=3)

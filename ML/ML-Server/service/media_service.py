@@ -1,14 +1,9 @@
-import os
 import time
-import cv2
-import asyncio
-import zipfile
 import io
 
 from core import *
 from utils_main import *
 
-# 어플리케이션에서 생성된 이미지 파일은 .jpg 고정
 
 # -----------------------------------------------------------
 # 이미지 촬영
@@ -22,21 +17,25 @@ def capture_images():
         cap = get_capture_manager()
 
         # 3장 반복 촬영
-        photo_count = 3
-        for i in range(photo_count):
+        count = 0
+        for _ in range(3):
+            count += 1
 
-            # 버퍼에 있는 오래된 프레임 제거
-            for _ in range(5):  # 필요한 만큼 버퍼 프레임 제거 (기본적으로 5~10 프레임 정도)
+            # 버퍼에 있는 오래된 5 프레임 제거
+            for _ in range(5):
                 cap.cap.grab()
 
             # 촬영
+            # core 웹캠 함수
             frame = cap.get_frame()
-
-            # 촬영 사진을 지정된 경로 폴더에 저장
-            img_path = os.path.join(IMG_FOLDER, f'photo_{i+1}.jpg')
-            print(f'photo_{i+1}.jpg 촬영 성공')
-            cv2.imwrite(img_path, frame)
-            # Wait for a second before capturing the next image
+            print(f"사진 {count} 촬영")
+            
+            # 촬영 사진을 메모리에 임시 저장
+            # util 함수
+            add_image(frame)
+            print(f"사진 {count} 임시 저장")
+            
+            # 대기
             time.sleep(0.5)
 
         print("capture_images() 종료")
@@ -50,44 +49,76 @@ def capture_images():
 # 이미지 파일 스트리밍 만들기
 
 
-async def create_image_stream(folder_path):
+async def create_image_stream(img_type):
     print("create_image_stream() 시작")
+    
+    match img_type:
+        case "cap": # 촬영 이미지
+            save_buffers = CAP_IMG_BUFFERS
+        case "conf": # 탐지 이미지
+            save_buffers = CONF_IMG_BUFFERS
 
-    for img in IMG_FILES:
-        image_path = folder_path / img
-        image_data = await load_image(image_path)
-
-        if image_data:
-            yield (
-                b"--frame\r\n"
-                b"Content-Type: image/jpeg\r\n\r\n" + image_data + b"\r\n"
-            )
-        print(f"{img} 스트리밍 전송")
-
-        await asyncio.sleep(1)  # 각 이미지 사이에 짧은 지연 추가
+    count = len(save_buffers)
+    if count == 0:
+        print("이미지 없음")
+        raise ValueError("저장된 이미지 없음")
+    
+    try:
+        # util 함수
+        async for img in stream_images_from_buffers(save_buffers):
+            yield img
+            
+    except asyncio.CancelledError: # FastAPI reload할 때 종종 CancelledError 발생
+        print("이미지 스트리밍 작업이 취소되었습니다.")
+        raise  # 예외를 다시 발생시켜 호출자에게 전달
 
     print("create_image_stream() 종료")
+    
+    
+# # 이미지 파일 스트리밍 만들기
+# def create_image_stream(img_type):
+#     print("create_image_stream() 시작")
+    
+#     match img_type:
+#         case "cap":  # 촬영 이미지
+#             save_buffers = CAP_IMG_BUFFERS
+#         case "conf":  # 탐지 이미지
+#             save_buffers = CONF_IMG_BUFFERS
+
+#     count = len(save_buffers)
+#     if count == 0:
+#         print("이미지 없음")
+#         raise ValueError("저장된 이미지 없음")
+    
+#     try:
+#         # util 함수 호출하여 이미지 스트리밍 생성
+#         for img in stream_images_from_buffers(save_buffers):
+#             yield img
+            
+#     except Exception as e:  # 동기 방식에서는 일반 예외 처리로 충분
+#         print(f"이미지 스트리밍 작업 중 예외 발생: {str(e)}")
+#         raise
+
+#     print("create_image_stream() 종료")
 
 # -----------------------------------------------------------
 # 이미지 파일 압축
 # 작은 작업이라 동기 방식으로
 
 
-def create_zip_file(folder_path) -> io.BytesIO:
+def create_zip_file(img_type) -> io.BytesIO:
     print("이미지 압축 시작")
 
-    s = io.BytesIO()
-    zip_file = zipfile.ZipFile(s, "w")
+    match img_type:
+        case "cap": # 촬영 이미지
+            save_buffers = CAP_IMG_BUFFERS
+        case "conf": # 탐지 이미지
+            save_buffers = CONF_IMG_BUFFERS
 
-    for img in IMG_FILES:
-        image_path = folder_path / img
-        zip_file.write(image_path, img)
-        print(f"{img} 압축 완료")
-
-    zip_file.close()
-    s.seek(0)
+    # util 함수
+    zip_file_buffer = zip_images_from_buffers(save_buffers)
 
     print("이미지 압축 완료")
-    return s
+    return zip_file_buffer
 
 # -----------------------------------------------------------
