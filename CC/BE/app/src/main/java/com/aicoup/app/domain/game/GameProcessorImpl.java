@@ -55,12 +55,10 @@ public class GameProcessorImpl implements GameProcessor {
             // 플레이어 턴이라고 프론트에 알려줌
             History history = new History(presentGame.getId(), 18, "1", "0");
             presentGame.addHistory(history);
+            presentGame.getActionContext().add(history);
             gameRepository.save(presentGame);
             return "yourTurn";
         } else { // GPT의 행동일 경우
-
-
-
 //            String dataFromGptApiForAction = chatGPTSocket.getDataFromGptApiForAction("asd");
             History history = new History(presentGame.getId(), 18, "1", "0");
             presentGame.addHistory(history);

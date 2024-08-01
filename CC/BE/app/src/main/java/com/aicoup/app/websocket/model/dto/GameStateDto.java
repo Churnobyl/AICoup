@@ -7,8 +7,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Getter @Setter
 public class GameStateDto {
@@ -16,8 +17,8 @@ public class GameStateDto {
     private List<GameMember> members = new ArrayList<>();
     private String message;
     private int whoseTurn;
-    private LinkedList<History> lastContext;
-    private Action lastAction;
+    private History lastContext;
+    private Map<String, Integer> canMove = new HashMap<>();
     private List<History> history;
     private int[] deck = new int[6];
 }
