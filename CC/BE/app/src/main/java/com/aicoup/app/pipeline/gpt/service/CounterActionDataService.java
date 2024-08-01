@@ -6,18 +6,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class GameDataService {
+public class CounterActionDataService {
     private final GameDataRepository gameDataRepository;
     private final ObjectMapper objectMapper;
 
     public String getGameDataAsJson(Long gameId) {
         Optional<GameData> gameDataOptional = gameDataRepository.findById(gameId);
 
-        if (!gameDataOptional.isPresent()) {
+        if (gameDataOptional.isEmpty()) {
             throw new IllegalArgumentException("Invalid game ID: " + gameId);
         }
 
@@ -33,7 +34,7 @@ public class GameDataService {
     public String getFormattedGameDataAsJson(Long gameId) {
         Optional<GameData> gameDataOptional = gameDataRepository.findById(gameId);
 
-        if (!gameDataOptional.isPresent()) {
+        if (gameDataOptional.isEmpty()) {
             throw new IllegalArgumentException("Invalid game ID: " + gameId);
         }
 

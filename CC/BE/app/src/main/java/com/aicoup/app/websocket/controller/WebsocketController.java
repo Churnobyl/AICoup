@@ -48,6 +48,24 @@ public class WebsocketController {
                 returnState = "gameMade";
                 break;
             case "gameState":
+                ObjectMapper objectMapper = new ObjectMapper();
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+
+                // 다른 사람 카드 가리기
+                for (GameMember member : gameStateDto.getMembers()) {
+                    if (!member.isPlayer()) {
+                        if (member.getLeftCard() > 0) {
+                            member.setLeftCard(0);
+                        }
+                        if (member.getRightCard() > 0) {
+                            member.setRightCard(0);
+                        }
+                    }
+                }
+
+                // JSON 문자열이 아닌 객체를 직접 설정
+                newMessage.setMainMessage(objectMapper.convertValue(gameStateDto, Map.class));
+
                 returnState = "gameState";
                 gameStateDto = gameStateGetter(message);
                 break;

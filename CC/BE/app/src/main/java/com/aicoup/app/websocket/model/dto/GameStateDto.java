@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 @Getter @Setter
@@ -15,7 +16,8 @@ public class GameStateDto {
     private List<GameMember> members = new ArrayList<>();
     private String message;
     private int whoseTurn;
-    private History lastContext;
+    private LinkedList<History> lastContext;
+    private Action lastAction;
     private List<History> history;
     private int[] deck = new int[6];
 }

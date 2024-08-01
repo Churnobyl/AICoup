@@ -22,4 +22,16 @@ public class GameData {
 
     @Column(name = "history", columnDefinition = "JSON", nullable = false)
     private String history;
+
+    @Column(name = "current_action", nullable = true)
+    private String currentAction;
+
+    @Column(name = "target", nullable = true)
+    private String target;
+
+    @Column(name = "counter_actioner", nullable = true)
+    private String counterActioner;
+
+    @Column(name = "counter_action", nullable = true)
+    private String counterAction;
 }
