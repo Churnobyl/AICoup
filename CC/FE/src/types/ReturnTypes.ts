@@ -1,3 +1,4 @@
+import History from "@/types/HistoryInf";
 import Member from "@/types/MemberInf";
 
 export default interface ReturnType {
