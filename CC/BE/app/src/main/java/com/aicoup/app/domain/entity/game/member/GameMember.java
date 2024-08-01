@@ -12,7 +12,7 @@ import org.springframework.data.redis.core.index.Indexed;
 import java.util.ArrayList;
 import java.util.List;
 
-@RedisHash("game_member")
+@RedisHash(value = "game_member", timeToLive = 3600L)
 @Getter @Setter
 @NoArgsConstructor
 public class GameMember extends MutableBaseEntity {

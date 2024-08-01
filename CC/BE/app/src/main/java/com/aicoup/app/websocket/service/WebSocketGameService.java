@@ -16,5 +16,5 @@ public interface WebSocketGameService {
 
     String myChoice(MessageDto messageDto);
 
-    void recordHistory(String gameId, Integer actionNumber, Integer playerTrying, Integer playerTried);
+    void recordHistory(String gameId, Integer actionNumber, String playerTrying, String playerTried);
 }
