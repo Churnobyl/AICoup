@@ -61,7 +61,7 @@ public class GameProcessorImpl implements GameProcessor {
 
 
 
-            String dataFromGptApiForAction = chatGPTSocket.getDataFromGptApiForAction("asd");
+//            String dataFromGptApiForAction = chatGPTSocket.getDataFromGptApiForAction("asd");
             History history = new History(presentGame.getId(), 18, "1", "0");
             presentGame.addHistory(history);
             gameRepository.save(presentGame);
