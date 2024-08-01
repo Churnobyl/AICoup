@@ -25,5 +25,7 @@ public class CardInfo {
     @Column(name ="card_info_id")
     private Integer id;
     private String name;
+    @Column(name = "english_name")
+    private String englishName;
     private String imageUrl;
 }

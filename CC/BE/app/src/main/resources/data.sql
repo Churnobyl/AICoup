@@ -25,6 +25,98 @@ VALUES (1,
         'Ambassador',
         'ambassador.jpg');
 
+-- 가능한 액션 데이터
+INSERT IGNORE INTO possible_action
+(possible_action_id,
+ action_id,
+ can_action_id)
+VALUES
+    (
+        1,
+        2,
+        23
+    ),
+    (
+        2,
+        2,
+        19
+    ),
+    (
+        3,
+        3,
+        23
+    ),
+    (
+        4,
+        3,
+        8
+    ),
+    (
+        5,
+        4,
+        23
+    ),
+    (
+        6,
+        4,
+        20
+    ),
+    (
+        7,
+        4,
+        21
+    ),
+    (
+        8,
+        4,
+        8
+    ),
+    (
+        9,
+        5,
+        23
+    ),
+    (
+        10,
+        5,
+        22
+    ),
+    (
+        11,
+        5,
+        8
+    ),
+    (
+        12,
+        6,
+        23
+    ),
+    (
+        13,
+        6,
+        8
+    ),
+    (
+        14,
+        19,
+        8
+    ),
+    (
+        15,
+        20,
+        8
+    ),
+    (
+        16,
+        21,
+        8
+    ),
+    (
+        17,
+        22,
+        8
+    );
+
 -- 행동 데이터
 INSERT IGNORE INTO action
 (action_id,
@@ -53,7 +145,7 @@ VALUES (1,
         1,
         0,
         true,
-        true),
+        false),
        (3,
         '징세',
         'Tax',
@@ -84,7 +176,7 @@ VALUES (1,
        (6,
         '교환',
         'Exchange',
-        '7원 지불. 영향력을 잃게 할 플레이어를 고르세요. 방해할 수 없습니다.',
+        '덱의 카드 2장과 원하는 카드를 교환. 방해할 수 없습니다.',
         5,
         0,
         0,
@@ -100,9 +192,9 @@ VALUES (1,
         false,
         false),
        (8,
-        '도전',
+        '을 갖고 있다는 주장에 도전합니다.',
         'Challenge',
-        '상대방의 카드에 의심을 품고 공개를 요구합니다.',
+        '상대방이 어떤 카드를 가지고 있다는 것에 의심을 품고 도전합니다.',
         0,
         0,
         0,
@@ -191,10 +283,110 @@ VALUES (1,
         false),
        (18,
         '플레이어 턴',
-        'Player Trun',
+        'Player Turn',
         '플레이어의 턴입니다.',
         0,
         0,
         0,
         false,
-        false)
+        false),
+       (19,
+        '방해',
+        'Block With Duke',
+        '공작으로 방해합니다.',
+        1,
+        0,
+        0,
+        false,
+        true),
+       (20,
+        '방해',
+        'Block With Captain',
+        '사령관으로 방해합니다.',
+        2,
+        0,
+        0,
+        false,
+        true),
+       (21,
+        '방해',
+        'Block With Ambassador',
+        '외교관으로 방해합니다.',
+        5,
+        0,
+        0,
+        false,
+        true),
+       (22,
+        '방해',
+        'Block With Contessa',
+        '귀부인으로 방해합니다.',
+        4,
+        0,
+        0,
+        false,
+        true),
+       (23,
+        '허용',
+        'Permit',
+        '허용합니다.',
+        0,
+        0,
+        0,
+        false,
+        false);
+
+INSERT IGNORE INTO aicoup.game_data (id, player_num, current_player, playerinfo, history, current_action, target,
+                                     counter_actioner, counter_action)
+VALUES (1, 4, 1, '[
+               {
+                   "1": {"cards": ["duke", "captain"], "cards_open": [false, false], "coins": 2},
+                   "2": {"cards": ["assassin", "captain"], "cards_open": [false, false], "coins": 2},
+                   "3": {"cards": ["ambassador", "ambassador"], "cards_open": [false, false], "coins": 2},
+                   "4": {"cards": ["assassin", "contessa"], "cards_open": [false, false], "coins": 2}
+               }
+           ]', '{
+               "1": [],
+               "2": [],
+               "3": [],
+               "4": []
+           }', null, null, null, null),
+       (2, 4, 1, '[
+               {
+                   "1": {"cards": ["duke", "captain"], "cards_open": [false, false], "coins": 2},
+                   "2": {"cards": ["assassin", "captain"], "cards_open": [false, false], "coins": 2},
+                   "3": {"cards": ["ambassador", "ambassador"], "cards_open": [false, false], "coins": 2},
+                   "4": {"cards": ["assassin", "contessa"], "cards_open": [false, false], "coins": 2}
+               }
+           ]', '{
+               "1": [],
+               "2": [],
+               "3": [],
+               "4": []
+           }', 'tax', 'none', null, null),
+       (3, 4, 2, '[
+               {
+                   "1": {"cards": ["duke", "captain"], "cards_open": [false, false], "coins": 5},
+                   "2": {"cards": ["assassin", "captain"], "cards_open": [false, false], "coins": 2},
+                   "3": {"cards": ["ambassador", "ambassador"], "cards_open": [false, false], "coins": 2},
+                   "4": {"cards": ["assassin", "contessa"], "cards_open": [false, false], "coins": 2}
+               }
+           ]', '{
+               "1": ["tax"],
+               "2": [],
+               "3": [],
+               "4": []
+           }', 'steal', '1', null, null),
+       (4, 4, 2, '[
+               {
+                   "1": {"cards": ["duke", "captain"], "cards_open": [false, false], "coins": 5},
+                   "2": {"cards": ["assassin", "captain"], "cards_open": [false, false], "coins": 2},
+                   "3": {"cards": ["ambassador", "ambassador"], "cards_open": [false, false], "coins": 2},
+                   "4": {"cards": ["assassin", "contessa"], "cards_open": [false, false], "coins": 2}
+               }
+           ]', '{
+               "1": ["tax"],
+               "2": [],
+               "3": [],
+               "4": []
+           }', null, null, '1', 'captain');

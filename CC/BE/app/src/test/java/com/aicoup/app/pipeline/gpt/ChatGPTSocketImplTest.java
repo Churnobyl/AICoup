@@ -19,7 +19,8 @@ class ChatGPTSocketImplTest {
         String systemPrompt = "You are an API that receives information of every turn of the Coup board game and outputs what current player has to do...";
 
         // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
-        String userPrompt = gameDataService.getFormattedGameDataAsJson(1L);
+        String userPrompt = gameDataService.getFormattedGameDataAsJson("1");
+        System.out.println("userPrompt = " + userPrompt);
 
         // API 호출
         String dataFromGptApiForAction = chatGPTSocket.getDataFromGptApiForAction(systemPrompt, userPrompt);
@@ -33,7 +34,7 @@ class ChatGPTSocketImplTest {
         String systemPrompt = "You are an API that receives information of every turn of the Coup board game and current_player's action and target...";
 
         // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
-        String userPrompt = gameDataService.getFormattedGameDataAsJson(2L);
+        String userPrompt = gameDataService.getFormattedGameDataAsJson("2");
 
         // API 호출
         String dataFromGptApiForChallenge = chatGPTSocket.getDataFromGptApiForChallengeAgainstAction(systemPrompt, userPrompt);
@@ -47,7 +48,7 @@ class ChatGPTSocketImplTest {
         String systemPrompt = "You are an API that receives information of every turn of the Coup board game and current_player's action and target...";
 
         // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
-        String userPrompt = gameDataService.getFormattedGameDataAsJson(3L);
+        String userPrompt = gameDataService.getFormattedGameDataAsJson("3");
 
         // API 호출
         String dataFromGptApiForCounterAction = chatGPTSocket.getDataFromGptApiForCounteractionAgainstAction(systemPrompt, userPrompt);
@@ -61,7 +62,7 @@ class ChatGPTSocketImplTest {
         String systemPrompt = "You are an API that receives information of every turn of the Coup board game and counter_actioner and his _counter_action...";
 
         // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
-        String userPrompt = gameDataService.getFormattedGameDataAsJson(4L);
+        String userPrompt = gameDataService.getFormattedGameDataAsJson("4");
 
         // API 호출
         String dataFromGptApiForCounterActionChallenge = chatGPTSocket.getDataFromGptApiForChallengeAgainstCounteraction(systemPrompt, userPrompt);
