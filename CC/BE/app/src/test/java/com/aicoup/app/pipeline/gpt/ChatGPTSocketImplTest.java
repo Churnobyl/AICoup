@@ -1,9 +1,6 @@
 package com.aicoup.app.pipeline.gpt;
 
-import com.aicoup.app.pipeline.gpt.service.ActionDataService;
-import com.aicoup.app.pipeline.gpt.service.ChallengeDataService;
-import com.aicoup.app.pipeline.gpt.service.CounterActionChallengeDataService;
-import com.aicoup.app.pipeline.gpt.service.CounterActionDataService;
+import com.aicoup.app.pipeline.gpt.service.GameDataService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

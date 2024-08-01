@@ -12,6 +12,14 @@ CREATE TABLE IF NOT EXISTS action
     CONSTRAINT PRIMARY KEY (action_id)
 );
 
+CREATE TABLE IF NOT EXISTS possible_action
+(
+    possible_action_id INTEGER,
+    action_id INTEGER,
+    can_action_id INTEGER,
+    CONSTRAINT PRIMARY KEY (possible_action_id)
+);
+
 CREATE TABLE IF NOT EXISTS card_info
 (
     card_info_id INTEGER,

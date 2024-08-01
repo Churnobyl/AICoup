@@ -48,14 +48,16 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
         if (mainMessage.get("cookie") != null) {
             Optional<Game> existGame = gameRepository.findById(mainMessage.get("cookie"));
+            // 기존 게임이 이미 존재한다면 해당 게임 아이디 리턴
             if (existGame.isPresent()) {
                 return existGame.get().getId();
             }
         }
 
+        // 새로운 게임 생성
         String gameId = gameGenerator.init(messageDto.getRoomId());
+        // 게임 시작 히스토리 작성
         recordHistory(gameId, 17, "0", "0");
-
         return gameId;
     }
 
