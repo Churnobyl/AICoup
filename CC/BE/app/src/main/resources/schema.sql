@@ -49,3 +49,15 @@ CREATE TABLE IF NOT EXISTS game_member
     CONSTRAINT PRIMARY KEY (game_member_id),
     CONSTRAINT fk_game_id FOREIGN KEY (game_id) REFERENCES game (game_id)
 );
+
+CREATE TABLE IF NOT EXISTS game_data (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    player_num INT NOT NULL,
+    current_player INT NOT NULL,
+    playerinfo JSON NOT NULL,
+    history JSON NOT NULL,
+    current_action VARCHAR(10),
+    target VARCHAR(10),
+    counter_actioner VARCHAR(10),
+    counter_action VARCHAR(10)
+);
