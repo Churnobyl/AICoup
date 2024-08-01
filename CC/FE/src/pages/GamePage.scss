@@ -20,8 +20,8 @@
 
 .modal {
   position: absolute;
-  top: 40%;
-  left: 42%;
+  top: 50%;
+  left: 50%;
   right: auto;
   bottom: auto;
   margin-right: -50%;
@@ -29,7 +29,7 @@
   background: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .overlay {
@@ -38,5 +38,5 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.1);
 }

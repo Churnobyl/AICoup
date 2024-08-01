@@ -5,6 +5,7 @@ import com.aicoup.app.domain.entity.game.card.CardInfo;
 import com.aicoup.app.domain.entity.game.history.History;
 import com.aicoup.app.domain.entity.game.member.GameMember;
 import com.aicoup.app.domain.game.GameGenerator;
+import com.aicoup.app.domain.game.GameProcessor;
 import com.aicoup.app.domain.redisRepository.GameMemberRepository;
 import com.aicoup.app.domain.redisRepository.GameRepository;
 import com.aicoup.app.domain.redisRepository.HistoryRepository;
@@ -30,6 +31,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     private final CardInfoRepository cardInfoRepository;
     private final HistoryRepository historyRepository;
     private final AIoTSocket aIoTSocket;
+    private final GameProcessor gameProcessor;
 
     public boolean gameCheck(MessageDto messageDto) {
         Map<String, String> mainMessage = (Map<String, String>) messageDto.getMainMessage();
@@ -52,7 +54,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
 
         String gameId = gameGenerator.init(messageDto.getRoomId());
-        recordHistory(gameId, 17, 0, 0);
+        recordHistory(gameId, 17, "0", "0");
 
         return gameId;
     }
@@ -60,7 +62,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     @Override
     public Map<String, String> validate(MessageDto messageDto) {
         Map<String, String> returnMessage = new HashMap<>();
-
         Map<String, String> mainMessage = (Map<String, String>) messageDto.getMainMessage();
 
         if (mainMessage.get("cookie") != null) {
@@ -116,8 +117,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             Optional<Game> existGame = gameRepository.findById(mainMessage.get("cookie"));
             if (existGame.isPresent()) {
                 Game game = existGame.get();
-                game.setTurn(game.getTurn() + 1);
-                gameRepository.save(game);
+                return gameProcessor.run(game);
             }
         }
 
@@ -130,7 +130,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     }
 
     @Override
-    public void recordHistory(String gameId, Integer actionNumber, Integer playerTrying, Integer playerTried) {
+    public void recordHistory(String gameId, Integer actionNumber, String playerTrying, String playerTried) {
         History history = new History(UUID.randomUUID().toString(), actionNumber, playerTrying, playerTried);
 
         Optional<Game> gameOptional = gameRepository.findById(gameId);
@@ -179,7 +179,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             gameStateDto.setMembers(members);
             gameStateDto.setHistory(game.getHistory());
             gameStateDto.setWhoseTurn(game.getWhoseTurn());
-            gameStateDto.setLastAction(game.getActionList().isEmpty() ? null : game.getActionList().getLast());
+            gameStateDto.setLastContext(game.getActionContext().isEmpty() ? null : game.getActionContext().getLast());
             gameStateDto.setDeck(game.getDeck());
             return gameStateDto;
         } else {

@@ -7,12 +7,13 @@ type Props = {
   className: string;
 };
 
-const Board = (props: Props) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const Board = (_props: Props) => {
   const store = useGameStore();
 
   return (
     <div className="board">
-      {store.members.map((member, index) => (
+      {store.members.map((_member, index) => (
         <CardHolder key={index} playerNumber={index} className="card-holder" />
       ))}
       <div style={{ position: "absolute" }}>

@@ -18,7 +18,7 @@ import org.springframework.data.redis.core.index.Indexed;
  * @playerTrying Integer 시도하는 플레이어 넘버
  * @playerTried Integer 대상 플레이어 넘버
  */
-@RedisHash("history")
+@RedisHash(value = "history", timeToLive = 3600L)
 @NoArgsConstructor
 @Getter @Setter
 public class History {
@@ -27,10 +27,10 @@ public class History {
     private String id;
     private int turn;
     private Integer actionId;
-    private Integer playerTrying;
-    private Integer playerTried;
+    private String playerTrying;
+    private String playerTried;
 
-    public History(String id, Integer actionId, Integer playerTrying, Integer playerTried) {
+    public History(String id, Integer actionId, String playerTrying, String playerTried) {
         this.id = id;
         this.actionId = actionId;
         this.playerTrying = playerTrying;

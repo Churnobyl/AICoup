@@ -34,6 +34,7 @@ public class WebsocketController {
 
         // state에 따라 분기 로직
         String state = message.getState();
+        GameStateDto gameStateDto = null;
         String returnState = null;
 
         switch (state) {
@@ -46,30 +47,13 @@ public class WebsocketController {
                 gameInitCookieSend(gameId);
                 returnState = "gameMade";
                 break;
-
             case "gameState":
-                ObjectMapper objectMapper = new ObjectMapper();
-                GameStateDto gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
-
-                // 다른 사람 카드 가리기
-                for (GameMember member : gameStateDto.getMembers()) {
-                    if (!member.isPlayer()) {
-                        if (member.getLeftCard() > 0) {
-                            member.setLeftCard(0);
-                        }
-                        if (member.getRightCard() > 0) {
-                            member.setRightCard(0);
-                        }
-                    }
-                }
-
-                // JSON 문자열이 아닌 객체를 직접 설정
-                newMessage.setMainMessage(objectMapper.convertValue(gameStateDto, Map.class));
-
                 returnState = "gameState";
+                gameStateDto = gameStateGetter(message);
                 break;
             case "nextTurn":
                 returnState = webSocketGameService.nextTurn(message);
+                gameStateDto = gameStateGetter(message);
                 break;
             case "myChoice":
                 returnState = webSocketGameService.myChoice(message);
@@ -81,8 +65,29 @@ public class WebsocketController {
         // 로직 이후 보낼 메시지에 state 설정
         newMessage.setState(returnState);
 
+        // JSON 문자열이 아닌 객체를 직접 설정
+        ObjectMapper objectMapper = new ObjectMapper();
+        newMessage.setMainMessage(objectMapper.convertValue(gameStateDto, Map.class));
 
         template.convertAndSend("/sub/chat/room/" + newMessage.getRoomId(), newMessage);
+    }
+
+    private GameStateDto gameStateGetter(MessageDto message) {
+        GameStateDto gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+
+        // 다른 사람 카드 가리기
+        for (GameMember member : gameStateDto.getMembers()) {
+            if (!member.isPlayer()) {
+                if (member.getLeftCard() > 0) {
+                    member.setLeftCard(0);
+                }
+                if (member.getRightCard() > 0) {
+                    member.setRightCard(0);
+                }
+            }
+        }
+
+        return gameStateDto;
     }
 
     private void gameInitCookieSend(String gameId) {

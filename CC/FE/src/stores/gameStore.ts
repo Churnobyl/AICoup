@@ -3,6 +3,7 @@ import { immer } from "zustand/middleware/immer";
 import Member from "@/types/MemberInf";
 import ReturnType from "@/types/ReturnTypes";
 import { devtools } from "zustand/middleware";
+import History from "@/types/HistoryInf";
 
 type Actions = {
   setHistory: (historyItem: History[]) => void;
