@@ -7,7 +7,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Getter @Setter
 public class GameStateDto {
@@ -16,6 +18,7 @@ public class GameStateDto {
     private String message;
     private int whoseTurn;
     private History lastContext;
+    private Map<String, Integer> canMove = new HashMap<>();
     private List<History> history;
     private int[] deck = new int[6];
 }
