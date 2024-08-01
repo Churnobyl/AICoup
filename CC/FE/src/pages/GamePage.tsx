@@ -6,78 +6,35 @@ import History from "@/types/HistoryInf";
 import Board from "@components/game/Board";
 import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
 
 const GamePage = () => {
   const store = useGameStore();
+  const storeRef = useRef(store); // Using useRef to avoid re-rendering
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState("");
-  const [turnMemo, setTurnMemo] = useState(0);
   const [options, setOptions] = useState<string[]>([]);
 
-  const publishMessage = (
-    roomId: number,
-    writer: string,
-    state: string,
-    mainMessage = {}
-  ) => {
-    clientData.publish({
-      destination: "/pub/chat/message",
-      body: JSON.stringify({
-        roomId,
-        writer,
-        mainMessage: {
-          ...mainMessage,
-          cookie: Cookies.get("aiCoup"),
-        },
-        state,
-      }),
-    });
-  };
-
-  const handleMessage = useCallback(
-    (message: { body: string }) => {
-      const parsedMessage = JSON.parse(message.body);
-      console.log("Received message: ", parsedMessage);
-
-      switch (parsedMessage.state) {
-        case "cookieSet":
-          Cookies.set("aiCoup", parsedMessage.mainMessage.message, {
-            expires: 1,
-          });
-          publishMessage(1, "userA", "gameState");
-          break;
-        case "exist":
-        case "gameMade":
-          publishMessage(1, "userA", "gameState");
-          break;
-        case "noExist":
-          publishMessage(1, "userA", "gameInit");
-          break;
-        case "gameState":
-          const { mainMessage } = parsedMessage;
-          const { members, turn, history, deck } = mainMessage;
-
-          store.setRoomId(parsedMessage.roomId);
-          store.setState(parsedMessage.state);
-          store.setMembers(members);
-          store.incrementTurn(turn);
-          store.setHistory(history);
-          store.setDeck(deck);
-          setTurnMemo(turn);
-
-          selectOptions(history);
-          break;
-        case "":
-        default:
-          break;
-      }
+  const publishMessage = useCallback(
+    (roomId: number, writer: string, state: string, mainMessage = {}) => {
+      clientData.publish({
+        destination: "/pub/chat/message",
+        body: JSON.stringify({
+          roomId,
+          writer,
+          mainMessage: {
+            ...mainMessage,
+            cookie: Cookies.get("aiCoup"),
+          },
+          state,
+        }),
+      });
     },
-    [store]
+    []
   );
 
-  const selectOptions = (history: History[]) => {
+  const selectOptions = useCallback((history: History[]) => {
     switch (history[history.length - 1].actionId) {
       case 1:
         break;
@@ -116,8 +73,50 @@ const GamePage = () => {
         setModalContent("게임을 시작하겠습니다.");
         setIsModalOpen(true);
         break;
+      default:
+        break;
     }
-  };
+  }, []);
+
+  const handleMessage = useCallback(
+    (message: { body: string }) => {
+      const parsedMessage = JSON.parse(message.body);
+      console.log("Received message: ", parsedMessage);
+
+      switch (parsedMessage.state) {
+        case "cookieSet":
+          Cookies.set("aiCoup", parsedMessage.mainMessage.message, {
+            expires: 1,
+          });
+          publishMessage(1, "userA", "gameState");
+          break;
+        case "exist":
+        case "gameMade":
+          publishMessage(1, "userA", "gameState");
+          break;
+        case "noExist":
+          publishMessage(1, "userA", "gameInit");
+          break;
+        case "gameState":
+          const { mainMessage } = parsedMessage;
+          const { members, turn, history, deck } = mainMessage;
+
+          storeRef.current.setRoomId(parsedMessage.roomId);
+          storeRef.current.setState(parsedMessage.state);
+          storeRef.current.setMembers(members);
+          storeRef.current.incrementTurn(turn);
+          storeRef.current.setHistory(history);
+          storeRef.current.setDeck(deck);
+
+          selectOptions(history);
+          break;
+        case "":
+        default:
+          break;
+      }
+    },
+    [publishMessage, selectOptions]
+  );
 
   useEffect(() => {
     connect();
@@ -133,7 +132,7 @@ const GamePage = () => {
     return () => {
       clientData.deactivate();
     };
-  }, [turnMemo, handleMessage]);
+  }, [handleMessage, publishMessage]);
 
   const handleSelect = (option: string) => {
     console.log("Selected option:", option);
