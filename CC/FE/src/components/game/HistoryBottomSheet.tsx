@@ -1,20 +1,48 @@
-import { useRef } from "react";
+import useGameStore from "@/stores/gameStore";
+import { useEffect, useRef, useState } from "react";
 import { BottomSheet, BottomSheetRef } from "react-spring-bottom-sheet";
 import "react-spring-bottom-sheet/dist/style.css";
 
 function HistoryBottomSheet() {
-  const sheetRef = useRef<BottomSheetRef>();
+  const sheetRef = useRef<BottomSheetRef>(null);
+  const lastItemRef = useRef<HTMLLIElement>(null);
+  const [open, setOpen] = useState(false);
+  const store = useGameStore();
+  const { history } = store;
+
+  const handleDismiss = () => {
+    setOpen(false);
+  };
+
+  useEffect(() => {
+    if (lastItemRef.current) {
+      lastItemRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [history]);
 
   return (
-    <BottomSheet open ref={sheetRef}>
-      <button
-        onClick={() => {
-          sheetRef.current?.snapTo(({ maxHeight }) => maxHeight);
-        }}
+    <>
+      <BottomSheet
+        open={open}
+        ref={sheetRef}
+        blocking={false}
+        onDismiss={handleDismiss}
+        snapPoints={({ minHeight, maxHeight }) => [minHeight, maxHeight * 0.1]}
+        defaultSnap={({ maxHeight }) => maxHeight / 4}
+        expandOnContentDrag={true}
       >
-        Expand to full height
-      </button>
-    </BottomSheet>
+        <ul>
+          {history.map((value, index) => (
+            <li
+              key={value.id}
+              ref={index === history.length - 1 ? lastItemRef : null}
+            >
+              {value.actionId}
+            </li>
+          ))}
+        </ul>
+      </BottomSheet>
+    </>
   );
 }
 

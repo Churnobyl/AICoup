@@ -1,11 +1,11 @@
 .board {
   display: grid;
   place-items: center;
-  width: 400px;
+  width: 1000px;
   height: 400px;
   margin: 0 auto;
   border: 1px solid #ccc;
-  border-radius: 500px;
+  border-radius: 100px;
 
   .card-holder {
     height: 128px;

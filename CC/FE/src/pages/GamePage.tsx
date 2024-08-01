@@ -1,14 +1,13 @@
 /* eslint-disable no-case-declarations */
 import { clientData, connect } from "@/apis/websocketConnect";
+import HistoryBottomSheet from "@/components/game/HistoryBottomSheet";
+import ModalComponent from "@/components/modals/ModalComponent";
+import History from "@/types/HistoryInf";
 import Board from "@components/game/Board";
 import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useState } from "react";
 import "./GamePage.scss";
-import HistoryRoll from "@/components/game/HistoryRoll";
-import ModalComponent from "@/components/modals/ModalComponent";
-import History from "@/types/HistoryInf";
-import HistoryBottomSheet from "@/components/game/HistoryBottomSheet";
 
 const GamePage = () => {
   const store = useGameStore();
@@ -17,7 +16,12 @@ const GamePage = () => {
   const [turnMemo, setTurnMemo] = useState(0);
   const [options, setOptions] = useState<string[]>([]);
 
-  const publishMessage = (roomId, writer, state, mainMessage = {}) => {
+  const publishMessage = (
+    roomId: number,
+    writer: string,
+    state: string,
+    mainMessage = {}
+  ) => {
     clientData.publish({
       destination: "/pub/chat/message",
       body: JSON.stringify({
@@ -108,9 +112,8 @@ const GamePage = () => {
       case 16:
         break;
       case 17:
-        setOptions(["게임 시작", "Asd"]);
+        setOptions(["게임 시작"]);
         setModalContent("게임을 시작하겠습니다.");
-
         setIsModalOpen(true);
         break;
     }
@@ -139,9 +142,8 @@ const GamePage = () => {
   };
 
   return (
-    <div className="gamePage">
+    <div className="gamePage" id="gamePage">
       <Board className="board" />
-      <HistoryRoll className="historyRoll" />
       <HistoryBottomSheet />
       <ModalComponent
         isOpen={isModalOpen}
