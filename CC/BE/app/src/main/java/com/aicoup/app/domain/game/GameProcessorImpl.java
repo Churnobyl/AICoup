@@ -4,6 +4,7 @@ import com.aicoup.app.domain.entity.game.Game;
 import com.aicoup.app.domain.entity.game.history.History;
 import com.aicoup.app.domain.redisRepository.GameRepository;
 import com.aicoup.app.pipeline.gpt.ChatGPTSocket;
+import com.aicoup.app.pipeline.gpt.service.GPTResponseGetter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
@@ -15,8 +16,8 @@ import java.util.LinkedList;
 public class GameProcessorImpl implements GameProcessor {
 
     private final GameRepository gameRepository;
-    private final ChatGPTSocket chatGPTSocket;
     private final SimpMessagingTemplate template;
+    private final GPTResponseGetter gptResponseGetter;
 
     Game presentGame = null;
 
@@ -49,19 +50,21 @@ public class GameProcessorImpl implements GameProcessor {
         // 이번 턴의 행동을 수행할 사람
         int whoseTurn = presentGame.getWhoseTurn();
         String nextPlayer = presentGame.getMemberIds().get(whoseTurn);
+        System.out.println("nextPlayer = " + nextPlayer);
 
         // 이번 턴의 행동을 수행할 사람이 플레이어일 경우
         if (nextPlayer.equals("1")) {
             // 플레이어 턴이라고 프론트에 알려줌
             History history = new History(presentGame.getId(), 18, "1", "0");
             presentGame.addHistory(history);
-            presentGame.getActionContext().add(history);
             gameRepository.save(presentGame);
             return "yourTurn";
         } else { // GPT의 행동일 경우
-//            String dataFromGptApiForAction = chatGPTSocket.getDataFromGptApiForAction("asd");
-            History history = new History(presentGame.getId(), 18, "1", "0");
+            String[] dataFromGptApiForAction = gptResponseGetter.actionApi(presentGame.getId());
+
+            History history = new History(presentGame.getId(), 18, nextPlayer, dataFromGptApiForAction[1].equals("none") ? "none" : dataFromGptApiForAction[1]);
             presentGame.addHistory(history);
+            presentGame.getActionContext().add(history);
             gameRepository.save(presentGame);
             return "gameState";
         }

@@ -6,23 +6,23 @@ INSERT IGNORE INTO card_info
  image_url)
 VALUES (1,
         '공작',
-        'Duke',
+        'duke',
         'duke.jpg'),
        (2,
         '사령관',
-        'Captain',
+        'captain',
         'captain.jpg'),
        (3,
         '암살자',
-        'Assassin',
+        'assassin',
         'assassin.jpg'),
        (4,
         '귀부인',
-        'Contessa',
+        'contessa',
         'contessa.jpg'),
        (5,
         '외교관',
-        'Ambassador',
+        'ambassador',
         'ambassador.jpg');
 
 -- 가능한 액션 데이터
