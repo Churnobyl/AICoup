@@ -2,6 +2,7 @@ package com.aicoup.app.pipeline.gpt.service;
 
 import com.aicoup.app.domain.entity.game.GameData;
 import com.aicoup.app.domain.repository.GameDataRepository;
+import com.aicoup.app.pipeline.gpt.converter.GPTConverter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import java.util.Optional;
 public class CounterActionChallengeDataService implements GameDataService {
     private final GameDataRepository gameDataRepository;
     private final ObjectMapper objectMapper;
+    private final GPTConverter gptConverter;
 
     public String getGameDataAsJson(String gameId) {
         Optional<GameData> gameDataOptional = gameDataRepository.findById(gameId);
@@ -32,13 +34,7 @@ public class CounterActionChallengeDataService implements GameDataService {
     }
 
     public String getFormattedGameDataAsJson(String gameId) {
-        Optional<GameData> gameDataOptional = gameDataRepository.findById(gameId);
-
-        if (gameDataOptional.isEmpty()) {
-            throw new IllegalArgumentException("Invalid game ID: " + gameId);
-        }
-
-        GameData gameData = gameDataOptional.get();
+        GameData gameData = gptConverter.run(gameId);
 
         try {
             // JSON 형식으로 변환
