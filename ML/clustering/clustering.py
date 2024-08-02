@@ -2,7 +2,7 @@ import sys
 import random
 import numpy as np
 
-from clustering_util import *
+from vector_util import *
 
 
 
