@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from clustering import kMeansClustering
 from vector_util import *
-from plot_util import plotCardsInfo
+from plot_util import plotInformations
 
 def tracePlayers(inferResult):
     # data 변환
@@ -49,7 +49,7 @@ def tracePlayers(inferResult):
     player_cluster_id = [cluster_id for (cluster_id, _) in degrees]
 
     # 시각화
-
+    plotInformations(cardInfo=cardInfo, clusters=clusters, block=True)
 
     # test_player = [{
     #         "left_card": cardPoints[min([card for card in clusters[id]['cards']], key=lambda x : cardPoints[card]['angle'])]['class_id']
