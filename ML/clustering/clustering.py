@@ -15,7 +15,7 @@ def kMeansClustering(k, pointData, type='plus'):
         for idx in range(k):
             cluster = {
                 'center': (random.uniform(0, 1), random.uniform(0, 1)),
-                'points': []
+                'cards': []
             }
             clusters[idx] = cluster
     
@@ -27,7 +27,7 @@ def kMeansClustering(k, pointData, type='plus'):
         pred = pred_cluster(pointData, clusters)
 
     for idx, clust_id in enumerate(pred):
-        clusters[clust_id]['points'].append(idx)
+        clusters[clust_id]['cards'].append(idx)
 
     return clusters
 
@@ -36,7 +36,7 @@ def kmeansplusplusInit(k, pointData):
     clusters = dict()
     clusters[0] = {
         "center": random.choice(pointData)['center'],
-        'points': []
+        'cards': []
     }
 
     for idx in range(1, k):
@@ -59,7 +59,7 @@ def kmeansplusplusInit(k, pointData):
         max_dist_point = max(dist, key=dist.get)
         clusters[idx] = {
             'center': pointData[max_dist_point]['center'],
-            'points': []
+            'cards': []
         }
 
     return clusters
@@ -76,7 +76,7 @@ def assign_clusters(pointData, clusters):
             dist.append((i, dis))
         # curr_cluster = np.argmin(dist)
         curr_cluster = min(dist, key=lambda x: x[1])[0]
-        clusters[curr_cluster]['points'].append(curr_point)
+        clusters[curr_cluster]['cards'].append(curr_point)
     return clusters
 
 
@@ -84,8 +84,8 @@ def assign_clusters(pointData, clusters):
 def update_clusters(pointData, clusters):
     k = len(clusters)
     for i in range(k):
-        # print([points['center'] for points in clusters[i]['points']])
-        points = np.array([[points['center'][0], points['center'][1]] for points in clusters[i]['points']])
+        # print([points['center'] for points in clusters[i]['cards']])
+        points = np.array([[points['center'][0], points['center'][1]] for points in clusters[i]['cards']])
         # print(points)
         if len(points) > 0:
             new_center = list(points.mean(axis =0))
@@ -93,7 +93,7 @@ def update_clusters(pointData, clusters):
             clusters[i]['center'] = new_center
             # print(f'{new_center=}')
              
-            clusters[i]['points'] = []
+            clusters[i]['cards'] = []
     return clusters
 
 
