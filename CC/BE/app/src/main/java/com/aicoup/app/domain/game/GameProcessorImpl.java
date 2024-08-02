@@ -4,6 +4,7 @@ import com.aicoup.app.domain.entity.game.Game;
 import com.aicoup.app.domain.entity.game.history.History;
 import com.aicoup.app.domain.redisRepository.GameRepository;
 import com.aicoup.app.pipeline.gpt.ChatGPTSocket;
+import com.aicoup.app.pipeline.gpt.service.GPTResponseGetter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
@@ -15,8 +16,8 @@ import java.util.LinkedList;
 public class GameProcessorImpl implements GameProcessor {
 
     private final GameRepository gameRepository;
-    private final ChatGPTSocket chatGPTSocket;
     private final SimpMessagingTemplate template;
+    private final GPTResponseGetter gptResponseGetter;
 
     Game presentGame = null;
 
@@ -59,7 +60,8 @@ public class GameProcessorImpl implements GameProcessor {
             gameRepository.save(presentGame);
             return "yourTurn";
         } else { // GPT의 행동일 경우
-//            String dataFromGptApiForAction = chatGPTSocket.getDataFromGptApiForAction("asd");
+            String dataFromGptApiForAction = gptResponseGetter.actionApi(presentGame.getId());
+
             History history = new History(presentGame.getId(), 18, "1", "0");
             presentGame.addHistory(history);
             gameRepository.save(presentGame);
