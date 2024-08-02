@@ -60,7 +60,7 @@ public class GameControllerTest {
     public void testTakeTurn() throws Exception {
         logger.info("Starting testTakeTurn");
         mockMvc.perform(MockMvcRequestBuilders.post("/api/game/turn")
-                        .param("playerIndex", "0")
+                        .param("playerName", "1")
                         .param("action", "Income")
                         .param("targetPlayerName", ""))
                 .andExpect(status().isOk());

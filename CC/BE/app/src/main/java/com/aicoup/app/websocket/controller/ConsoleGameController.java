@@ -22,7 +22,7 @@ public class ConsoleGameController {
             @RequestParam("playerName") String playerName,
             @RequestParam("action") String action,
             @RequestParam("targetPlayerName") String targetPlayerName) {
-        gameService.takeTurn(playerName, action, targetPlayerName);
+        gameService.takeTotalTurn(playerName, action, targetPlayerName);
     }
 
     @GetMapping("/state")
