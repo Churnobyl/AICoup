@@ -7,6 +7,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class ConsoleClient {
     private static final Scanner scanner = new Scanner(System.in);
@@ -53,12 +54,24 @@ public class ConsoleClient {
         for (CardDto card : currentPlayer.getCards()) {
             System.out.println("  - " + card.getName() + (card.isRevealed() ? " (공개)" : " (비공개)"));
         }
-        System.out.println("가능한 액션:");
-        for (int i = 0; i < actions.length; i++) {
-            System.out.println((i + 1) + ". " + actions[i]);
+
+        // 공개된 카드 정보 출력
+        List<CardDto> revealedCards = currentPlayer.getCards().stream()
+                .filter(CardDto::isRevealed)
+                .collect(Collectors.toList());
+        if (!revealedCards.isEmpty()) {
+            System.out.println("공개된 카드:");
+            for (CardDto card : revealedCards) {
+                System.out.println("  - " + card.getName());
+            }
         }
 
-        System.out.println("액션 번호를 선택하세요:");
+        System.out.println("가능한 액션:");
+        for (int i = 0; i < actions.length; i++) {
+            System.out.print((i + 1) + ". " + actions[i] + " ");
+        }
+
+        System.out.println("\n" + "액션 번호를 선택하세요:");
         int actionIndex = scanner.nextInt();
         scanner.nextLine(); // 개행 문자 소비
 

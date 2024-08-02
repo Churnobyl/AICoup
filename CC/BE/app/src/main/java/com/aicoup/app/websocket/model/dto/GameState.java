@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Collections;
 
 @Getter
-    @Setter
+@Setter
 public class GameState {
-    private List<PlayerDto> players;
-    private List<PlayerDto> playersAlive;
     private int currentPlayerIndex;
     private boolean gameIsRunning;
+    private List<PlayerDto> players;
+    private List<PlayerDto> playersAlive;
     private List<CardDto> deck;
 
     // Singleton 패턴으로 전역적으로 상태를 관리합니다.
@@ -40,11 +40,11 @@ public class GameState {
         deck = new ArrayList<>();
         // 각 카드 타입별로 3장씩 추가
         for (int i = 0; i < 3; i++) {
-            deck.add(new CardDto("Duke", false));
-            deck.add(new CardDto("Assassin", false));
-            deck.add(new CardDto("Ambassador", false));
-            deck.add(new CardDto("Captain", false));
-            deck.add(new CardDto("Contessa", false));
+            deck.add(new CardDto("Duke", false, false));
+            deck.add(new CardDto("Assassin", false, false));
+            deck.add(new CardDto("Ambassador", false, false));
+            deck.add(new CardDto("Captain", false,false));
+            deck.add(new CardDto("Contessa", false, false));
         }
         Collections.shuffle(deck);
     }

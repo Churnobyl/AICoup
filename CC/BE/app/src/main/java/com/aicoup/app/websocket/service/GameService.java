@@ -6,17 +6,14 @@ import com.aicoup.app.websocket.model.dto.PlayerDto;
 import com.aicoup.app.websocket.model.dto.Action;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.ArrayList;
+import java.util.*;
 
 @Service
 public class GameService {
-    private final GameState gameState = GameState.getInstance();
+    private GameState gameState;
 
     public void setupGame(List<String> playerNames) {
-        gameState = new GameState();
+        gameState = GameState.getInstance();
         gameState.setPlayers(new ArrayList<>());
         gameState.setPlayersAlive(new ArrayList<>());
         gameState.setGameIsRunning(true);
@@ -28,8 +25,6 @@ public class GameService {
             PlayerDto player = new PlayerDto();
             player.setName(name);
             player.setCards(gameState.drawCards(2));
-            player.setCoins(2);
-            player.setAlive(true);
             gameState.getPlayers().add(player);
             gameState.getPlayersAlive().add(player);
         }
@@ -40,14 +35,15 @@ public class GameService {
         String[] cardTypes = {"Duke", "Assassin", "Ambassador", "Captain", "Contessa"};
         for (String cardType : cardTypes) {
             for (int i = 0; i < 3; i++) {
-                deck.add(new CardDto(cardType, false));
+                deck.add(new CardDto(cardType, false, false));
             }
         }
         Collections.shuffle(deck);
         gameState.setDeck(deck);
     }
 
-    public void takeTurn(int playerIndex, String actionName, String targetPlayerName) {
+    public void takeTurn(String playerName, String actionName, String targetPlayerName) {
+        int playerIndex = getPlayerIndexByName(playerName);
         PlayerDto player = gameState.getPlayers().get(playerIndex);
         Action action = getActionByName(actionName);
 
@@ -78,57 +74,73 @@ public class GameService {
             throw new IllegalArgumentException("Target player is required for this action.");
         }
 
-        // 특정 액션에 대한 추가 검증
+// 특정 액션에 대한 추가 검증
         switch (action.getName()) {
             case "Coup":
-                if (player.getCoins() >= 10 && !action.getName().equals("Coup")) {
-                    throw new IllegalStateException("Player must perform Coup when having 10 or more coins.");
+                if (player.getCoins() < 7) {
+                    throw new IllegalStateException("At least 7 coins are required for Coup.");
                 }
+                validateTarget(player, targetPlayerName);
                 break;
             case "Assassinate":
                 if (player.getCoins() < 3) {
                     throw new IllegalStateException("At least 3 coins are required for Assassination.");
                 }
+                validateTarget(player, targetPlayerName);
                 break;
             case "Steal":
-                PlayerDto target = findPlayerByName(targetPlayerName)
-                        .orElseThrow(() -> new IllegalArgumentException("Target player not found."));
+                PlayerDto target = validateTarget(player, targetPlayerName);
                 if (target.getCoins() == 0) {
                     throw new IllegalStateException("Cannot steal from a player with no coins.");
                 }
                 break;
             case "Tax":
-                // Tax 액션에 대한 특별한 검증이 필요하다면 여기에 추가
-                break;
-            case "Income":
             case "ForeignAid":
+            case "Income":
+                if (targetPlayerName != null && !targetPlayerName.isEmpty()) {
+                    throw new IllegalStateException("This action does not require a target.");
+                }
+                break;
             case "Exchange":
-                // 이 액션들에 대한 특별한 검증이 필요하다면 여기에 추가
+                if (targetPlayerName != null && !targetPlayerName.isEmpty()) {
+                    throw new IllegalStateException("Exchange does not require a target.");
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Invalid action name: " + action.getName());
         }
     }
 
-    private Action getActionByName(String actionName) {
-        switch(actionName) {
-            case "Income":
-                return new Action("Income", 0, false);
-            case "ForeignAid":
-                return new Action("ForeignAid", 0, false);
-            case "Coup":
-                return new Action("Coup", 7, true);
-            case "Tax":
-                return new Action("Tax", 0, false);
-            case "Assassinate":
-                return new Action("Assassinate", 3, true);
-            case "Steal":
-                return new Action("Steal", 0, true);
-            case "Exchange":
-                return new Action("Exchange", 0, false);
-            default:
-                throw new IllegalArgumentException("Invalid action name: " + actionName);
+    private PlayerDto validateTarget(PlayerDto player, String targetPlayerName) {
+        if (targetPlayerName == null || targetPlayerName.isEmpty()) {
+            throw new IllegalArgumentException("Target player is required for this action.");
         }
+
+        PlayerDto target = findPlayerByName(targetPlayerName)
+                .orElseThrow(() -> new IllegalArgumentException("Target player not found: " + targetPlayerName));
+
+        if (Objects.equals(target.getName(), player.getName())) {
+            throw new IllegalStateException("Cannot target yourself.");
+        }
+
+        if (!target.isAlive()) {
+            throw new IllegalStateException("Cannot target a player who is out of the game.");
+        }
+
+        return target;
+    }
+
+    private Action getActionByName(String actionName) {
+        return switch (actionName) {
+            case "Income" -> new Action("Income", 0, false);
+            case "ForeignAid" -> new Action("ForeignAid", 0, false);
+            case "Coup" -> new Action("Coup", 7, true);
+            case "Tax" -> new Action("Tax", 0, false);
+            case "Assassinate" -> new Action("Assassinate", 3, true);
+            case "Steal" -> new Action("Steal", 0, true);
+            case "Exchange" -> new Action("Exchange", 0, false);
+            default -> throw new IllegalArgumentException("Invalid action name: " + actionName);
+        };
     }
 
     private void performAction(PlayerDto player, Action action, PlayerDto target) {
@@ -142,11 +154,7 @@ public class GameService {
             case "Coup":
                 player.setCoins(player.getCoins() - 7);
                 if (target != null) {
-                    String cardToRemove = chooseCardToRemove(target);
-                    target.removeCard(cardToRemove);
-                    if (target.getCards().isEmpty()) {
-                        gameState.getPlayersAlive().remove(target);
-                    }
+                    loseInfluence(target);
                 }
                 break;
             case "Tax":
@@ -155,11 +163,7 @@ public class GameService {
             case "Assassinate":
                 player.setCoins(player.getCoins() - 3);
                 if (target != null) {
-                    String cardToRemove = chooseCardToRemove(target);
-                    target.removeCard(cardToRemove);
-                    if (target.getCards().isEmpty()) {
-                        gameState.getPlayersAlive().remove(target);
-                    }
+                    loseInfluence(target);
                 }
                 break;
             case "Steal":
@@ -177,10 +181,21 @@ public class GameService {
         }
     }
 
-    private String chooseCardToRemove(PlayerDto target) {
+    private void loseInfluence(PlayerDto target) {
         // 실제 게임에서는 플레이어가 제거할 카드를 선택해야 합니다.
-        // 여기서는 간단히 첫 번째 카드를 제거하는 것으로 구현합니다.
-        return target.getCards().get(0);
+        // 여기서는 간단히 첫 번째 비공개 카드를 제거하는 것으로 구현합니다.
+        CardDto cardToLoseInfluence = target.getCards().stream()
+                .filter(card -> !card.isInfluenceLost())
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No cards left to lose influence"));
+
+        cardToLoseInfluence.setRevealed(true);
+        cardToLoseInfluence.setInfluenceLost(true);
+
+        if (target.getCards().stream().allMatch(CardDto::isInfluenceLost)) {
+            target.setAlive(false);
+            gameState.getPlayersAlive().remove(target);
+        }
     }
 
     private void exchangeCards(PlayerDto player) {
@@ -211,6 +226,16 @@ public class GameService {
 
     public GameState getGameState() {
         return gameState;
+    }
+
+    private int getPlayerIndexByName(String playerName) {
+        List<PlayerDto> players = gameState.getPlayers();
+        for (int i = 0; i < players.size(); i++) {
+            if (players.get(i).getName().equals(playerName)) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("Player not found: " + playerName);
     }
 
     private Optional<PlayerDto> findPlayerByName(String name) {

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 @RestController
 @RequestMapping("/api/game")
-public class GameController2 {
+public class ConsoleGameController {
     @Autowired
     private GameService gameService;
 
@@ -19,10 +19,10 @@ public class GameController2 {
 
     @PostMapping("/turn")
     public void takeTurn(
-            @RequestParam("playerIndex") int playerIndex,
+            @RequestParam("playerName") String playerName,
             @RequestParam("action") String action,
             @RequestParam("targetPlayerName") String targetPlayerName) {
-        gameService.takeTurn(playerIndex, action, targetPlayerName);
+        gameService.takeTurn(playerName, action, targetPlayerName);
     }
 
     @GetMapping("/state")
