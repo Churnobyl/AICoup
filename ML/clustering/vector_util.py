@@ -12,12 +12,17 @@ def getVectorValueByCenter(dots):
     return ret
 
 
-def getVectorSize(vects):
+def getVectorSize(vect):
+    return math.sqrt(vect[0]**2 + vect[1]**2)
+
+
+def getVectorSizes(vects):
     ret = []
     for vec in vects:
         ret.append(math.sqrt(vec[0]**2 + vec[1]**2))
     
     return ret
+
 
 def getAnglesByVectors(vects):
     ret = []
@@ -39,6 +44,9 @@ def normalizeVector(vects):
 def productVector(v1, v2):
     return v1[0]*v2[0] + v1[1]*v2[1]
 
+
+# def getAnglesByVectors(vectors):
+#     return [math.acos(p / s) if v[1] > 0 else 2 * math.pi - math.acos(p/s) for p, s, v in zip(products, vectorSizes, clusterVects)]
 
 def anglesToDegrees(angles):
     ret = []
