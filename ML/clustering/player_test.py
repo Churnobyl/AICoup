@@ -209,7 +209,6 @@ inferResult = [
 ]
 
 if __name__ == '__main__':
-    print('player test')
-
+  print('player test')
     
-    print(tracePlayers(inferResult))
+  print(tracePlayers(inferResult))

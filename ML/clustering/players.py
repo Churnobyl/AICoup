@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 
 from clustering import kMeansClustering
 from vector_util import *
+from plot_util import plotCardsInfo
 
 def tracePlayers(inferResult):
     # data 변환
@@ -48,21 +49,6 @@ def tracePlayers(inferResult):
     player_cluster_id = [cluster_id for (cluster_id, _) in degrees]
 
     # 시각화
-    for idx, label in enumerate(cardInfo):
-        plt.text(label['x']+0.01, label['y']+0.01, f"{idx}-{label['class_id']}")
-        plt.plot(label['x'], label['y'], 'bo')
-
-    clust_font = {
-        'color': 'red'
-    }
-    for k in clusters:
-        plt.text(clusters[k]["center"][0], clusters[k]["center"][1], k, fontdict=clust_font)
-        plt.plot(clusters[k]["center"][0], clusters[k]["center"][1], 'rx')
-
-    plt.axhline(0.5)
-    plt.axvline(0.5)
-    plt.axis((0, 1, 0, 1))
-    plt.show()
 
 
     # test_player = [{
