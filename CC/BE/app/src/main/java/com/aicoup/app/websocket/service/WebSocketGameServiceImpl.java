@@ -1,6 +1,8 @@
 package com.aicoup.app.websocket.service;
 
 import com.aicoup.app.domain.entity.game.Game;
+import com.aicoup.app.domain.entity.game.action.Action;
+import com.aicoup.app.domain.entity.game.action.PossibleAction;
 import com.aicoup.app.domain.entity.game.card.CardInfo;
 import com.aicoup.app.domain.entity.game.history.History;
 import com.aicoup.app.domain.entity.game.member.GameMember;
@@ -9,7 +11,9 @@ import com.aicoup.app.domain.game.GameProcessor;
 import com.aicoup.app.domain.redisRepository.GameMemberRepository;
 import com.aicoup.app.domain.redisRepository.GameRepository;
 import com.aicoup.app.domain.redisRepository.HistoryRepository;
+import com.aicoup.app.domain.repository.ActionRepository;
 import com.aicoup.app.domain.repository.CardInfoRepository;
+import com.aicoup.app.domain.repository.PossibleActionRepository;
 import com.aicoup.app.pipeline.aiot.AIoTSocket;
 import com.aicoup.app.pipeline.aiot.dto.MMResponse;
 import com.aicoup.app.websocket.model.dto.GameStateDto;
@@ -29,6 +33,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     private final GameRepository gameRepository;
     private final GameMemberRepository gameMemberRepository;
     private final CardInfoRepository cardInfoRepository;
+    private final PossibleActionRepository possibleActionRepository;
+    private final ActionRepository actionRepository;
     private final HistoryRepository historyRepository;
     private final AIoTSocket aIoTSocket;
     private final GameProcessor gameProcessor;
@@ -75,27 +81,27 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                         .map(gameMemberRepository::findById)
                         .filter(Optional::isPresent)
                         .map(Optional::get)
-                        .collect(Collectors.toList());
+                        .toList();
 
                 for (int i = 0; i < members.size(); i++) {
                     // 왼쪽 카드 비교
                     if (
                         // 왼쪽 카드 숫자 > 0 (오픈되지 않은 상태) && 왼쪽 카드 숫자 != 현실 왼쪽 카드 숫자
-                        (members.get(i).getLeftCard() > 0 && Objects.equals(members.get(i).getLeftCard(), dataFromAIoTServer.get(i).getLeft_card())) ||
-                                // 왼쪽 카드 오픈된 상태 && 현실 왼쪽 카드 뒷면 안 보일 경우
-                                (members.get(i).getLeftCard() < 0 && dataFromAIoTServer.get(i).getLeft_card() != 0)
+                            (members.get(i).getLeftCard() > 0 && Objects.equals(members.get(i).getLeftCard(), dataFromAIoTServer.get(i).getLeft_card())) ||
+                                    // 왼쪽 카드 오픈된 상태 && 현실 왼쪽 카드 뒷면 안 보일 경우
+                                    (members.get(i).getLeftCard() < 0 && dataFromAIoTServer.get(i).getLeft_card() != 0)
                     ) {
                         returnMessage.put("result", "fail");
                         returnMessage.put("message", members.get(i).getName() + "님의 왼쪽 카드 상태가 서버와 다릅니다.");
                         break;
                     }
-                    
+
                     // 오른쪽 카드 비교
                     if (
                         // 오른쪽 카드 숫자 > 0 (오픈되지 않은 상태) && 오른쪽 카드 숫자 != 현실 오른쪽 카드 숫자
-                        (members.get(i).getRightCard() > 0 && Objects.equals(members.get(i).getRightCard(), dataFromAIoTServer.get(i).getRight_card())) ||
-                                // 오른쪽 카드 오픈된 상태 && 현실 오른쪽 카드 뒷면 안 보일 경우
-                                (members.get(i).getRightCard() < 0 && dataFromAIoTServer.get(i).getRight_card() != 0)
+                            (members.get(i).getRightCard() > 0 && Objects.equals(members.get(i).getRightCard(), dataFromAIoTServer.get(i).getRight_card())) ||
+                                    // 오른쪽 카드 오픈된 상태 && 현실 오른쪽 카드 뒷면 안 보일 경우
+                                    (members.get(i).getRightCard() < 0 && dataFromAIoTServer.get(i).getRight_card() != 0)
                     ) {
                         returnMessage.put("result", "fail");
                         returnMessage.put("message", members.get(i).getName() + "님의 오른쪽 카드 상태가 서버와 다릅니다.");
@@ -176,16 +182,39 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 }
             });
 
-            GameStateDto gameStateDto = new GameStateDto();
-            gameStateDto.setTurn(game.getTurn());
-            gameStateDto.setMembers(members);
-            gameStateDto.setHistory(game.getHistory());
-            gameStateDto.setWhoseTurn(game.getWhoseTurn());
-            gameStateDto.setLastContext(game.getActionContext().isEmpty() ? null : game.getActionContext().getLast());
-            gameStateDto.setDeck(game.getDeck());
+            // 가능한 액션 가져오기
+            Map<String, Integer> result = null;
+            if (game.getActionContext().isEmpty()) {
+                result = new HashMap<>();
+                result.put("수입", 1);
+                result.put("해외원조", 2);
+                result.put("징세", 3);
+                result.put("강탈", 4);
+                result.put("암살", 5);
+                result.put("교환", 6);
+                result.put("쿠", 7);
+            } else {
+                System.out.println("game.getActionContext().getLast().getActionId() = " + game.getActionContext().getLast().getActionId());
+                result = possibleActionRepository.findCanActionNamesAndIdsByActionId(game.getActionContext().getLast().getActionId());
+            }
+
+            GameStateDto gameStateDto = getGameStateDto(game, members, result);
+
             return gameStateDto;
         } else {
             throw new RuntimeException("Game not found with ID: " + gameId);
         }
+    }
+
+    private static GameStateDto getGameStateDto(Game game, List<GameMember> members, Map<String, Integer> result) {
+        GameStateDto gameStateDto = new GameStateDto();
+        gameStateDto.setTurn(game.getTurn());
+        gameStateDto.setMembers(members);
+        gameStateDto.setHistory(game.getHistory());
+        gameStateDto.setWhoseTurn(game.getWhoseTurn());
+        gameStateDto.setCanAction(result);
+        gameStateDto.setLastContext(game.getActionContext().isEmpty() ? null : game.getActionContext().getLast());
+        gameStateDto.setDeck(game.getDeck());
+        return gameStateDto;
     }
 }

@@ -50,20 +50,21 @@ public class GameProcessorImpl implements GameProcessor {
         // 이번 턴의 행동을 수행할 사람
         int whoseTurn = presentGame.getWhoseTurn();
         String nextPlayer = presentGame.getMemberIds().get(whoseTurn);
+        System.out.println("nextPlayer = " + nextPlayer);
 
         // 이번 턴의 행동을 수행할 사람이 플레이어일 경우
         if (nextPlayer.equals("1")) {
             // 플레이어 턴이라고 프론트에 알려줌
             History history = new History(presentGame.getId(), 18, "1", "0");
             presentGame.addHistory(history);
-            presentGame.getActionContext().add(history);
             gameRepository.save(presentGame);
             return "yourTurn";
         } else { // GPT의 행동일 경우
-            String dataFromGptApiForAction = gptResponseGetter.actionApi(presentGame.getId());
+            String[] dataFromGptApiForAction = gptResponseGetter.actionApi(presentGame.getId());
 
-            History history = new History(presentGame.getId(), 18, "1", "0");
+            History history = new History(presentGame.getId(), 18, nextPlayer, dataFromGptApiForAction[1].equals("none") ? "none" : dataFromGptApiForAction[1]);
             presentGame.addHistory(history);
+            presentGame.getActionContext().add(history);
             gameRepository.save(presentGame);
             return "gameState";
         }

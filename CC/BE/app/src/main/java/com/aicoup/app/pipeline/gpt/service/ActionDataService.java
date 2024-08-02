@@ -6,6 +6,7 @@ import com.aicoup.app.pipeline.gpt.converter.GPTConverter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 
@@ -51,5 +52,21 @@ public class ActionDataService implements GameDataService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error converting to JSON", e);
         }
+    }
+
+    public String[] getData(String gameId) {
+        String formattedGameDataAsJson = getFormattedGameDataAsJson(gameId);
+
+        // JSONObject 생성
+        JSONObject jsonObject = new JSONObject(formattedGameDataAsJson);
+
+        // 키값과 밸류값 추출
+        String action = jsonObject.getString("action");
+        String target = jsonObject.getString("target");
+        String[] actionArr = new String[2];
+        actionArr[0] = action;
+        actionArr[1] = target;
+        System.out.println(formattedGameDataAsJson);
+        return actionArr;
     }
 }
