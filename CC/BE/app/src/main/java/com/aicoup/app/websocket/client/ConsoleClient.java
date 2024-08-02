@@ -13,7 +13,7 @@ public class ConsoleClient {
     private static final Scanner scanner = new Scanner(System.in);
     private static final RestTemplate restTemplate = new RestTemplate();
     private static final String baseUrl = "http://localhost:8080/api/game";
-    private static final String[] actions = {"Income", "ForeignAid", "Tax", "Steal", "Assassinate", "Exchange", "Coup"};
+    private static final String[] actions = {"income", "foreign_aid", "tax", "steal", "assassinate", "exchange", "coup"};
 
     public static void main(String[] args) {
         setupGame();
@@ -84,7 +84,7 @@ public class ConsoleClient {
         String action = actions[actionIndex - 1];
 
         String targetPlayerName = "";
-        if (action.equals("Coup") || action.equals("Assassinate") || action.equals("Steal")) {
+        if (action.equals("coup") || action.equals("assassinate") || action.equals("steal")) {
             System.out.println("타겟 플레이어의 이름을 입력하세요:");
             targetPlayerName = scanner.nextLine();
         }
