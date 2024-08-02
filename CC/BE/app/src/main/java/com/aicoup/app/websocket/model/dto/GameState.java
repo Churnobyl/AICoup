@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Collections;
 
 @Getter
-    @Setter
+@Setter
 public class GameState {
-    private List<PlayerDto> players;
-    private List<PlayerDto> playersAlive;
     private int currentPlayerIndex;
     private boolean gameIsRunning;
+    private List<PlayerDto> players;
+    private List<PlayerDto> playersAlive;
     private List<CardDto> deck;
 
     // Singleton 패턴으로 전역적으로 상태를 관리합니다.
