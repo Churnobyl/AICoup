@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from collections import deque
 
@@ -6,22 +5,18 @@ from collections import deque
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  
 
-# 촬영 사진 저장 폴더 경로 및 생성
-IMG_FOLDER = ROOT / 'media/capture_img'
-os.makedirs(IMG_FOLDER, exist_ok=True)
-
-# 객체 탐지 결과 저장 폴더 경로
-DET_FOLDER = ROOT / 'media/detect'
-
 # 모델 가중치 파일 경로
 WEIGHTS = ROOT / 'core/coup-0730.pt'  
 DEVICE = ''
 
-# 이미지 파일 목록
-IMG_FILES = ["photo_1.jpg", "photo_2.jpg", "photo_3.jpg"]
+# 최신 촬영 이미지 3장 저장
+CAP_IMG_BUFFERS = deque(maxlen=3)
 
-# 텍스트 파일 목록
-TXT_FILES = ["photo_1.txt", "photo_2.txt", "photo_3.txt"]
+# 최신 탐지 결과 이미지 3장 저장
+CONF_IMG_BUFFERS = deque(maxlen=3)
+
+# 객체 탐지 결과값 최대 3턴 저장
+DET_LOGS = deque(maxlen=3)
 
 # 클러스터링 중간 결과값
 test = {0: {'center': [0.5473437547683716, 0.15111111104488373], 'points': []},
@@ -32,11 +27,3 @@ test = {0: {'center': [0.5473437547683716, 0.15111111104488373], 'points': []},
 
 CLST_DATA = test
 
-# 객체 탐지 결과값 최대 3턴 저장
-DET_LOGS = deque(maxlen=3)
-
-# 최신 촬영 이미지 3장 저장
-CAP_IMG_BUFFERS = deque(maxlen=3)
-
-# 최신 탐지 결과 이미지 3장 저장
-CONF_IMG_BUFFERS = deque(maxlen=3)

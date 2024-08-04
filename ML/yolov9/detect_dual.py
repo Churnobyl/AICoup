@@ -6,6 +6,16 @@ from pathlib import Path
 
 import torch
 
+import time
+# --------------------------------------------------------------------------------------
+sys.path.append(os.path.join(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))), 'ML-Server'))
+
+# from ML-Server/.. import common
+from core import *
+from utils_main import *
+
+# --------------------------------------------------------------------------------------
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLO root directory
 if str(ROOT) not in sys.path:
@@ -59,12 +69,11 @@ def run(
     if is_url and is_file:
         source = check_file(source)  # download
 
-    # Directories
 # --------------------------------------------------------------------------------------
-    # 객체 탐지 결과 저장 경로 설정 : project 변수
-    # 객체 탐지할 때마다 결과를 exp에 저장할 필요가 없으므로, exp파일 중복 생성 방지
+    # Directories
+    ### 객체 탐지할 때마다 결과를 exp에 저장할 필요가 없으므로, exp파일 중복 생성 방지
     save_dir = Path(project)/name 
-    os.makedirs(Path(project), exist_ok=True)
+    # os.makedirs(Path(project), exist_ok=True)
 
     # save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run # 주석 처리
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
@@ -85,7 +94,11 @@ def run(
     elif screenshot:
         dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
     else:
-        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
+# --------------------------------------------------------------------------------------
+        ### 전역 변수 메모리 버퍼에 접근, 이미지 불러오기
+        # dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
+        dataset = list(load_images_from_buffers(CAP_IMG_BUFFERS))
+# --------------------------------------------------------------------------------------   
     vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Run inference
@@ -93,13 +106,12 @@ def run(
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
 
 # --------------------------------------------------------------------------------------
-    # main.py에 반환할 객체 탐지 결과 return값
+    ### main.py에 반환할 객체 탐지 결과 return값
     results = []
     print("run() 실행")
 # --------------------------------------------------------------------------------------
-    print(0)
 
-    for path, im, im0s, vid_cap, s in dataset:
+    for path, im, im0s, vid_cap, s in dataset:       
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -131,21 +143,27 @@ def run(
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # im.jpg
-            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+# --------------------------------------------------------------------------------------       
+            ### 주석 처리
+            # save_path = str(save_dir / p.name)  # im.jpg
+            # txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+# --------------------------------------------------------------------------------------
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             
 # --------------------------------------------------------------------------------------
-            # 하나의 이미지에 복수 객체가 탐지될 경우, 이미지 별로 복수 객체 탐지 결과를 분류하여 담는다
+            ### 하나의 이미지에 복수 객체가 탐지될 경우, 이미지 별로 복수 객체 탐지 결과를 분류하여 담는다
             print("---")
             img_det = []
 
-            print(f"{p.stem}.jpg 이미지 탐색 시작")
-            open(f'{txt_path}.txt', 'w')
-            print(f"{p.stem}.txt 파일 생성")
+            print(f"{p}.jpg 이미지 탐색 시작")
+            
+            # 주석 처리
+            # if save_txt:
+            #     open(f'{txt_path}.txt', 'w')
+            #     print(f"{p.stem}.txt 파일 생성")
 # --------------------------------------------------------------------------------------
 
             # 탐지된 객체가 있을 때
@@ -164,7 +182,7 @@ def run(
                 for *xyxy, conf, cls in reversed(det):
 
 # --------------------------------------------------------------------------------------
-                    # 객체 탐지 결과를 obj_det 변환해서 img_det 리스트에 담기
+                    ### 객체 탐지 결과를 obj_det 변환해서 img_det 리스트에 담기
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     print("객체 탐지")
                     obj_det = []
@@ -182,8 +200,9 @@ def run(
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                        with open(f'{txt_path}.txt', 'a') as f:
-                            f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                        # 주석 처리
+                        # with open(f'{txt_path}.txt', 'a') as f:
+                        #     f.write(('%g ' * len(line)).rstrip() % line + '\n')
                         print("텍스트 저장")
 
                     if save_img or save_crop or view_img:  # Add bbox to image
@@ -193,7 +212,7 @@ def run(
                         print("B박스 설정")
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
-                        print(f"{p.stem}.jpg B박스 이미지 저장")
+                        print(f"{p} 이미지 탐지 객체 별 크롭 이미지 저장")
 
             # Stream results
             im0 = annotator.result()
@@ -205,28 +224,34 @@ def run(
                 cv2.imshow(str(p), im0)
                 cv2.waitKey(1)  # 1 millisecond
 
-            # Save results (image with detections)
-            if save_img:
-                if dataset.mode == 'image':
-                    cv2.imwrite(save_path, im0)
-                else:  # 'video' or 'stream'
-                    if vid_path[i] != save_path:  # new video
-                        vid_path[i] = save_path
-                        if isinstance(vid_writer[i], cv2.VideoWriter):
-                            vid_writer[i].release()  # release previous video writer
-                        if vid_cap:  # video
-                            fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                            w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                            h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                        else:  # stream
-                            fps, w, h = 30, im0.shape[1], im0.shape[0]
-                        save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                    vid_writer[i].write(im0)
-
 # --------------------------------------------------------------------------------------
-        # 이미지 별로 묶은 객체 탐지 결과 리스트를 results에 담기
-        print(f"{p.stem}.jpg 이미지 탐지 결과 results에 담기")
+            # Save results (image with detections)
+
+            if save_img:
+                ### 메모리 버퍼에 임시 저장
+                data_utils.add_image(im0, CONF_IMG_BUFFERS, "conf")
+                print("탐지 이미지 저장")
+                
+#                 if dataset.mode == 'image':
+#                     cv2.imwrite(save_path, im0)
+
+#                 else:  # 'video' or 'stream'
+#                     if vid_path[i] != save_path:  # new video
+#                         vid_path[i] = save_path
+#                         if isinstance(vid_writer[i], cv2.VideoWriter):
+#                             vid_writer[i].release()  # release previous video writer
+#                         if vid_cap:  # video
+#                             fps = vid_cap.get(cv2.CAP_PROP_FPS)
+#                             w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+#                             h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+#                         else:  # stream
+#                             fps, w, h = 30, im0.shape[1], im0.shape[0]
+#                         save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
+#                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+#                     vid_writer[i].write(im0)
+
+        ### 이미지 별로 묶은 객체 탐지 결과 리스트를 results에 담기
+        print(f"{p} 이미지 탐지 결과 results에 담기")
         results.append(img_det)
 # --------------------------------------------------------------------------------------
 
@@ -243,7 +268,7 @@ def run(
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
 # --------------------------------------------------------------------------------------
-    # main.py에 객체 탐지 결과 반환
+    ### main.py에 객체 탐지 결과 반환
     print("run() 종료")
     return results
 # --------------------------------------------------------------------------------------

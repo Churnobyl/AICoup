@@ -18,12 +18,11 @@ router = APIRouter(
 
 @router.post('/images')
 async def capture_images():
-    msg = media_service.capture_images()
-    return JSONResponse(
-        content=msg
-    )
+    msg = await media_service.capture_images()
+    return msg
 
 # -----------------------------------------------------------
+# 이미지 요청
 # 이미지 스트리밍
 # 이미지 다운로드
 '''
@@ -31,8 +30,6 @@ async def capture_images():
 cap이미지와 conf이미지는 동일한 리소스,
 stream과 download는 리소스에 대한 행위
 '''
-
-# 이미지 요청
 
 
 @router.get('/images')
@@ -46,14 +43,19 @@ async def get_images(
 
     if action == "stream":
         # 이미지 스트리밍 생성
+        print("get_images() 스트림 시작")
         image_stream = create_image_stream(img_type)
+        print("get_images() 스트림 종료")
         return StreamingResponse(
             image_stream,
             media_type="multipart/x-mixed-replace; boundary=frame"
         )
+        
     elif action == "download":
         # 이미지 파일 압축
-        zip_file = create_zip_file(img_type)
+        print("get_images() 파일 압축 시작")
+        zip_file = await create_zip_file(img_type)
+        print("get_images() 파일 압축 종료")
         return StreamingResponse(
             zip_file,
             media_type="application/x-zip-compressed",
@@ -68,14 +70,13 @@ async def get_images(
 
 @router.post('/labels')
 async def reprocess_inference():
-    results = convert_to_dict(inference())
+    results = await convert_to_dict(inference())
     return JSONResponse(content=results)
 
 # -----------------------------------------------------------
-# 객체 탐지 결과
+# 객체 탐지 결과 요청
+# 객체 탐지 yolo 결과
 # 객체 탐지 클러스터링 결과
-
-# 객체 탐지 결과 JSON 전송
 
 
 @router.get('/labels')
@@ -86,8 +87,8 @@ async def get_labels(
     plot: Optional[int] = Query(default=None)  # plot 파라미터는 선택적
 ):
     if result_type == "det":
-        # 저장된 객체 탐지 결과를 반환
-        detection_results = convert_queue()
+        # 저장된 객체 탐지 결과 내역 반환
+        detection_results = await convert_queue()
         return JSONResponse(content=detection_results)
 
     elif result_type == "clst":
@@ -102,7 +103,7 @@ async def get_labels(
                 print('클러스터링 3단계')
             case _:
                 print('Value is something else')
-                return JSONResponse(CLST_DATA)
+                return await JSONResponse(CLST_DATA)
 
         match plot:
             # 클러스터링 단계별 플롯 이미지
