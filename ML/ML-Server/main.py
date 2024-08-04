@@ -3,7 +3,13 @@ from contextlib import asynccontextmanager
 import os
 import sys
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(os.path.dirname(__file__))), 'yolov9'))
+# sys.path.append(os.path.join(os.path.dirname(os.path.abspath(os.path.dirname(__file__))), 'yolov9'))
+# 위 코드 줄바꿈하면 ModuleNotFoundError: No module named 'detect_dual 에러 발생
+
+current_file_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_file_dir)
+target_dir = os.path.join(parent_dir, 'yolov9')
+sys.path.append(target_dir)
 
 from router import *
 from core.capture_config import get_capture_manager

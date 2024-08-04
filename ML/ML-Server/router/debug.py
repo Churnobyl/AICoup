@@ -43,19 +43,15 @@ async def get_images(
 
     if action == "stream":
         # 이미지 스트리밍 생성
-        print("get_images() 스트림 시작")
         image_stream = create_image_stream(img_type)
-        print("get_images() 스트림 종료")
         return StreamingResponse(
             image_stream,
             media_type="multipart/x-mixed-replace; boundary=frame"
         )
-        
+
     elif action == "download":
         # 이미지 파일 압축
-        print("get_images() 파일 압축 시작")
         zip_file = await create_zip_file(img_type)
-        print("get_images() 파일 압축 종료")
         return StreamingResponse(
             zip_file,
             media_type="application/x-zip-compressed",

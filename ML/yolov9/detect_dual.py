@@ -229,7 +229,7 @@ def run(
 
             if save_img:
                 ### 메모리 버퍼에 임시 저장
-                data_utils.add_image(im0, CONF_IMG_BUFFERS, "conf")
+                data_utils.add_image(im0, CONF_IMG_BUFFERS, img_type="conf")
                 print("탐지 이미지 저장")
                 
 #                 if dataset.mode == 'image':
