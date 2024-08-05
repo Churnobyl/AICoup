@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 import { clientData, connect } from "@/apis/websocketConnect";
-import HistoryBottomSheet from "@/components/game/HistoryBottomSheet";
+import HistoryBottomSheet from "@/components/ui/sheets/HistoryBottomSheet";
 import ModalComponent from "@/components/modals/ModalComponent";
 import History from "@/types/HistoryInf";
 import Board from "@components/game/Board";
@@ -11,7 +11,7 @@ import "./GamePage.scss";
 
 const GamePage = () => {
   const store = useGameStore();
-  const storeRef = useRef(store); // Using useRef to avoid re-rendering
+  const storeRef = useRef(store);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState("");
   const [options, setOptions] = useState<string[]>([]);
@@ -88,7 +88,6 @@ const GamePage = () => {
           Cookies.set("aiCoup", parsedMessage.mainMessage.message, {
             expires: 1,
           });
-          publishMessage(1, "userA", "gameState");
           break;
         case "exist":
         case "gameMade":
@@ -99,7 +98,7 @@ const GamePage = () => {
           break;
         case "gameState":
           const { mainMessage } = parsedMessage;
-          const { members, turn, history, deck } = mainMessage;
+          const { members, turn, history, deck, lastContext } = mainMessage;
 
           storeRef.current.setRoomId(parsedMessage.roomId);
           storeRef.current.setState(parsedMessage.state);
@@ -107,6 +106,7 @@ const GamePage = () => {
           storeRef.current.incrementTurn(turn);
           storeRef.current.setHistory(history);
           storeRef.current.setDeck(deck);
+          storeRef.current.setLastContext(lastContext);
 
           selectOptions(history);
           break;
@@ -136,7 +136,10 @@ const GamePage = () => {
 
   const handleSelect = (option: string) => {
     console.log("Selected option:", option);
-    publishMessage(1, "userA", "nextTurn");
+
+    publishMessage(1, "userA", "myChoice", {
+      select: option,
+    });
     setIsModalOpen(false);
   };
 

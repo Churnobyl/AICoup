@@ -1,11 +1,21 @@
+@font-face {
+    font-family: "BlackAndWhitePicture";
+    src: url("./assets/BlackAndWhitePicture-Regular.ttf");
+}
+
 #root {
     margin-left: auto;
     margin-right: auto;
     width: 1000px;
-    height: 600px;
-    max-height: 600px;
+    height: 550px;
+    max-width: 1000px;
+    max-height: 550px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    background: url("./assets/bg.jpg");
+    background-size: 1000px 550px;
+    font-size: 20px;
+    font-family: "BlackAndWhitePicture";
 }

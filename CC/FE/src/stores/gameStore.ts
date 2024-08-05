@@ -13,6 +13,7 @@ type Actions = {
   setRoomId: (roomId: string) => void;
   setState: (states: string) => void;
   setDeck: (deck: number[]) => void;
+  setLastContext: (historyItem: History[]) => void;
 };
 
 const useGameStore = create<ReturnType & Actions>()(
@@ -25,6 +26,7 @@ const useGameStore = create<ReturnType & Actions>()(
       roomId: "",
       state: "",
       deck: [],
+      lastContext: [],
       setHistory: (historyItem: History[]) => {
         set((state) => {
           state.history = historyItem;
@@ -58,6 +60,11 @@ const useGameStore = create<ReturnType & Actions>()(
       setDeck: (deck: number[]) => {
         set((state) => {
           state.deck = deck;
+        });
+      },
+      setLastContext: (historyItem: History[]) => {
+        set((state) => {
+          state.lastContext = historyItem;
         });
       },
     }))
