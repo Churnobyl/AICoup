@@ -2,3 +2,4 @@
 
 from .media_service import *
 from .model_service import *
+from .players_service import *
