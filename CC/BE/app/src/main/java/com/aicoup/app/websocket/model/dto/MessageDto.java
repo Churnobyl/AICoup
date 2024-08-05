@@ -5,14 +5,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.Map;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @ToString
 public class MessageDto {
-
     private String roomId;
     private String writer;
     private String state;

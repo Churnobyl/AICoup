@@ -1,6 +1,7 @@
 package com.aicoup.app.websocket.model.dto;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,5 +31,4 @@ public class PlayerDto {
     public boolean hasCard(String card) {
         return this.cards.contains(card);
     }
-
 }
