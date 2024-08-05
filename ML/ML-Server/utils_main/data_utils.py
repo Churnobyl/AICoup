@@ -175,3 +175,46 @@ async def zip_images_from_buffers(buffer_path) -> io.BytesIO:
     return s
 
 # -----------------------------------------------------------
+# 디렉토리 파일 사용
+# -----------------------------------------------------------
+# 이미지 파일 불러오기
+
+async def load_image(image_path):
+    try:
+        with open(image_path, "rb") as image_file:
+            print(image_path, "이미지 파일 읽기")
+            return image_file.read()
+        
+    except FileNotFoundError:
+        print(f"파일을 찾을 수 없습니다: {image_path}")
+        return None
+
+# -----------------------------------------------------------
+# 텍스트 파일 불러오기 및 변환
+
+async def convert_txt_file():
+    print("텍스트 파일 변환 시작")
+    
+    results = []
+
+    for txt in TXT_FILES:
+        txt_path = DET_FOLDER/'exp/labels' / txt
+        txt_list = []
+
+        try:
+            if txt_path.is_file():
+                with open(txt_path, 'r') as f: # read-only
+                    print(txt_path, "텍스트 파일 읽어오기")
+                    for line in f:
+                        txt_list.append(line.strip().split())
+                results.append(txt_list)
+            else:
+                print(f"File {txt_path} does not exist.")
+                results.append(txt_list)  # Append empty list if file does not exist
+
+        except Exception as e:
+            print(f"Error reading file {txt_path}: {e}")
+            results.append(txt_list)  # Append empty list if there is an error
+
+    print("텍스트 파일 변환 종료")
+    return results    

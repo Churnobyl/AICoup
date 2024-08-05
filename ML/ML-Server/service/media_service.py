@@ -6,6 +6,8 @@ from utils_main import *
 
 
 # -----------------------------------------------------------
+# 메모리 버퍼 사용
+# -----------------------------------------------------------
 # 이미지 촬영
 
 
@@ -97,3 +99,47 @@ async def create_zip_file(img_type) -> io.BytesIO:
     return zip_file_buffer
 
 # -----------------------------------------------------------
+# 디렉토리 파일 사용
+# -----------------------------------------------------------
+# 이미지 파일 스트리밍 만들기
+
+
+async def create_image_stream_from_folder(folder_path):
+    print("create_image_stream_from_folder() 시작")
+
+    for img in IMG_FILES:
+        image_path = folder_path / img
+        image_data = await load_image(image_path)
+
+        if image_data:
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" + image_data + b"\r\n"
+            )
+        print(f"{img} 스트리밍 전송")
+
+        await asyncio.sleep(1)  # 각 이미지 사이에 짧은 지연 추가
+
+    print("create_image_stream_from_folder() 종료")
+    
+# -----------------------------------------------------------
+# 이미지 파일 압축
+
+
+async def create_zip_file_from_folder(folder_path) -> io.BytesIO:
+    print("이미지 압축 시작")
+
+    s = io.BytesIO()
+    zip_file = zipfile.ZipFile(s, "w")
+
+    for img in IMG_FILES:
+        image_path = folder_path / img
+        zip_file.write(image_path, img)
+        print(f"{img} 압축 완료")
+
+    zip_file.close()
+    s.seek(0)
+
+    print("이미지 압축 완료")
+    return s
+

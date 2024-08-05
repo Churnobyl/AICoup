@@ -73,7 +73,7 @@ def run(
     # Directories
     ### 객체 탐지할 때마다 결과를 exp에 저장할 필요가 없으므로, exp파일 중복 생성 방지
     save_dir = Path(project)/name 
-    # os.makedirs(Path(project), exist_ok=True)
+    os.makedirs(Path(project), exist_ok=True)
 
     # save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run # 주석 처리
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
@@ -93,11 +93,16 @@ def run(
         bs = len(dataset)
     elif screenshot:
         dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
-    else:
+        
 # --------------------------------------------------------------------------------------
+    elif source == str(IMG_FOLDER):
+        ### media 디렉토리에 접근, 이미지 불러오기
+        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
+        print("media 디렉토리 이미지 사용")
+    else:
         ### 전역 변수 메모리 버퍼에 접근, 이미지 불러오기
-        # dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
         dataset = list(load_images_from_buffers(CAP_IMG_BUFFERS))
+        print("메모리 버퍼 이미지 사용")
 # --------------------------------------------------------------------------------------   
     vid_path, vid_writer = [None] * bs, [None] * bs
 
@@ -144,9 +149,11 @@ def run(
 
             p = Path(p)  # to Path
 # --------------------------------------------------------------------------------------       
-            ### 주석 처리
-            # save_path = str(save_dir / p.name)  # im.jpg
-            # txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+            ### media 저장하지 않을 시 주석 처리
+            if project == DET_FOLDER:
+                print("경로 설정")
+                save_path = str(save_dir / p.name)  # im.jpg
+                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
 # --------------------------------------------------------------------------------------
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
@@ -160,10 +167,10 @@ def run(
 
             print(f"{p}.jpg 이미지 탐색 시작")
             
-            # 주석 처리
-            # if save_txt:
-            #     open(f'{txt_path}.txt', 'w')
-            #     print(f"{p.stem}.txt 파일 생성")
+            # media 저장하지 않을 시 주석 처리
+            if save_txt:
+                open(f'{txt_path}.txt', 'w')
+                print(f"{p.stem}.txt 파일 생성")
 # --------------------------------------------------------------------------------------
 
             # 탐지된 객체가 있을 때
@@ -200,9 +207,8 @@ def run(
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                        # 주석 처리
-                        # with open(f'{txt_path}.txt', 'a') as f:
-                        #     f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                        with open(f'{txt_path}.txt', 'a') as f:
+                            f.write(('%g ' * len(line)).rstrip() % line + '\n')
                         print("텍스트 저장")
 
                     if save_img or save_crop or view_img:  # Add bbox to image
@@ -228,28 +234,32 @@ def run(
             # Save results (image with detections)
 
             if save_img:
+                # media 디렉토리에 저장
+                if project == DET_FOLDER:
+                    if dataset.mode == 'image':
+                        cv2.imwrite(save_path, im0)
+                        print("탐지 이미지 파일 저장")
+
+                    else:  # 'video' or 'stream'
+                        if vid_path[i] != save_path:  # new video
+                            vid_path[i] = save_path
+                            if isinstance(vid_writer[i], cv2.VideoWriter):
+                                vid_writer[i].release()  # release previous video writer
+                            if vid_cap:  # video
+                                fps = vid_cap.get(cv2.CAP_PROP_FPS)
+                                w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                                h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                            else:  # stream
+                                fps, w, h = 30, im0.shape[1], im0.shape[0]
+                            save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
+                            vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                        vid_writer[i].write(im0)
+
                 ### 메모리 버퍼에 임시 저장
-                data_utils.add_image(im0, CONF_IMG_BUFFERS, img_type="conf")
-                print("탐지 이미지 저장")
-                
-#                 if dataset.mode == 'image':
-#                     cv2.imwrite(save_path, im0)
-
-#                 else:  # 'video' or 'stream'
-#                     if vid_path[i] != save_path:  # new video
-#                         vid_path[i] = save_path
-#                         if isinstance(vid_writer[i], cv2.VideoWriter):
-#                             vid_writer[i].release()  # release previous video writer
-#                         if vid_cap:  # video
-#                             fps = vid_cap.get(cv2.CAP_PROP_FPS)
-#                             w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-#                             h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-#                         else:  # stream
-#                             fps, w, h = 30, im0.shape[1], im0.shape[0]
-#                         save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-#                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-#                     vid_writer[i].write(im0)
-
+                else:
+                    data_utils.add_image(im0, CONF_IMG_BUFFERS, img_type="conf")
+                    print("탐지 이미지 버퍼 저장")
+                    
         ### 이미지 별로 묶은 객체 탐지 결과 리스트를 results에 담기
         print(f"{p} 이미지 탐지 결과 results에 담기")
         results.append(img_det)
