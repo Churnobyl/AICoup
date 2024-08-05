@@ -1,7 +1,7 @@
-import CardHolder from "@/components/game/CardHolder";
-import "./Board.scss";
-import useGameStore from "@/stores/gameStore";
 import Deck from "@/components/game/Deck";
+import Player from "@/components/game/Player";
+import useGameStore from "@/stores/gameStore";
+import "./Board.scss";
 
 type Props = {
   className: string;
@@ -14,7 +14,12 @@ const Board = (_props: Props) => {
   return (
     <div className="board">
       {store.members.map((_member, index) => (
-        <CardHolder key={index} playerNumber={index} className="card-holder" />
+        <Player
+          key={index}
+          playerNumber={index}
+          className={`player ${index !== 0 ? "active" : ""}`}
+          isClickable={index !== 0}
+        />
       ))}
       <div style={{ position: "absolute" }}>
         <Deck />

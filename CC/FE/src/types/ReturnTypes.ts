@@ -9,4 +9,5 @@ export default interface ReturnType {
   roomId: string;
   state: string;
   deck: number[];
+  lastContext: History[];
 }

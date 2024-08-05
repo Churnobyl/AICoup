@@ -1,0 +1,14 @@
+.player {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  .player.clickable {
+    cursor: pointer;
+
+    &:hover {
+      background-color: #c6ffb3;
+    }
+  }
+}

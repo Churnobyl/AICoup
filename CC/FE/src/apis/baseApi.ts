@@ -7,7 +7,9 @@ export const baseApi = (uri: string, method: string, body?: BodyInit) => {
     method,
     headers: {
       "Content-Type": "application/json",
-      Origin: "http://localhost:5173",
+      Origin: `http://${import.meta.env.VITE_FRONTEND_SERVER}:${
+        import.meta.env.VITE_FRONTEND_PORT
+      }`,
     },
     credentials: "include",
   };
