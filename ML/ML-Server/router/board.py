@@ -20,12 +20,18 @@ async def game_start():
 
 @router.get('/game-status')
 async def get_game_status():
-    results = await convert_to_dict(inference("dir"))
-    result = tracePlayers(results)
+    
     for tried in range(TRIAL):
+        print("inference try... ", tried)
+        results = await convert_to_dict(inference("dir"))
+        result = tracePlayers(results)
         if result is not None:
-            break
-    return JSONResponse(result)
+            result = {
+                "user_card": result[0],
+                "deck_card": result[1]
+            }
+            return JSONResponse(result)
+    return
 
 @router.get('/game-satatus/image')
 async def get_board_image():

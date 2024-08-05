@@ -4,97 +4,142 @@ from service.clustering import kMeansClustering
 from utils_main.vector_util import *
 from utils_main.plot_util import plotInformations
 
+# TMP: variables, constances
+IMAGE_NUM = 3
+PLAYER_NUM = 4
+IS_AMB_ACTION = True
+AMB_PLAYER_IDX = 0
+
 def tracePlayers(inferResult):
     # data 변환
 
     # 임의로 리스트 하나만 남겨서 0의 인덱스로 접근 한 모습
     ## TODO: 이 부분 구현해야함
     ## TODO: BBOX 말도 안되는 포인트 제거 하는게 좋아보임
-    cardInfo = inferResult[0]['detections']
-    cardInfo = [obj for obj in cardInfo if obj['class_id'] < 6]
 
-    image_idx, cardInfo = preValidCard(inferResult)
-    if cardInfo is None:
-        return None
+    ## 이전 코드
+    # cardInfo = inferResult[0]['detections']
+    # cardInfo = [obj for obj in cardInfo if obj['class_id'] < 6]
+
+    image_idx = 0
     # 먼저 카드의 개수로 valid
+    while image_idx < IMAGE_NUM:
+        image_idx, cardInfo = preValidCard(inferResult, s_idx=image_idx)
+        if cardInfo is None:
+            print("Failed pre Valid...")
+            image_idx += 1
+            continue
+        print(f'{image_idx=}')
+
+        cardPoints = dict(enumerate([{
+                                "class_id": i['class_id'],
+                                "center": (i['x'], i['y']),
+                                "vector": getVectorValueByCenter([[i['x'], i['y']]])[0],
+                                "cluster": -1
+                                }
+                                for i in cardInfo]))
+        for card in cardPoints:
+            # angle = getAngleByVector(cardPoints[card]['vector'])
+            angle = math.acos(cardPoints[card]['vector'][0] / getVectorSize(cardPoints[card]['vector']))
+            angle = angle if cardPoints[card]['vector'][1] > 0 else 2 * math.pi - angle
+            cardPoints[card]['angle'] = angle
+
+        # 클러스터링
+        N = PLAYER_NUM + 1   # tmp
+        clusters = kMeansClustering(N, cardPoints)
+        # 클러스터 검증 및 덱, 유저 인덱스 반환
+        deckIdx, usersIdx = clusterValid(clusters)
+        if deckIdx is None:
+            print("Failed clustering Valid...")
+            image_idx += 1
+            continue
+
+        # TODO: 덱 카드와 플레이어 카드 분리
+
+        # 벡터변환 및 플레이어 할당
+        clusterPoints = [clusters[k]['center'] for k in clusters]        
+
+        clusterVects  = getVectorValueByCenter(clusterPoints)
+        vectorSizes = getVectorSizes(clusterVects)
+        products = [productVector(vec, [1, 0]) for vec in clusterVects]
+
+        angles = [math.acos(p / s) if v[1] > 0 else 2 * math.pi - math.acos(p/s) for p, s, v in zip(products, vectorSizes, clusterVects)]
+
+        degrees = anglesToDegrees(angles)
+        degrees = list(enumerate(degrees))
+        degrees.sort(key=lambda x : x[1])
+
+        # TODO: cluster 분배 정책이 되는 함수 구현
+        player_cluster_id = [cluster_id for (cluster_id, _) in degrees[::-1] if cluster_id != deckIdx]
+
+        # 시각화
+        plotInformations(cardInfo=cardInfo, clusters=clusters, block=True, show=False, save=True)
+
+        # test_player = [{
+        #         "left_card": cardPoints[min([card for card in clusters[id]['cards']], key=lambda x : cardPoints[card]['angle'])]['class_id']
+        #     } for id in player_cluster_id]
+        # print(test_player)
+
+
+        # TODO: 이전 정보 가져와서 extra 분류해야함
+        players = [{
+                "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[id]['cards']],
+                # TODO: 함수로 빼기 + 각도 0 근처에서 값 반전 고려
+                "left_card": cardPoints[min([card for card in clusters[id]['cards']], key=lambda x : cardPoints[x]['angle'])]['class_id'],
+                "right_card": cardPoints[max([card for card in clusters[id]['cards']], key=lambda x : cardPoints[x]['angle'])]['class_id'],
+                "extra_card": [],
+                "vector_value": clusterVects[id]
+            } for id in player_cluster_id
+        ]
+        deck = {
+            "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[deckIdx]['cards']],
+            "vector_value": clusterVects[deckIdx]
+        }
+
+        # validation
+        # TODO: validation 부분 구현
+        postValidCard()
+
+        return (players, deck)
     
-
-    cardPoints = dict(enumerate([{
-                            "class_id": i['class_id'],
-                            "center": (i['x'], i['y']),
-                            "vector": getVectorValueByCenter([[i['x'], i['y']]])[0],
-                            "cluster": -1
-                            }
-                            for i in cardInfo]))
-    for card in cardPoints:
-        # angle = getAngleByVector(cardPoints[card]['vector'])
-        angle = math.acos(cardPoints[card]['vector'][0] / getVectorSize(cardPoints[card]['vector']))
-        angle = angle if cardPoints[card]['vector'][1] > 0 else 2 * math.pi - angle
-        cardPoints[card]['angle'] = angle
-
-    # 클러스터링
-    N = 5   # tmp
-    clusters = kMeansClustering(N, cardPoints)
-
-    # TODO: 덱 카드와 플레이어 카드 분리
-
-    # 벡터변환 및 플레이어 할당
-    clusterPoints = [clusters[k]['center'] for k in clusters]
-    clusterVects  = getVectorValueByCenter(clusterPoints)
-    vectorSizes = getVectorSizes(clusterVects)
-    products = [productVector(vec, [1, 0]) for vec in clusterVects]
-
-    angles = [math.acos(p / s) if v[1] > 0 else 2 * math.pi - math.acos(p/s) for p, s, v in zip(products, vectorSizes, clusterVects)]
-
-    degrees = anglesToDegrees(angles)
-    degrees = list(enumerate(degrees))
-    degrees.sort(key=lambda x : x[1])
-
-    # TODO: cluster 분배 정책이 되는 함수 구현
-    player_cluster_id = [cluster_id for (cluster_id, _) in degrees]
-
-    # 시각화
-    plotInformations(cardInfo=cardInfo, clusters=clusters, block=True, save=True)
-
-    # test_player = [{
-    #         "left_card": cardPoints[min([card for card in clusters[id]['cards']], key=lambda x : cardPoints[card]['angle'])]['class_id']
-    #     } for id in player_cluster_id]
-    # print(test_player)
-
-
-    # TODO: 이전 정보 가져와서 extra 분류해야함
-    players = [{
-            "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[id]['cards']],
-            # TODO: 함수로 빼기 + 각도 0 근처에서 값 반전 고려
-            "left_card": cardPoints[min([card for card in clusters[id]['cards']], key=lambda x : cardPoints[x]['angle'])]['class_id'],
-            "right_card": cardPoints[max([card for card in clusters[id]['cards']], key=lambda x : cardPoints[x]['angle'])]['class_id'],
-            "extra_card": [],
-            "vector_value": clusterVects[id]
-        } for id in player_cluster_id[::-1]
-    ]
-
-    # validation
-    # TODO: validation 부분 구현
-    postValidCard()
-    
-    print(players)
-    return players
+    return None
 
 
 def preValidCard(infers, s_idx=0):
     cardInfo = []
-    for idx in enumerate(s_idx, infers):
-        cardInfo = infers[idx]
+    for idx in range(s_idx, IMAGE_NUM):
+        cardInfo = infers[idx]['detections']
         cardInfo = [obj for obj in cardInfo if obj['class_id'] < 6]
-        if len(cardInfo):
+        if calcCardsNum(len(cardInfo)):
+            print(f'{len(cardInfo)=}')
             return idx, cardInfo
 
-    return idx, None
+    return s_idx, None
 
+
+def clusterValid(clusters):
+    deck = None
+    user = []
+    for idx in clusters:
+        if len(clusters[idx]['cards']) == 1:
+            if deck is not None:
+                print("clustering error - double deck")
+                return None, None
+            deck = idx
+        elif len(clusters[idx]['cards']) == 2 or len(clusters[idx]['cards']) == 4:
+            user.append(idx)
+        else:
+            print("clustering error - invalid card num")
+            return None, None
+
+    return deck, user
 
 def postValidCard():
     pass
 
 
-def calcCardsNum():
-    pass
+def calcCardsNum(cardNum):
+    validNum = PLAYER_NUM * 2 + 1
+    if IS_AMB_ACTION:
+        validNum += 2
+    return cardNum == validNum
