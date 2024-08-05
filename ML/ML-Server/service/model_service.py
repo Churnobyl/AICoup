@@ -19,7 +19,12 @@ def inference():
         detections = run(
             weights=WEIGHTS,
             # nosave=False,# 디폴트 # B박스를 생성한 img 파일 저장
-            save_conf=True  # 객체 탐지 정확도 저장
+            save_conf=True,  # 객체 탐지 정확도 저장
+            # -----------------------------------------------------------
+            # media 디렉토리 활용
+            source=IMG_FOLDER,
+            project = DET_FOLDER, #객체 탐지 결과 파일 저장 경로
+            save_txt=True,  # 객체 탐지 결과 txt 파일 저장
         )
 
         if not detections:

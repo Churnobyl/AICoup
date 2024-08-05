@@ -28,6 +28,7 @@ app = FastAPI(lifespan=lifespan)
 #---------------------------------------------------------------------
 app.include_router(debug.router)
 app.include_router(board.router)
+app.include_router(sample_test.router)
 
 if __name__ == "__main__":
     import uvicorn

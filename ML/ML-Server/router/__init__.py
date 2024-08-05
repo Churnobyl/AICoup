@@ -2,3 +2,4 @@
 
 from .board import *
 from .debug import *
+from .sample_test import *
