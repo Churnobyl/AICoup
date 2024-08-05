@@ -12,9 +12,9 @@ import java.util.Map;
 
 @Getter @Setter
 public class GameStateDto {
+    private String message; // gameId
     private Integer turn;
     private List<GameMember> members = new ArrayList<>();
-    private String message;
     private int whoseTurn;
     private History lastContext;
     private Map<String, Integer> canAction = new HashMap<>();

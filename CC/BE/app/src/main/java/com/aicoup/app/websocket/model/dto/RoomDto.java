@@ -11,7 +11,6 @@ import java.util.UUID;
 @Getter
 @Setter
 public class RoomDto {
-
     private String roomId;
     private String name;
     private Set<WebSocketSession> sessions = new HashSet<>();
