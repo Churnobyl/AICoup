@@ -37,11 +37,11 @@ def plotInformations(cardInfo=None, clusters=None, block=False, show=True, trans
     plt.axvline(0.5)
     plt.axis((0, 1, 0, 1))
 
+    if save:
+        plt.savefig('savefig_default.png')
     if not block:
         plt.ion()
     if show:
         plt.show()
     if transform:
         pass
-    if save:
-        plt.savefig('savefig_default.png')
