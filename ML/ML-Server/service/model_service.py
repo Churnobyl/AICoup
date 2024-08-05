@@ -23,7 +23,6 @@ def inference(path):
                     weights=WEIGHTS,
                     # nosave=False,# 디폴트 # B박스를 생성한 img 파일 저장
                     save_conf=True  # 객체 탐지 정확도 저장
-                    # use_buffers=True
                 )
                 
                 if not detections:
