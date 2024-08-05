@@ -12,7 +12,7 @@ const Deck = () => {
 
   return (
     <div className="deck-cover">
-      <p>덱 ({deckNumber})</p>
+      <span>덱 ({deckNumber})</span>
       <div className="deck"></div>
     </div>
   );
