@@ -191,7 +191,7 @@ def run(
 # --------------------------------------------------------------------------------------
                     ### 객체 탐지 결과를 obj_det 변환해서 img_det 리스트에 담기
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    print("객체 탐지")
+                    # print("객체 탐지")
                     obj_det = []
                     # 라벨 클래스
                     obj_det.append(cls.item()) 
@@ -200,7 +200,7 @@ def run(
                         obj_det.append(i) 
                     # 정확도
                     obj_det.append(conf.item())
-                    print("객체 탐지 결과", obj_det)
+                    # print("객체 탐지 결과", obj_det)
                     img_det.append(obj_det)
 # --------------------------------------------------------------------------------------
 
@@ -209,16 +209,16 @@ def run(
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(f'{txt_path}.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
-                        print("텍스트 저장")
+                        # print("텍스트 저장")
 
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
-                        print("B박스 설정")
+                        # print("B박스 설정")
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
-                        print(f"{p} 이미지 탐지 객체 별 크롭 이미지 저장")
+                        # print(f"{p} 이미지 탐지 객체 별 크롭 이미지 저장")
 
             # Stream results
             im0 = annotator.result()
