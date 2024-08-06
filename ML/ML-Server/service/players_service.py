@@ -3,20 +3,20 @@ import matplotlib.pyplot as plt
 from service.clustering import kMeansClustering
 from utils_main.vector_util import *
 from utils_main.plot_util import plotInformations
+import main
 
 # TMP: variables, constances
 IMAGE_NUM = 3
-PLAYER_NUM = 4
 IS_AMB_ACTION = True
 AMB_PLAYER_IDX = 0
 
+# TODO: ambassador action param
 def tracePlayers(inferResult):
     # data 변환
 
     # 임의로 리스트 하나만 남겨서 0의 인덱스로 접근 한 모습
     ## TODO: 이 부분 구현해야함
-    ## TODO: BBOX 말도 안되는 포인트 제거 하는게 좋아보임
-
+    
     ## 이전 코드
     # cardInfo = inferResult[0]['detections']
     # cardInfo = [obj for obj in cardInfo if obj['class_id'] < 6]
@@ -45,7 +45,7 @@ def tracePlayers(inferResult):
             cardPoints[card]['angle'] = angle
 
         # 클러스터링
-        N = PLAYER_NUM + 1   # tmp
+        N = main.app.game.playerNum + 1   # tmp
         clusters = kMeansClustering(N, cardPoints)
         # 클러스터 검증 및 덱, 유저 인덱스 반환
         deckIdx, usersIdx = clusterValid(clusters)
@@ -98,7 +98,9 @@ def tracePlayers(inferResult):
 
         # validation
         # TODO: validation 부분 구현
-        postValidCard()
+        if not postValidCard(players):
+            print('Failed validation in post valid')
+            return None
 
         return (players, deck)
     
@@ -116,7 +118,7 @@ def preValidCard(infers, s_idx=0):
 
     return s_idx, None
 
-
+# TODO: ambassador action param
 def clusterValid(clusters):
     deck = None
     user = []
@@ -134,12 +136,22 @@ def clusterValid(clusters):
 
     return deck, user
 
-def postValidCard():
-    pass
 
+# TODO: ambassador action param
+def postValidCard(players):
+    if main.app.game.playersCard is not None:
+        for pre, cur in zip(main.app.game.playersCard, players):
+            if pre['left_card'] != cur['left_card']:
+                return False
+            if pre['right_card'] != cur['right_card']:
+                return False
+
+            print(f'{pre=}')
+            print(f'{cur=}')
+    return True
 
 def calcCardsNum(cardNum):
-    validNum = PLAYER_NUM * 2 + 1
+    validNum = main.app.game.playerNum * 2 + 1
     if IS_AMB_ACTION:
         validNum += 2
     return cardNum == validNum
