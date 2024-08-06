@@ -13,6 +13,8 @@ $light_brown: #dab785;
 
   padding-right: 1rem;
   padding-left: 1rem;
+  background: $dark_brown;
+  border: $dark_brown solid 1px;
 
   &.large {
     height: 3rem;
@@ -29,8 +31,6 @@ $light_brown: #dab785;
     font-size: 0.875;
   }
 
-  background: $dark_brown;
-  border: $dark_brown solid 1px;
   &:hover {
     background: $light_brown;
   }
