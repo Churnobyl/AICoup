@@ -9,6 +9,9 @@ import {
 } from "react-router-dom";
 import "./index.css";
 
+/**
+ * 라우터
+ */
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/">
