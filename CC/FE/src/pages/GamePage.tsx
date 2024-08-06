@@ -8,7 +8,7 @@ import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
-import { optionKeyByName, optionKeyByNumber } from "@/stores/selectOptions";
+import { optionKeyByName } from "@/stores/selectOptions";
 
 const convertOption = (opt: string): number => {
   return optionKeyByName[opt] !== undefined ? optionKeyByName[opt] : -1;
@@ -25,6 +25,9 @@ const GamePage = () => {
 
   const [selectedOption, setSelectedOption] = useState<number>(0);
   const [selectedTarget, setSelectedTarget] = useState<number>(0);
+
+  console.log(selectedOption);
+  console.log(selectedTarget);
 
   const publishMessage = useCallback(
     (roomId: number, writer: string, state: string, mainMessage = {}) => {

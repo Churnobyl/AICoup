@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import "./Button.scss";
+import "./button.scss";
 
 type ButtonType = {
   children: React.ReactNode;

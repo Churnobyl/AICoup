@@ -1,5 +1,6 @@
 import Modal from "react-modal";
 import "./ModalComponent.scss";
+import Button from "@/components/ui/button/button";
 
 Modal.setAppElement("#root"); // Make sure to bind modal to your appElement
 
@@ -30,9 +31,12 @@ const ModalComponent = ({
         <p>{content}</p>
         <div className="modal-actions">
           {options.map((option: string, index: number) => (
-            <button key={index} onClick={() => onSelect(option)}>
-              {option}
-            </button>
+            <Button
+              key={index}
+              size="medium"
+              children={option}
+              onClick={() => onSelect(option)}
+            />
           ))}
         </div>
       </div>
