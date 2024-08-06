@@ -59,10 +59,19 @@ public class WebsocketController {
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 hideOtherPlayersCards(gameStateDto);
                 break;
-            case "myChoice":
-                returnState = webSocketGameService.myChoice(message);
-                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
-                hideOtherPlayersCards(gameStateDto);
+            case "action":
+                gameStateDto = webSocketGameService.performPlayerAction(message);
+//                webSocketGameService.checkAndNotifyChallenge(gameStateDto, roomId);
+//                webSocketGameService.checkAndNotifyCounterAction(gameStateDto, roomId);
+                returnState = "actionProcessed";
+                break;
+            case "challenge":
+                gameStateDto = webSocketGameService.handlePlayerChallenge(message);
+                returnState = "challengeProcessed";
+                break;
+            case "counterAction":
+                gameStateDto = webSocketGameService.handlePlayerCounterAction(message);
+                returnState = "counterActionProcessed";
                 break;
             default:
                 throw new IllegalArgumentException("웹소켓 메시지 잘못 접근함");
@@ -105,4 +114,6 @@ public class WebsocketController {
         cookieSetMessage.setState("cookieSet");
         sendMessage("1", cookieSetMessage);
     }
+
+
 }

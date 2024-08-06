@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.index.Indexed;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @RedisHash(value = "game_member", timeToLive = 3600L)
 @Getter @Setter
@@ -32,5 +33,15 @@ public class GameMember extends MutableBaseEntity {
     public GameMember(String id, String name) {
         this.id = id;
         this.name = name;
+    }
+
+    public boolean hasCard(Integer cardId) {
+        if (leftCardInfo != null && Objects.equals(leftCardInfo.getId(), cardId)) {
+            return true;
+        }
+        if (rightCardInfo != null && Objects.equals(rightCardInfo.getId(), cardId)) {
+            return true;
+        }
+        return false;
     }
 }

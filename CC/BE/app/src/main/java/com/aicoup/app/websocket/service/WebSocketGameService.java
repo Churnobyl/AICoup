@@ -7,11 +7,9 @@ import java.util.Map;
 
 public interface WebSocketGameService {
     Map<String, String> validate(MessageDto message);
-    GameStateDto processAction(MessageDto message);
+//    GameStateDto processAction(MessageDto message);
     GameStateDto getGameState(String gameId);
     void recordHistory(String gameId, Integer actionNumber, String playerTrying, String playerTried);
-
     String nextTurn(MessageDto messageDto);
-
     String myChoice(MessageDto messageDto);
 }

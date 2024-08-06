@@ -20,4 +20,9 @@ public class GameStateDto {
     private Map<String, Integer> canAction = new HashMap<>();
     private List<History> history;
     private int[] deck = new int[6];
+
+    private boolean awaitingChallenge;
+    private boolean awaitingCounterAction;
+    private Integer awaitingChallengeActionValue;
+    private Integer awaitingCounterActionValue;
 }
