@@ -61,8 +61,6 @@ public class WebsocketController {
                 break;
             case "action":
                 gameStateDto = webSocketGameService.performPlayerAction(message);
-//                webSocketGameService.checkAndNotifyChallenge(gameStateDto, roomId);
-//                webSocketGameService.checkAndNotifyCounterAction(gameStateDto, roomId);
                 returnState = "actionProcessed";
                 break;
             case "challenge":
@@ -114,6 +112,4 @@ public class WebsocketController {
         cookieSetMessage.setState("cookieSet");
         sendMessage("1", cookieSetMessage);
     }
-
-
 }
