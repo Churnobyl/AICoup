@@ -25,4 +25,5 @@ public class GameStateDto {
     private boolean awaitingCounterAction;
     private Integer awaitingChallengeActionValue;
     private Integer awaitingCounterActionValue;
+    private boolean challengeSuccessful;
 }

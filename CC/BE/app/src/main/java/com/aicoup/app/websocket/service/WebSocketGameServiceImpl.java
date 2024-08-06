@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.socket.server.WebSocketService;
 
 import java.util.*;
 import java.util.function.Function;
@@ -38,88 +39,118 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     private final PossibleActionRepository possibleActionRepository;
     private final AIoTSocket aIoTSocket;
     private final GPTResponseGetter gptResponseGetter;
-
-    @Autowired
     private final SimpMessagingTemplate messagingTemplate;
 
-    // 플레이어가 GPT인지 확인하는 메서드
-    private boolean isGPTPlayer(GameMember player) {
-        return player.getName().startsWith("GPT");
-    }
-
-    // MessageDto를 사용하는 플레이어 액션 처리 메서드
-    public GameStateDto performPlayerAction(MessageDto message) {
-        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
-        String gameId = mainMessage.get("cookie");
-        String playerName = message.getWriter();
-        String roomId = message.getRoomId();
-        int actionValue = Integer.parseInt(mainMessage.get("action"));
-        String targetPlayerName = mainMessage.get("targetPlayerName");
-
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
-
-        // 챌린지와 카운터 액션 처리
-        handleChallengeAndCounterAction(game, actionValue);
-
-        // processAction 호출
-        GameStateDto gameState = processAction(game, playerName, actionValue, targetPlayerName);
-
-        return gameState;
-    }
-
-    // GPT의 액션을 수행하는 메서드
-    public GameStateDto performGPTAction(String gameId, GameMember currentPlayer) {
-        String[] actionResult = gptResponseGetter.actionApi(gameId);
-        String action = actionResult[0];
-        String target = actionResult[1];
-
-        int actionValue = convertActionToValue(action);
-
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
-
-        // processAction 호출
-        GameStateDto gameState = processAction(game, currentPlayer.getName(), actionValue, target);
-
-        // 챌린지와 카운터 액션 처리
-        handleChallengeAndCounterAction(game, actionValue);
-
-        return gameState;
-    }
-
     public enum ActionType {
-        INCOME(1),
-        FOREIGN_AID(2),
-        TAX(3),
-        STEAL(4),
-        ASSASSINATE(5),
-        EXCHANGE(6),
-        COUP(7),
-        CHALLENGE(8),
-        ALLOW(9),
-        BLOCK_DUKE(10),
-        BLOCK_CAPTAIN(11),
-        BLOCK_CONTESSA(12);
+        INCOME(1, "income"),
+        FOREIGN_AID(2, "foreign_aid"),
+        TAX(3, "tax"),
+        STEAL(4, "steal"),
+        ASSASSINATE(5, "assassinate"),
+        EXCHANGE(6, "exchange"),
+        COUP(7, "coup"),
+        CHALLENGE(8, "challenge"),
+        BLOCK_DUKE(9, "block_duke"),
+        BLOCK_CONTESSA(10, "block_contessa"),
+        BLOCK_CAPTAIN(11, "block_captain"),
+        BLOCK_AMBASSADOR(12, "block_ambassador");
 
         private final int value;
+        private final String name;
 
-        ActionType(int value) {
+        ActionType(int value, String name) {
             this.value = value;
+            this.name = name;
         }
 
         public int getValue() {
             return value;
         }
 
-        public static ActionType fromValue(int value) {
-            for (ActionType type : values()) {
-                if (type.value == value) {
-                    return type;
+        public String getName() {
+            return name;
+        }
+
+        public static String findActionName(int actionValue) {
+            for (ActionType action : values()) {
+                if (action.getValue() == actionValue) {
+                    return action.getName();
                 }
             }
-            throw new IllegalArgumentException("Invalid action value: " + value);
+            throw new IllegalArgumentException("Invalid action value: " + actionValue);
         }
+
+        public static ActionType fromActionValue(int actionValue) {
+            for (ActionType action : values()) {
+                if (action.getValue() == actionValue) {
+                    return action;
+                }
+            }
+            throw new IllegalArgumentException("Invalid action value: " + actionValue);
+        }
+
+        public static int findActionValue(String actionName) {
+            for (ActionType action : values()) {
+                if (action.getName().equalsIgnoreCase(actionName)) {
+                    return action.getValue();
+                }
+            }
+            throw new IllegalArgumentException("Invalid action name: " + actionName);
+        }
+    }
+
+    // 플레이어가 GPT인지 확인하는 메서드
+    private boolean isGPTPlayer(GameMember player) {
+        return player.getName().startsWith("GPT");
+    }
+
+    public GameStateDto performPlayerAction(MessageDto message) {
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+        String gameId = mainMessage.get("cookie");
+        String playerName = message.getWriter();
+        int actionValue = Integer.parseInt(mainMessage.get("action"));
+        String targetPlayerName = mainMessage.get("targetPlayerName");
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        String actionName = ActionType.findActionName(actionValue);
+        validateAction(gameId, playerName, actionName);
+
+        return processAction(game, playerName, actionValue, targetPlayerName);
+    }
+
+    public GameStateDto performGPTAction(String gameId, GameMember currentPlayer) {
+        String[] actionResult = gptResponseGetter.actionApi(gameId);
+        String action = actionResult[0];
+        String target = actionResult[1];
+
+        int actionValue = ActionType.findActionValue(action);
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        return processAction(game, currentPlayer.getName(), actionValue, target);
+    }
+
+    private GameStateDto processAction(Game game, String playerName, int actionValue, String targetPlayerName) {
+        GameMember player = findPlayerByName(game, playerName);
+
+        // 1단계: 액션 유효성 검사 및 초기 처리
+        game.setCurrentActionState("ACTION_PENDING");
+        game.setCurrentAction(actionValue);
+        game.setCurrentPlayerName(playerName);
+        game.setCurrentTargetName(targetPlayerName);
+        gameRepository.save(game);
+
+        // 2단계: 챌린지 기회 제공
+        if (shouldPerformChallenge(actionValue)) {
+            offerPlayerChallenge(game, actionValue);
+            return buildGameState(game.getId());
+        }
+
+        // 3단계: 액션 완료 (챌린지가 필요 없는 경우)
+        return completePlayerAction(game, player.getName(), actionValue, targetPlayerName);
     }
 
     @Override
@@ -166,7 +197,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 (member.getRightCard() < 0 && aiotData.getRight_card() == 0);
     }
 
-    private GameStateDto processAction(Game game, String playerName, int actionValue, String targetPlayerName) {
+    private GameStateDto completePlayerAction(Game game, String playerName, int actionValue, String targetPlayerName) {
         GameMember currentPlayer = findPlayerByName(game, playerName);
 
         // 액션 수행
@@ -287,8 +318,18 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         if (isChallenge) {
             int actionValue = game.getAwaitingChallengeActionValue();
             gameState = challenge(gameId, challengerName, actionValue);
+
+            boolean challengeSuccessful = gameState.isChallengeSuccessful();
+
+            if (challengeSuccessful) {
+                game.setCurrentActionState("CHALLENGE_SUCCESSFUL");
+            } else {
+                GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
+                gameState = completePlayerAction(game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
+            }
         } else {
-            gameState = buildGameState(gameId);
+            GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
+            gameState = completePlayerAction(game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
         }
 
         game.setAwaitingChallenge(false);
@@ -382,7 +423,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     }
 
     private void performAction(Game game, GameMember player, int actionValue, String targetPlayerName) {
-        ActionType actionType = ActionType.fromValue(actionValue);
+        ActionType actionType = ActionType.fromActionValue(actionValue);
         Action action = actionRepository.findByEnglishName(actionType.name())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid action: " + actionType.name()));
 
@@ -550,12 +591,10 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 if (isGPTPlayer(currentPlayer)) {
                     performGPTAction(game.getId(), currentPlayer);
                 }
-
                 return "gameState";
             }
         }
-
-        return "gameState";
+        return "action";
     }
 
     @Override
@@ -598,7 +637,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
         // 마지막 액션 가져오기
         History lastAction = game.getActionContext().getLast();
-        ActionType lastActionType = ActionType.fromValue(lastAction.getActionId());
+        ActionType lastActionType = ActionType.fromActionValue(lastAction.getActionId());
         GameMember target = findPlayerByName(game, lastAction.getPlayerTrying());
 
         // 도전 성공 여부 확인
@@ -628,8 +667,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
         // 마지막 액션 가져오기
         History lastAction = game.getActionContext().getLast();
-        ActionType originalActionType = ActionType.fromValue(lastAction.getActionId());
-        ActionType counterActionType = ActionType.fromValue(actionValue);
+        ActionType originalActionType = ActionType.fromActionValue(lastAction.getActionId());
+        ActionType counterActionType = ActionType.fromActionValue(actionValue);
 
         // 대응 가능한 액션인지 확인
         if (!isCounterActionValid(originalActionType, counterActionType)) {
