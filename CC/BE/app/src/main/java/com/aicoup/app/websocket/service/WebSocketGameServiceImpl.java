@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.socket.server.WebSocketService;
 
 import java.util.*;
 import java.util.function.Function;
@@ -38,8 +39,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     private final PossibleActionRepository possibleActionRepository;
     private final AIoTSocket aIoTSocket;
     private final GPTResponseGetter gptResponseGetter;
-
-    @Autowired
     private final SimpMessagingTemplate messagingTemplate;
 
     // 플레이어가 GPT인지 확인하는 메서드
@@ -58,14 +57,43 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+        GameMember player = findPlayerByName(game, playerName);
 
-        // 챌린지와 카운터 액션 처리
-        handleChallengeAndCounterAction(game, actionValue);
+        // 1단계: 액션 유효성 검사 및 초기 처리
+        validateAction(gameId, player.getName(), actionValue);
+        game.setCurrentActionState("ACTION_PENDING");
+        game.setCurrentAction(actionValue);
+        gameRepository.save(game);
 
-        // processAction 호출
-        GameStateDto gameState = processAction(game, playerName, actionValue, targetPlayerName);
+        // 2단계: 챌린지 기회 제공
+        if (shouldPerformChallenge(actionValue)) {
+            offerPlayerChallenge(game, actionValue);
+            return buildGameState(game.getId()); // 여기서 일단 리턴
+        }
 
-        return gameState;
+        // 3단계: 액션 완료 (챌린지가 없거나 실패한 경우)
+        return completePlayerAction(game, player, actionValue, targetPlayerName);
+    }
+
+    private String findActionName(int actionValue) {
+        switch  (actionValue) {
+            case 1:
+                return "income";
+            case 2:
+                return "forien_aid";
+            case 3:
+                return "tax";
+            case 4:
+                return "steal";
+            case 5:
+                return "assassinate";
+            case 6:
+                return "exchange";
+            case 7:
+                return "coup";
+            default:
+                throw new IllegalArgumentException("Invalid action: ");
+        }
     }
 
     // GPT의 액션을 수행하는 메서드
@@ -162,7 +190,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 (member.getRightCard() < 0 && aiotData.getRight_card() == 0);
     }
 
-    private GameStateDto processAction(Game game, String playerName, int actionValue, String targetPlayerName) {
+    private GameStateDto completePlayerAction(Game game, String playerName, int actionValue, String targetPlayerName) {
         GameMember currentPlayer = findPlayerByName(game, playerName);
 
         // 액션 수행
@@ -282,9 +310,18 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         GameStateDto gameState;
         if (isChallenge) {
             int actionValue = game.getAwaitingChallengeActionValue();
-            gameState = challenge(gameId, challengerName, actionValue);
+            boolean challengeSuccessful = challenge(gameId, challengerName, actionValue);
+
+            if (challengeSuccessful) {
+                game.setCurrentActionState("CHALLENGE_SUCCESSFUL");
+                gameState = buildGameState(gameId);
+            } else {
+                GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
+                gameState = completePlayerAction(game, player, game.getCurrentAction(), game.getCurrentTargetName());
+            }
         } else {
-            gameState = buildGameState(gameId);
+            GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
+            gameState = completePlayerAction(game, player, game.getCurrentAction(), game.getCurrentTargetName());
         }
 
         game.setAwaitingChallenge(false);
@@ -546,12 +583,10 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 if (isGPTPlayer(currentPlayer)) {
                     performGPTAction(game.getId(), currentPlayer);
                 }
-
                 return "gameState";
             }
         }
-
-        return "gameState";
+        return "action";
     }
 
     @Override

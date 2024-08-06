@@ -42,6 +42,10 @@ public class Game extends MutableBaseEntity {
     private boolean awaitingCounterAction;
     private Integer awaitingChallengeActionValue;
     private Integer awaitingCounterActionValue;
+    private String currentActionState;
+    private Integer currentAction;
+    private String currentPlayerName;
+    private String currentTargetName;
 
     /**
      * id 생성자
