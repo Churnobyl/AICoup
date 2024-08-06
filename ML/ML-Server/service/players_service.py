@@ -9,9 +9,10 @@ import main
 IMAGE_NUM = 3
 IS_AMB_ACTION = True
 AMB_PLAYER_IDX = 0
+CARD_REALLOC_SITUATION = ['amb_done', 'ch_win']
 
 # TODO: ambassador action param
-def tracePlayers(inferResult):
+def tracePlayers(inferResult, situation):
     # data 변환
 
     # 임의로 리스트 하나만 남겨서 0의 인덱스로 접근 한 모습
@@ -82,6 +83,7 @@ def tracePlayers(inferResult):
 
 
         # TODO: 이전 정보 가져와서 extra 분류해야함
+        # 함수로 아래 빼기. - extra 분류, min/max가 에러 해결, cos 유사 판별
         players = [{
                 "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[id]['cards']],
                 # TODO: 함수로 빼기 + 각도 0 근처에서 값 반전 고려
@@ -98,7 +100,7 @@ def tracePlayers(inferResult):
 
         # validation
         # TODO: validation 부분 구현
-        if not postValidCard(players):
+        if not postValidCard(players, situation):
             print('Failed validation in post valid')
             return None
 
@@ -118,7 +120,7 @@ def preValidCard(infers, s_idx=0):
 
     return s_idx, None
 
-# TODO: ambassador action param
+
 def clusterValid(clusters):
     deck = None
     user = []
@@ -137,18 +139,17 @@ def clusterValid(clusters):
     return deck, user
 
 
-# TODO: ambassador action param
-def postValidCard(players):
+def postValidCard(players, situation):
     if main.app.game.playersCard is not None:
-        for pre, cur in zip(main.app.game.playersCard, players):
+        for idx, (pre, cur) in enumerate(zip(main.app.game.playersCard, players)):
+            if situation['name'] in CARD_REALLOC_SITUATION and idx == situation['player_id']:
+                continue
             if pre['left_card'] != cur['left_card']:
                 return False
             if pre['right_card'] != cur['right_card']:
                 return False
-
-            print(f'{pre=}')
-            print(f'{cur=}')
     return True
+
 
 def calcCardsNum(cardNum):
     validNum = main.app.game.playerNum * 2 + 1
