@@ -1,17 +1,26 @@
 class GameStatus:
     def __init__(self):
+        print('GameStatus Constructor')
+        self.initializing()
+
+    def initializing(self):
         self.running = False
-        self.firstInfer = False
+        self.playerNum = 0
         self.deckCard = None
         self.playersCard = None
-        self.action = None
 
-    def initializing(self, playerNum):
+    def game_start(self, playerNum):
         self.running = True
-        self.firstInfer = False
         self.playerNum = playerNum
-        self.deckCard = None
-        self.playersCard = None
 
-    def start(self):
+    def ambassador_action(self, playerId):
         pass
+
+    def ambassador_action_done(self):
+        pass
+
+    def card_realloc(self):
+        pass
+
+    def game_end(self):
+        self.running = False

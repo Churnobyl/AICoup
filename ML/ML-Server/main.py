@@ -13,12 +13,14 @@ sys.path.append(target_dir)
 
 from router import *
 from core.capture_config import get_capture_manager
+from core import status
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Singleton
     # 애플리케이션 시작 시 CaptureManager 인스턴스 생성
     cap = get_capture_manager()
+    app.game = status.GameStatus()
     yield
     # 애플리케이션 종료 시 저장된 인스턴스의 release 메서드 호출
     cap.release()
