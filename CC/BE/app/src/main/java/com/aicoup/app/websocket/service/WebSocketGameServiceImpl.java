@@ -2,23 +2,24 @@ package com.aicoup.app.websocket.service;
 
 import com.aicoup.app.domain.entity.game.Game;
 import com.aicoup.app.domain.entity.game.action.Action;
-import com.aicoup.app.domain.entity.game.action.PossibleAction;
 import com.aicoup.app.domain.entity.game.card.CardInfo;
 import com.aicoup.app.domain.entity.game.history.History;
 import com.aicoup.app.domain.entity.game.member.GameMember;
-import com.aicoup.app.domain.game.GameGenerator;
-import com.aicoup.app.domain.game.GameProcessor;
 import com.aicoup.app.domain.redisRepository.GameMemberRepository;
 import com.aicoup.app.domain.redisRepository.GameRepository;
-import com.aicoup.app.domain.redisRepository.HistoryRepository;
 import com.aicoup.app.domain.repository.ActionRepository;
 import com.aicoup.app.domain.repository.CardInfoRepository;
 import com.aicoup.app.domain.repository.PossibleActionRepository;
 import com.aicoup.app.pipeline.aiot.AIoTSocket;
 import com.aicoup.app.pipeline.aiot.dto.MMResponse;
+import com.aicoup.app.pipeline.gpt.service.GPTResponseGetter;
 import com.aicoup.app.websocket.model.dto.GameStateDto;
 import com.aicoup.app.websocket.model.dto.MessageDto;
+import com.aicoup.app.domain.game.GameGenerator;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -33,11 +34,530 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     private final GameRepository gameRepository;
     private final GameMemberRepository gameMemberRepository;
     private final CardInfoRepository cardInfoRepository;
-    private final PossibleActionRepository possibleActionRepository;
     private final ActionRepository actionRepository;
-    private final HistoryRepository historyRepository;
+    private final PossibleActionRepository possibleActionRepository;
     private final AIoTSocket aIoTSocket;
-    private final GameProcessor gameProcessor;
+    private final GPTResponseGetter gptResponseGetter;
+
+    @Autowired
+    private final SimpMessagingTemplate messagingTemplate;
+
+    // 플레이어가 GPT인지 확인하는 메서드
+    private boolean isGPTPlayer(GameMember player) {
+        return player.getName().startsWith("GPT");
+    }
+
+    // MessageDto를 사용하는 플레이어 액션 처리 메서드
+    public GameStateDto performPlayerAction(MessageDto message) {
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+        String gameId = mainMessage.get("cookie");
+        String playerName = message.getWriter();
+        String roomId = message.getRoomId();
+        int actionValue = Integer.parseInt(mainMessage.get("action"));
+        String targetPlayerName = mainMessage.get("targetPlayerName");
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        // 챌린지와 카운터 액션 처리
+        handleChallengeAndCounterAction(game, actionValue);
+
+        // processAction 호출
+        GameStateDto gameState = processAction(game, playerName, actionValue, targetPlayerName);
+
+        return gameState;
+    }
+
+    // GPT의 액션을 수행하는 메서드
+    public GameStateDto performGPTAction(String gameId, GameMember currentPlayer) {
+        String[] actionResult = gptResponseGetter.actionApi(gameId);
+        String action = actionResult[0];
+        String target = actionResult[1];
+
+        int actionValue = convertActionToValue(action);
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        // processAction 호출
+        GameStateDto gameState = processAction(game, currentPlayer.getName(), actionValue, target);
+
+        // 챌린지와 카운터 액션 처리
+        handleChallengeAndCounterAction(game, actionValue);
+
+        return gameState;
+    }
+
+    public enum ActionType {
+        INCOME(1),
+        FOREIGN_AID(2),
+        TAX(3),
+        STEAL(4),
+        ASSASSINATE(5),
+        EXCHANGE(6),
+        COUP(7),
+        CHALLENGE(8),
+        ALLOW(9),
+        BLOCK_DUKE(10),
+        BLOCK_CAPTAIN(11),
+        BLOCK_CONTESSA(12);
+
+        private final int value;
+
+        ActionType(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+
+        public static ActionType fromValue(int value) {
+            for (ActionType type : values()) {
+                if (type.value == value) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Invalid action value: " + value);
+        }
+    }
+
+    @Override
+    public Map<String, String> validate(MessageDto message) {
+        Map<String, String> returnMessage = new HashMap<>();
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+
+        if (mainMessage.get("cookie") == null || !gameRepository.existsById(mainMessage.get("cookie"))) {
+            returnMessage.put("result", "fail");
+            returnMessage.put("message", "유효하지 않은 게임입니다.");
+            return returnMessage;
+        }
+
+        // AIoT 검증 로직
+        Game game = gameRepository.findById(mainMessage.get("cookie")).get();
+        List<GameMember> members = game.getMemberIds().stream()
+                .map(gameMemberRepository::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+
+        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer();
+        for (int i = 0; i < members.size(); i++) {
+            if (!validateMemberCards(members.get(i), dataFromAIoTServer.get(i))) {
+                returnMessage.put("result", "fail");
+                returnMessage.put("message", members.get(i).getName() + "님의 카드 상태가 서버와 다릅니다.");
+                return returnMessage;
+            }
+        }
+
+        returnMessage.put("result", "ok");
+        returnMessage.put("message", "");
+        return returnMessage;
+    }
+
+    private boolean validateMemberCards(GameMember member, MMResponse aiotData) {
+        return (member.getLeftCard() > 0 && Objects.equals(member.getLeftCard(), aiotData.getLeft_card())) ||
+                (member.getLeftCard() < 0 && aiotData.getLeft_card() == 0) &&
+                        (member.getRightCard() > 0 && Objects.equals(member.getRightCard(), aiotData.getRight_card())) ||
+                (member.getRightCard() < 0 && aiotData.getRight_card() == 0);
+    }
+
+    private GameStateDto processAction(Game game, String playerName, int actionValue, String targetPlayerName) {
+        GameMember currentPlayer = findPlayerByName(game, playerName);
+
+        // 액션 수행
+        performAction(game, currentPlayer, actionValue, targetPlayerName);
+
+        // 턴 종료 및 다음 플레이어로 이동
+        game.setWhoseTurn((game.getWhoseTurn() + 1) % game.getMemberIds().size());
+        game.setTurn(game.getTurn() + 1);
+
+        gameRepository.save(game);
+
+        return buildGameState(game.getId());
+    }
+
+    // 챌린지와 카운터 액션을 처리하는 메서드
+    private void handleChallengeAndCounterAction(Game game, int actionValue) {
+        // 챌린지 처리
+        if (shouldPerformChallenge(actionValue)) {
+            boolean playerChallenged = offerPlayerChallenge(game, actionValue);
+            if (!playerChallenged) {
+                handleGPTChallenge(game, actionValue);
+            }
+        }
+
+        // 카운터 액션 처리
+        if (shouldPerformCounterAction(actionValue)) {
+            boolean playerCountered = offerPlayerCounterAction(game, actionValue);
+            if (!playerCountered) {
+                handleGPTCounterAction(game, actionValue);
+            }
+        }
+    }
+
+    private boolean offerPlayerChallenge(Game game, int actionValue) {
+        game.setAwaitingChallenge(true);
+        game.setAwaitingChallengeActionValue(actionValue);
+        gameRepository.save(game);
+        checkAndNotifyChallenge(game, "1");
+        return false;
+    }
+
+    private boolean offerPlayerCounterAction(Game game, int actionValue) {
+        game.setAwaitingCounterAction(true);
+        game.setAwaitingCounterActionValue(actionValue);
+        gameRepository.save(game);
+        checkAndNotifyChallenge(game, "1");
+        return false;
+    }
+
+    public void checkAndNotifyChallenge(Game game, String roomId) {
+        if (game.isAwaitingChallenge()) {
+            MessageDto challengeNotification = new MessageDto(roomId, "server");
+            challengeNotification.setState("awaitingChallenge");
+            challengeNotification.setMainMessage(Map.of(
+                    "actionValue", game.getAwaitingChallengeActionValue(),
+                    "message", "Challenge opportunity available"
+            ));
+            messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, challengeNotification);
+        }
+    }
+
+    public void checkAndNotifyCounterAction(Game game, String roomId) {
+        if (game.isAwaitingCounterAction()) {
+            MessageDto counterActionNotification = new MessageDto(roomId, "server");
+            counterActionNotification.setState("awaitingCounterAction");
+            counterActionNotification.setMainMessage(Map.of(
+                    "actionValue", game.getAwaitingCounterActionValue(),
+                    "message", "Counter action opportunity available"
+            ));
+            messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, counterActionNotification);
+        }
+    }
+    private void handleGPTChallenge(Game game, int actionValue) {
+        String[] challengeResult = gptResponseGetter.challengeApi(game.getId());
+        String challenger = challengeResult[0];
+        if (!"none".equals(challenger)) {
+            challenge(game.getId(), challenger, actionValue);
+        }
+    }
+
+    private void handleGPTCounterAction(Game game, int actionValue) {
+        String[] counterActionResult = gptResponseGetter.counterActionApi(game.getId());
+        String counterActioner = counterActionResult[0];
+        String counterAction = counterActionResult[1];
+        if (!"none".equals(counterActioner)) {
+            int counterActionValue = convertActionToValue(counterAction);
+            counterAction(game.getId(), counterActioner, counterActionValue);
+
+            boolean playerChallengedCounter = offerPlayerChallenge(game, counterActionValue);
+            if (!playerChallengedCounter) {
+                handleGPTChallengeAgainstCounter(game, counterActionValue);
+            }
+        }
+    }
+
+    private void handleGPTChallengeAgainstCounter(Game game, int counterActionValue) {
+        String[] counterActionChallengeResult = gptResponseGetter.counterActionChallengeApi(game.getId());
+        String counterActionChallenger = counterActionChallengeResult[0];
+        if (!"none".equals(counterActionChallenger)) {
+            challenge(game.getId(), counterActionChallenger, counterActionValue);
+        }
+    }
+
+    public GameStateDto handlePlayerChallenge(MessageDto message) {
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+        String gameId = mainMessage.get("cookie");
+        String challengerName = message.getWriter();
+        boolean isChallenge = Boolean.parseBoolean(mainMessage.get("isChallenge"));
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        if (!game.isAwaitingChallenge()) {
+            throw new IllegalStateException("Challenge is not allowed at this time");
+        }
+
+        GameStateDto gameState;
+        if (isChallenge) {
+            int actionValue = game.getAwaitingChallengeActionValue();
+            gameState = challenge(gameId, challengerName, actionValue);
+        } else {
+            gameState = buildGameState(gameId);
+        }
+
+        game.setAwaitingChallenge(false);
+        game.setAwaitingChallengeActionValue(null);
+        gameRepository.save(game);
+
+        return gameState;
+    }
+
+    public GameStateDto handlePlayerCounterAction(MessageDto message) {
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+        String gameId = mainMessage.get("cookie");
+        String counterActorName = message.getWriter();
+        boolean isCounterAction = Boolean.parseBoolean(mainMessage.get("isCounterAction"));
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        if (!game.isAwaitingCounterAction()) {
+            throw new IllegalStateException("Counter action is not allowed at this time");
+        }
+
+        GameStateDto gameState;
+        if (isCounterAction) {
+            int actionValue = Integer.parseInt(mainMessage.get("action"));
+            gameState = counterAction(gameId, counterActorName, actionValue);
+
+            // 카운터 액션에 대한 챌린지 기회 제공
+            offerPlayerChallenge(game, actionValue);
+        } else {
+            gameState = buildGameState(gameId);
+        }
+
+        game.setAwaitingCounterAction(false);
+        game.setAwaitingCounterActionValue(null);
+        gameRepository.save(game);
+
+        return gameState;
+    }
+
+    // 액션 문자열을 숫자로 변환하는 메서드
+    private int convertActionToValue(String action) {
+        switch (action.toLowerCase()) {
+            case "income": return 1;
+            case "foreign_aid": return 2;
+            case "tax": return 3;
+            case "steal": return 4;
+            case "assassinate": return 5;
+            case "exchange": return 6;
+            case "coup": return 7;
+            default: throw new IllegalArgumentException("Unknown action: " + action);
+        }
+    }
+
+    // 챌린지를 수행해야 하는지 확인하는 메서드
+    private boolean shouldPerformChallenge(int actionValue) {
+        return actionValue == 3 || actionValue == 4 || actionValue == 5 || actionValue == 6;
+    }
+
+    // 카운터 액션을 수행해야 하는지 확인하는 메서드
+    private boolean shouldPerformCounterAction(int actionValue) {
+        return actionValue == 2 || actionValue == 4 || actionValue == 5;
+    }
+
+    public void validateAction(String gameId, String playerName, String actionName) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+        GameMember player = findPlayerByName(game, playerName);
+        Action action = actionRepository.findByEnglishName(actionName)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid action: " + actionName));
+
+        int requiredCoins = getRequiredCoinsForAction(actionName);
+        if (player.getCoin() < requiredCoins) {
+            throw new IllegalArgumentException("Not enough coins to perform the action.");
+        }
+
+        if (player.getCoin() >= 10 && !actionName.equals("Coup")) {
+            throw new IllegalArgumentException("Player must perform Coup when having 10 or more coins.");
+        }
+    }
+
+    private int getRequiredCoinsForAction(String actionName) {
+        switch (actionName) {
+            case "Coup":
+                return 7;
+            case "Assassinate":
+                return 3;
+            default:
+                return 0;
+        }
+    }
+
+    private void performAction(Game game, GameMember player, int actionValue, String targetPlayerName) {
+        ActionType actionType = ActionType.fromValue(actionValue);
+        Action action = actionRepository.findByEnglishName(actionType.name())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid action: " + actionType.name()));
+
+        GameMember target = null;
+        if (targetPlayerName != null && !targetPlayerName.isEmpty()) {
+            target = findPlayerByName(game, targetPlayerName);
+        }
+
+        switch (actionType) {
+            case INCOME:
+                player.setCoin(player.getCoin() + 1);
+                break;
+            case FOREIGN_AID:
+                player.setCoin(player.getCoin() + 2);
+                break;
+            case COUP:
+                player.setCoin(player.getCoin() - 7);
+                if (target != null) {
+                    loseInfluence(target);
+                }
+                break;
+            case TAX:
+                player.setCoin(player.getCoin() + 3);
+                break;
+            case ASSASSINATE:
+                player.setCoin(player.getCoin() - 3);
+                if (target != null) {
+                    loseInfluence(target);
+                }
+                break;
+            case STEAL:
+                if (target != null) {
+                    int stolenCoins = Math.min(2, target.getCoin());
+                    target.setCoin(target.getCoin() - stolenCoins);
+                    player.setCoin(player.getCoin() + stolenCoins);
+                }
+                break;
+            case EXCHANGE:
+                // Exchange 로직 구현
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid action: " + actionType.name());
+        }
+
+        gameMemberRepository.save(player);
+        if (target != null) {
+            gameMemberRepository.save(target);
+        }
+        recordHistory(game.getId(), action.getId(), player.getName(), targetPlayerName);
+    }
+
+    private void loseInfluence(GameMember target) {
+        if (target.getLeftCard() != null && target.getLeftCard() > 0) {
+            target.setLeftCard(-target.getLeftCard());
+        } else if (target.getRightCard() != null && target.getRightCard() > 0) {
+            target.setRightCard(-target.getRightCard());
+        }
+
+        if ((target.getLeftCard() == null || target.getLeftCard() < 0) &&
+                (target.getRightCard() == null || target.getRightCard() < 0)) {
+            target.setPlayer(false);
+        }
+    }
+
+    private GameMember findPlayerByName(Game game, String playerName) {
+        return game.getMemberIds().stream()
+                .map(id -> gameMemberRepository.findById(id).orElseThrow())
+                .filter(member -> member.getName().equals(playerName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerName));
+    }
+
+    @Override
+    public GameStateDto getGameState(String gameId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found with ID: " + gameId));
+
+        List<GameMember> members = game.getMemberIds().stream()
+                .map(id -> gameMemberRepository.findById(id).orElseThrow())
+                .collect(Collectors.toList());
+
+        Map<Integer, CardInfo> cardInfoMap = cardInfoRepository.findAll().stream()
+                .collect(Collectors.toMap(CardInfo::getId, Function.identity()));
+
+        members.forEach(member -> {
+            if (member.getLeftCard() != null) {
+                CardInfo leftCardInfo = cardInfoMap.get(Math.abs(member.getLeftCard()));
+                member.setLeftCardInfo(leftCardInfo);
+            }
+            if (member.getRightCard() != null) {
+                CardInfo rightCardInfo = cardInfoMap.get(Math.abs(member.getRightCard()));
+                member.setRightCardInfo(rightCardInfo);
+            }
+        });
+
+        Map<String, Integer> possibleActions = game.getActionContext().isEmpty()
+                ? getDefaultActions()
+                : possibleActionRepository.findCanActionNamesAndIdsByActionId(game.getActionContext().getLast().getActionId());
+
+        return getGameStateDto(game, members, possibleActions);
+    }
+
+    private Map<String, Integer> getDefaultActions() {
+        Map<String, Integer> defaultActions = new HashMap<>();
+        defaultActions.put("Income", 1);
+        defaultActions.put("ForeignAid", 2);
+        defaultActions.put("Tax", 3);
+        defaultActions.put("Steal", 4);
+        defaultActions.put("Assassinate", 5);
+        defaultActions.put("Exchange", 6);
+        defaultActions.put("Coup", 7);
+        return defaultActions;
+    }
+
+    private GameStateDto getGameStateDto(Game game, List<GameMember> members, Map<String, Integer> possibleActions) {
+        GameStateDto gameStateDto = new GameStateDto();
+        gameStateDto.setMessage(game.getId());
+        gameStateDto.setTurn(game.getTurn());
+        gameStateDto.setMembers(members);
+        gameStateDto.setHistory(game.getHistory());
+        gameStateDto.setWhoseTurn(game.getWhoseTurn());
+        gameStateDto.setCanAction(possibleActions);
+        gameStateDto.setLastContext(game.getActionContext().isEmpty() ? null : game.getActionContext().getLast());
+        gameStateDto.setDeck(game.getDeck());
+        return gameStateDto;
+    }
+
+    @Override
+    public void recordHistory(String gameId, Integer actionNumber, String playerTrying, String playerTried) {
+        History history = new History(UUID.randomUUID().toString(), actionNumber, playerTrying, playerTried);
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found with ID: " + gameId));
+
+        history.setTurn(game.getTurn());
+        game.addHistory(history);
+        gameRepository.save(game);
+    }
+
+    public GameStateDto buildGameState(String gameId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found with ID: " + gameId));
+
+        GameStateDto gameStateDto = getGameState(gameId);
+        gameStateDto.setMessage(gameId);
+        gameStateDto.setAwaitingChallenge(game.isAwaitingChallenge());
+        gameStateDto.setAwaitingCounterAction(game.isAwaitingCounterAction());
+        gameStateDto.setAwaitingChallengeActionValue(game.getAwaitingChallengeActionValue());
+        gameStateDto.setAwaitingCounterActionValue(game.getAwaitingCounterActionValue());
+
+        return gameStateDto;
+    }
+
+
+    @Override
+    public String nextTurn(MessageDto messageDto) {
+        Map<String, String> mainMessage = (Map<String, String>) messageDto.getMainMessage();
+
+        if (mainMessage.get("cookie") != null) {
+            Optional<Game> existGame = gameRepository.findById(mainMessage.get("cookie"));
+            if (existGame.isPresent()) {
+                Game game = existGame.get();
+                GameMember currentPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
+
+                if (isGPTPlayer(currentPlayer)) {
+                    performGPTAction(game.getId(), currentPlayer);
+                }
+
+                return "gameState";
+            }
+        }
+
+        return "gameState";
+    }
+
+    @Override
+    public String myChoice(MessageDto messageDto) {
+        return "";
+    }
 
     public boolean gameCheck(MessageDto messageDto) {
         Map<String, String> mainMessage = (Map<String, String>) messageDto.getMainMessage();
@@ -67,154 +587,69 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return gameId;
     }
 
-    @Override
-    public Map<String, String> validate(MessageDto messageDto) {
-        Map<String, String> returnMessage = new HashMap<>();
-        Map<String, String> mainMessage = (Map<String, String>) messageDto.getMainMessage();
+    public GameStateDto challenge(String gameId, String challengerName, Integer actionValue) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+        GameMember challenger = findPlayerByName(game, challengerName);
 
-        if (mainMessage.get("cookie") != null) {
-            Optional<Game> existGame = gameRepository.findById(mainMessage.get("cookie"));
-            if (existGame.isPresent()) {
-                Game game = existGame.get();
-                List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer();
-                List<GameMember> members = game.getMemberIds().stream()
-                        .map(gameMemberRepository::findById)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .toList();
+        // 마지막 액션 가져오기
+        History lastAction = game.getActionContext().getLast();
+        ActionType lastActionType = ActionType.fromValue(lastAction.getActionId());
+        GameMember target = findPlayerByName(game, lastAction.getPlayerTrying());
 
-                for (int i = 0; i < members.size(); i++) {
-                    // 왼쪽 카드 비교
-                    if (
-                        // 왼쪽 카드 숫자 > 0 (오픈되지 않은 상태) && 왼쪽 카드 숫자 != 현실 왼쪽 카드 숫자
-                            (members.get(i).getLeftCard() > 0 && Objects.equals(members.get(i).getLeftCard(), dataFromAIoTServer.get(i).getLeft_card())) ||
-                                    // 왼쪽 카드 오픈된 상태 && 현실 왼쪽 카드 뒷면 안 보일 경우
-                                    (members.get(i).getLeftCard() < 0 && dataFromAIoTServer.get(i).getLeft_card() != 0)
-                    ) {
-                        returnMessage.put("result", "fail");
-                        returnMessage.put("message", members.get(i).getName() + "님의 왼쪽 카드 상태가 서버와 다릅니다.");
-                        break;
-                    }
+        // 도전 성공 여부 확인
+        boolean challengeSuccess = !target.hasCard(lastActionType.getValue());
 
-                    // 오른쪽 카드 비교
-                    if (
-                        // 오른쪽 카드 숫자 > 0 (오픈되지 않은 상태) && 오른쪽 카드 숫자 != 현실 오른쪽 카드 숫자
-                            (members.get(i).getRightCard() > 0 && Objects.equals(members.get(i).getRightCard(), dataFromAIoTServer.get(i).getRight_card())) ||
-                                    // 오른쪽 카드 오픈된 상태 && 현실 오른쪽 카드 뒷면 안 보일 경우
-                                    (members.get(i).getRightCard() < 0 && dataFromAIoTServer.get(i).getRight_card() != 0)
-                    ) {
-                        returnMessage.put("result", "fail");
-                        returnMessage.put("message", members.get(i).getName() + "님의 오른쪽 카드 상태가 서버와 다릅니다.");
-                        break;
-                    }
-                }
-            }
-        }
-
-        returnMessage.put("result", "ok");
-        returnMessage.put("message", "");
-
-        return returnMessage;
-    }
-
-    @Override
-    public String nextTurn(MessageDto messageDto) {
-        Map<String, String> mainMessage = (Map<String, String>) messageDto.getMainMessage();
-
-        if (mainMessage.get("cookie") != null) {
-            Optional<Game> existGame = gameRepository.findById(mainMessage.get("cookie"));
-            if (existGame.isPresent()) {
-                Game game = existGame.get();
-                return gameProcessor.run(game);
-            }
-        }
-
-        return "gameState";
-    }
-
-    @Override
-    public String myChoice(MessageDto messageDto) {
-        return "";
-    }
-
-    @Override
-    public void recordHistory(String gameId, Integer actionNumber, String playerTrying, String playerTried) {
-        History history = new History(UUID.randomUUID().toString(), actionNumber, playerTrying, playerTried);
-
-        Optional<Game> gameOptional = gameRepository.findById(gameId);
-        if (gameOptional.isPresent()) {
-            Game game = gameOptional.get();
-            history.setTurn(game.getTurn());
-            game.addHistory(history);
-            gameRepository.save(game);
+        if (challengeSuccess) {
+            // 도전 성공: 타겟 플레이어가 영향력 상실
+            loseInfluence(target);
         } else {
-            throw new RuntimeException("Game not found with ID: " + gameId);
+            // 도전 실패: 도전자가 영향력 상실
+            loseInfluence(challenger);
+            // 타겟 플레이어는 새 카드를 받음
+            giveNewCard(target);
         }
+
+        // 게임 상태 업데이트
+        game.addHistory(new History(UUID.randomUUID().toString(), ActionType.CHALLENGE.getValue(), challengerName, target.getName()));
+        gameRepository.save(game);
+
+        return buildGameState(gameId);
     }
 
-    public GameStateDto buildGameState(String message) {
-        GameStateDto gameStateDto = getGameState(message);
-        gameStateDto.setMessage(message);
-        return gameStateDto;
-    }
+    public GameStateDto counterAction(String gameId, String counterActorName, Integer actionValue) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+        GameMember counterActor = findPlayerByName(game, counterActorName);
 
-    public GameStateDto getGameState(String gameId) {
-        Optional<Game> gameOptional = gameRepository.findById(gameId);
-        if (gameOptional.isPresent()) {
-            Game game = gameOptional.get();
-            List<GameMember> members = game.getMemberIds().stream()
-                    .map(gameMemberRepository::findById)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .collect(Collectors.toList());
+        // 마지막 액션 가져오기
+        History lastAction = game.getActionContext().getLast();
+        ActionType originalActionType = ActionType.fromValue(lastAction.getActionId());
+        ActionType counterActionType = ActionType.fromValue(actionValue);
 
-            Map<Integer, CardInfo> cardInfoMap = cardInfoRepository.findAll().stream()
-                    .collect(Collectors.toMap(CardInfo::getId, Function.identity()));
-
-            members.forEach(member -> {
-                if (member.getLeftCard() != null) {
-                    CardInfo leftCardInfo = cardInfoMap.get(member.getLeftCard());
-                    member.setLeftCardInfo(leftCardInfo);
-                }
-                if (member.getRightCard() != null) {
-                    CardInfo rightCardInfo = cardInfoMap.get(member.getRightCard());
-                    member.setRightCardInfo(rightCardInfo);
-                }
-            });
-
-            // 가능한 액션 가져오기
-            Map<String, Integer> result = null;
-            if (game.getActionContext().isEmpty()) {
-                result = new HashMap<>();
-                result.put("수입", 1);
-                result.put("해외원조", 2);
-                result.put("징세", 3);
-                result.put("강탈", 4);
-                result.put("암살", 5);
-                result.put("교환", 6);
-                result.put("쿠", 7);
-            } else {
-                System.out.println("game.getActionContext().getLast().getActionId() = " + game.getActionContext().getLast().getActionId());
-                result = possibleActionRepository.findCanActionNamesAndIdsByActionId(game.getActionContext().getLast().getActionId());
-            }
-
-            GameStateDto gameStateDto = getGameStateDto(game, members, result);
-
-            return gameStateDto;
-        } else {
-            throw new RuntimeException("Game not found with ID: " + gameId);
+        // 대응 가능한 액션인지 확인
+        if (!isCounterActionValid(originalActionType, counterActionType)) {
+            throw new IllegalArgumentException("Invalid counter action");
         }
+
+        // 대응 액션 추가
+        game.addHistory(new History(UUID.randomUUID().toString(), actionValue, counterActorName, lastAction.getPlayerTrying()));
+        gameRepository.save(game);
+
+        return buildGameState(gameId);
     }
 
-    private static GameStateDto getGameStateDto(Game game, List<GameMember> members, Map<String, Integer> result) {
-        GameStateDto gameStateDto = new GameStateDto();
-        gameStateDto.setTurn(game.getTurn());
-        gameStateDto.setMembers(members);
-        gameStateDto.setHistory(game.getHistory());
-        gameStateDto.setWhoseTurn(game.getWhoseTurn());
-        gameStateDto.setCanAction(result);
-        gameStateDto.setLastContext(game.getActionContext().isEmpty() ? null : game.getActionContext().getLast());
-        gameStateDto.setDeck(game.getDeck());
-        return gameStateDto;
+    private boolean isCounterActionValid(ActionType originalAction, ActionType counterAction) {
+        Map<ActionType, List<ActionType>> validCounterActions = Map.of(
+                ActionType.FOREIGN_AID, List.of(ActionType.BLOCK_DUKE),
+                ActionType.ASSASSINATE, List.of(ActionType.BLOCK_CONTESSA),
+                ActionType.STEAL, List.of(ActionType.BLOCK_CAPTAIN, ActionType.BLOCK_DUKE)
+        );
+
+        return validCounterActions.getOrDefault(originalAction, List.of()).contains(counterAction);
+    }
+
+    private void giveNewCard(GameMember player) {
+
     }
 }
