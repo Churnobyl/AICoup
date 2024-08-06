@@ -1,7 +1,7 @@
-$dark_brown: #060301;
+$dark_brown: #5a2d0f;
 $light_brown: #dab785;
 
-button {
+.button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -30,6 +30,7 @@ button {
   }
 
   background: $dark_brown;
+  border: $dark_brown solid 1px;
   &:hover {
     background: $light_brown;
   }
