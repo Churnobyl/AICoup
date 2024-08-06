@@ -24,9 +24,13 @@ async def game_start(player_num: int):
 async def get_status_raw():
     return JSONResponse(main.app.game.__dict__)
 
-
+# situation format...
+# {
+#     'name': str,
+#     'player_id': Optional[int]
+# }
 @router.post('/game-status')
-async def get_game_status(situate: Optional[dict]):
+async def get_game_status(situation: Optional[dict]):
     # TODO: return error message
     if not main.app.game.running:
         return
@@ -34,7 +38,7 @@ async def get_game_status(situate: Optional[dict]):
     for tried in range(TRIAL):
         print("inference try... ", tried)
         results = await convert_to_dict(inference("dir"))
-        result = tracePlayers(results)
+        result = tracePlayers(results, situation)
         if result is not None:
             main.app.game.playersCard = result[0]
             main.app.game.deckCard = result[1]
