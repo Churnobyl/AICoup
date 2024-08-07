@@ -1,11 +1,6 @@
 import * as StompJs from "@stomp/stompjs";
 
-const brokerURL =
-  "ws://" +
-  import.meta.env.VITE_BACKEND_SERVER +
-  ":" +
-  import.meta.env.VITE_BACKEND_PORT +
-  "/api/game";
+const brokerURL = "ws://" + import.meta.env.VITE_BACKEND_SERVER + "/api/game";
 
 export const clientData: StompJs.Client = new StompJs.Client({
   brokerURL: brokerURL,
