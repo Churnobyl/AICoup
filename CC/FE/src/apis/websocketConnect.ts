@@ -5,7 +5,7 @@ const brokerURL =
   import.meta.env.VITE_BACKEND_SERVER +
   ":" +
   import.meta.env.VITE_BACKEND_PORT +
-  "/game";
+  "/api/game";
 
 export const clientData: StompJs.Client = new StompJs.Client({
   brokerURL: brokerURL,
