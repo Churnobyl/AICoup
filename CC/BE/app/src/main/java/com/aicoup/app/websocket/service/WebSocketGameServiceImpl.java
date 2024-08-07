@@ -521,29 +521,55 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             }
         });
 
-        Map<String, Integer> possibleActions = game.getActionContext().isEmpty()
-                ? getDefaultActions()
-                : possibleActionRepository.findCanActionNamesAndIdsByActionId(game.getActionContext().getLast().getActionId());
+        Map<String, Integer> possibleActions = getPossibleActions(game);
 
         return getGameStateDto(game, members, possibleActions);
     }
 
-    private Map<String, Integer> getDefaultActions() {
-        Map<String, Integer> defaultActions = new HashMap<>();
-        defaultActions.put("income", 1);
-        defaultActions.put("foreign_aid", 2);
-        defaultActions.put("tax", 3);
-        defaultActions.put("steal", 4);
-        defaultActions.put("assassinate", 5);
-        defaultActions.put("exchange", 6);
-        defaultActions.put("coup", 7);
-        defaultActions.put("challenge", 8);
-        defaultActions.put("permit", 9);
-        defaultActions.put("block_duke", 10);
-        defaultActions.put("block_captain", 11);
-        defaultActions.put("block_ambassador", 12);
-        defaultActions.put("block_contessa", 13);
-        return defaultActions;
+    private Map<String, Integer> getPossibleActions(Game game) {
+        if (game.isAwaitingChallenge()) {
+            return getChallengeActions();
+        } else if (game.isAwaitingCounterAction()) {
+            return getCounterActions(game.getCurrentAction());
+        } else {
+            return getPlayerTurnActions(game);
+        }
+    }
+
+    private Map<String, Integer> getPlayerTurnActions(Game game) {
+        Map<String, Integer> actions = new HashMap<>();
+        actions.put("income", 1);
+        actions.put("foreign_aid", 2);
+        actions.put("tax", 3);
+        actions.put("steal", 4);
+        actions.put("assassinate", 5);
+        actions.put("exchange", 6);
+        actions.put("coup", 7);
+        return actions;
+    }
+
+    private Map<String, Integer> getChallengeActions() {
+        Map<String, Integer> actions = new HashMap<>();
+        actions.put("challenge", 8);
+        actions.put("permit", 9);
+        return actions;
+    }
+
+    private Map<String, Integer> getCounterActions(int currentAction) {
+        Map<String, Integer> actions = new HashMap<>();
+        switch (currentAction) {
+            case 2: // foreign_aid
+                actions.put("block_duke", 10);
+                break;
+            case 4: // steal
+                actions.put("block_captain", 11);
+                actions.put("block_ambassador", 12);
+                break;
+            case 5: // assassinate
+                actions.put("block_contessa", 13);
+                break;
+        }
+        return actions;
     }
 
     private GameStateDto getGameStateDto(Game game, List<GameMember> members, Map<String, Integer> possibleActions) {
@@ -697,7 +723,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 ActionType.ASSASSINATE, List.of(ActionType.BLOCK_CONTESSA),
                 ActionType.STEAL, List.of(ActionType.BLOCK_CAPTAIN, ActionType.BLOCK_DUKE)
         );
-
         return validCounterActions.getOrDefault(originalAction, List.of()).contains(counterAction);
     }
 
