@@ -105,7 +105,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return player.getName().startsWith("GPT");
     }
 
-    public GameStateDto performPlayerAction(MessageDto message) {
+    public void performPlayerAction(MessageDto message) {
         Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
         String gameId = mainMessage.get("cookie");
         String playerName = message.getWriter();
@@ -116,12 +116,14 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
 
         String actionName = ActionType.findActionName(actionValue);
-        validateAction(gameId, playerName, actionName);
-
-        return processAction(game, playerName, actionValue, targetPlayerName);
+        if(validateAction(gameId, playerName, actionName)){
+            recordHistory(game.getId(), actionValue, "0", targetPlayerName);
+            handleGPTChallenge(game, actionValue);
+            handleGPTCounterAction(game, actionValue);
+        }
     }
 
-    public GameStateDto performGPTAction(String gameId, GameMember currentPlayer) {
+    public void performGPTAction(String gameId, GameMember currentPlayer) {
         String[] actionResult = gptResponseGetter.actionApi(gameId);
         String action = actionResult[0];
         String target = actionResult[1];
@@ -131,10 +133,18 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
 
-        return processAction(game, currentPlayer.getName(), actionValue, target);
+        recordHistory(game.getId(), actionValue, currentPlayer.getName(), target);
     }
 
-    private GameStateDto processAction(Game game, String playerName, int actionValue, String targetPlayerName) {
+    public GameStateDto processAction(MessageDto message) {
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+        String gameId = mainMessage.get("cookie");
+        String playerName = message.getWriter();
+        int actionValue = Integer.parseInt(mainMessage.get("action"));
+        String targetPlayerName = mainMessage.get("targetPlayerName");
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
         GameMember player = findPlayerByName(game, playerName);
 
         // 1단계: 액션 유효성 검사 및 초기 처리
@@ -143,12 +153,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         game.setCurrentPlayerName(playerName);
         game.setCurrentTargetName(targetPlayerName);
         gameRepository.save(game);
-
-        // 2단계: 챌린지 기회 제공
-        if (shouldPerformChallenge(actionValue)) {
-            offerPlayerChallenge(game, actionValue);
-            return buildGameState(game.getId());
-        }
 
         // 3단계: 액션 완료 (챌린지가 필요 없는 경우)
         return completePlayerAction(game, player.getName(), actionValue, targetPlayerName);
@@ -208,6 +212,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         game.setWhoseTurn((game.getWhoseTurn() + 1) % game.getMemberIds().size());
         game.setTurn(game.getTurn() + 1);
 
+        // 히스토리에 기록
+        recordHistory(game.getId(), actionValue, "0", "0");
         gameRepository.save(game);
 
         return buildGameState(game.getId());
@@ -230,6 +236,26 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 handleGPTCounterAction(game, actionValue);
             }
         }
+    }
+
+    @Override
+    public String myChoice(MessageDto message) {
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+        String gameId = mainMessage.get("cookie");
+        String playerName = message.getWriter();
+        int actionValue = Integer.parseInt(mainMessage.get("action"));
+        String targetPlayerName = mainMessage.get("targetPlayerName");
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        if(actionValue==10) {
+            handlePlayerChallenge(message);
+        } else {
+            handlePlayerCounterAction(message);
+        }
+
+        return "";
     }
 
     private boolean offerPlayerChallenge(Game game, int actionValue) {
@@ -256,6 +282,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                     "actionValue", game.getAwaitingChallengeActionValue(),
                     "message", "Challenge opportunity available"
             ));
+            recordHistory(game.getId(), 1, "0", "0");
             messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, challengeNotification);
         }
     }
@@ -271,6 +298,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, counterActionNotification);
         }
     }
+
     private void handleGPTChallenge(Game game, int actionValue) {
         String[] challengeResult = gptResponseGetter.challengeApi(game.getId());
         String challenger = challengeResult[0];
@@ -395,7 +423,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return actionValue == 2 || actionValue == 4 || actionValue == 5;
     }
 
-    public void validateAction(String gameId, String playerName, String actionName) {
+    public boolean validateAction(String gameId, String playerName, String actionName) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
         GameMember player = findPlayerByName(game, playerName);
@@ -404,12 +432,15 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
         int requiredCoins = getRequiredCoinsForAction(actionName);
         if (player.getCoin() < requiredCoins) {
-            throw new IllegalArgumentException("Not enough coins to perform the action.");
+//            throw new IllegalArgumentException("Not enough coins to perform the action.");
+            return false;
         }
 
         if (player.getCoin() >= 10 && !actionName.equals("Coup")) {
-            throw new IllegalArgumentException("Player must perform Coup when having 10 or more coins.");
+//            throw new IllegalArgumentException("Player must perform Coup when having 10 or more coins.");
+            return false;
         }
+        return true;
     }
 
     private int getRequiredCoinsForAction(String actionName) {
@@ -611,11 +642,9 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return gameStateDto;
     }
 
-
     @Override
     public String nextTurn(MessageDto messageDto) {
         Map<String, String> mainMessage = (Map<String, String>) messageDto.getMainMessage();
-
         if (mainMessage.get("cookie") != null) {
             Optional<Game> existGame = gameRepository.findById(mainMessage.get("cookie"));
             if (existGame.isPresent()) {
@@ -625,16 +654,14 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
                 if (isGPTPlayer(currentPlayer)) {
                     performGPTAction(game.getId(), currentPlayer);
+                    return "gptAction";
+                } else {
+                    recordHistory(game.getId(), 18, "0", "0");
+                    return "action";
                 }
-                return "gameState";
             }
         }
-        return "action";
-    }
-
-    @Override
-    public String myChoice(MessageDto messageDto) {
-        return "";
+        return "gameState";
     }
 
     public boolean gameCheck(MessageDto messageDto) {
