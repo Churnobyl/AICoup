@@ -1,3 +1,7 @@
+# dependency management
+package-lock.json
+yarn.lock
+
 # For Security
 .env
 
