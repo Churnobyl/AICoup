@@ -1,8 +1,8 @@
 import Modal from "react-modal";
 import "./ModalComponent.scss";
-import Button from "@/components/ui/button/button";
+import Button from "@/components/ui/button/Button";
 
-Modal.setAppElement("#root"); // Make sure to bind modal to your appElement
+Modal.setAppElement("#root");
 
 type ModalProps = {
   isOpen: boolean;
