@@ -489,12 +489,13 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
     }
 
-    private GameMember findPlayerByName(Game game, String playerName) {
+    private GameMember findPlayerByName(Game game, String playerId) {
+        System.out.println("playerId: " + playerId);
         return game.getMemberIds().stream()
                 .map(id -> gameMemberRepository.findById(id).orElseThrow())
-                .filter(member -> member.getName().equals(playerName))
+                .filter(member -> member.getId().equals(playerId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerName));
+                .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
     }
 
     @Override
@@ -529,13 +530,19 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     private Map<String, Integer> getDefaultActions() {
         Map<String, Integer> defaultActions = new HashMap<>();
-        defaultActions.put("Income", 1);
-        defaultActions.put("ForeignAid", 2);
-        defaultActions.put("Tax", 3);
-        defaultActions.put("Steal", 4);
-        defaultActions.put("Assassinate", 5);
-        defaultActions.put("Exchange", 6);
-        defaultActions.put("Coup", 7);
+        defaultActions.put("income", 1);
+        defaultActions.put("foreign_aid", 2);
+        defaultActions.put("tax", 3);
+        defaultActions.put("steal", 4);
+        defaultActions.put("assassinate", 5);
+        defaultActions.put("exchange", 6);
+        defaultActions.put("coup", 7);
+        defaultActions.put("challenge", 8);
+        defaultActions.put("permit", 9);
+        defaultActions.put("block_duke", 10);
+        defaultActions.put("block_captain", 11);
+        defaultActions.put("block_ambassador", 12);
+        defaultActions.put("block_contessa", 13);
         return defaultActions;
     }
 
@@ -587,8 +594,9 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             Optional<Game> existGame = gameRepository.findById(mainMessage.get("cookie"));
             if (existGame.isPresent()) {
                 Game game = existGame.get();
+                System.out.println("game: "+game);
                 GameMember currentPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
-
+                game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
                 if (isGPTPlayer(currentPlayer)) {
                     performGPTAction(game.getId(), currentPlayer);
                 }

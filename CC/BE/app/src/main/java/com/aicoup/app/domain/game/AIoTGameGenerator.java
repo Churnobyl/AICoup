@@ -40,7 +40,8 @@ public class AIoTGameGenerator implements GameGenerator {
         Random random = new Random();
         
         // 랜덤으로 플레이어 순서 세팅
-        newGame.setWhoseTurn(random.nextInt(participants));
+//        newGame.setWhoseTurn(random.nextInt(participants));
+        newGame.setWhoseTurn(0);
 
         GPTPlayerCreate(participantList, participants);
 

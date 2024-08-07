@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.index.Indexed;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -70,5 +71,27 @@ public class Game extends MutableBaseEntity {
      */
     public void addHistory(History oneHistory) {
         history.add(oneHistory);
+    }
+
+    @Override
+    public String toString() {
+        return "Game{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", turn=" + turn +
+                ", whoseTurn=" + whoseTurn +
+                ", actionContext=" + actionContext +
+                ", memberIds=" + memberIds +
+                ", deck=" + Arrays.toString(deck) +
+                ", history=" + history +
+                ", awaitingChallenge=" + awaitingChallenge +
+                ", awaitingCounterAction=" + awaitingCounterAction +
+                ", awaitingChallengeActionValue=" + awaitingChallengeActionValue +
+                ", awaitingCounterActionValue=" + awaitingCounterActionValue +
+                ", currentActionState='" + currentActionState + '\'' +
+                ", currentAction=" + currentAction +
+                ", currentPlayerName='" + currentPlayerName + '\'' +
+                ", currentTargetName='" + currentTargetName + '\'' +
+                '}';
     }
 }

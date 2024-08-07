@@ -39,6 +39,8 @@ public class WebsocketController {
         GameStateDto gameStateDto = null;
         String returnState = null;
 
+        System.out.println(state);
+
         switch (state) {
             case "gameCheck":
                 boolean result = webSocketGameService.gameCheck(message);
@@ -56,15 +58,6 @@ public class WebsocketController {
                 break;
             case "nextTurn":
                 returnState = webSocketGameService.nextTurn(message);
-                if(returnState.equals("action")) {
-                    int[] actionArr = new int[7];
-                    for(int i=0; i<7; i++) {
-                        actionArr[i] = i + 1;
-                    }
-                    newMessage.setMainMessage(objectMapper.convertValue(actionArr, Map.class));
-                    newMessage.setState(returnState);
-                    sendMessage(roomId, newMessage);
-                }
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 hideOtherPlayersCards(gameStateDto);
                 break;
