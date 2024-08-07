@@ -7,9 +7,9 @@ import main
 
 # TMP: variables, constances
 IMAGE_NUM = 3
-IS_AMB_ACTION = True
+IS_AMB_ACTION = False
 AMB_PLAYER_IDX = 0
-CARD_REALLOC_SITUATION = ['amb_done', 'ch_win']
+CARD_REALLOC_SITUATION = ['amb_pick', 'amb_done', 'ch_win']
 
 # TODO: ambassador action param
 def tracePlayers(inferResult, situation):
@@ -25,7 +25,9 @@ def tracePlayers(inferResult, situation):
     image_idx = 0
     # 먼저 카드의 개수로 valid
     while image_idx < IMAGE_NUM:
-        image_idx, cardInfo = preValidCard(inferResult, s_idx=image_idx)
+        # TODO: api name을 무조건 박을지 결정 일단 코드는 남겨둠...
+        # action = situation['name'] if situation.get('name') else None
+        image_idx, cardInfo = preValidCard(inferResult, s_idx=image_idx, is_amb_action=situation['name']=='amb_pick')
         if cardInfo is None:
             print("Failed pre Valid...")
             image_idx += 1
@@ -108,13 +110,18 @@ def tracePlayers(inferResult, situation):
     
     return None
 
+def pickLeftCardClass(card_list, card_points):
+    pass
 
-def preValidCard(infers, s_idx=0):
+def pickRightCardClass(card_list, card_points):
+    pass
+
+def preValidCard(infers, s_idx=0, is_amb_action=False):
     cardInfo = []
     for idx in range(s_idx, IMAGE_NUM):
         cardInfo = infers[idx]['detections']
         cardInfo = [obj for obj in cardInfo if obj['class_id'] < 6]
-        if calcCardsNum(len(cardInfo)):
+        if calcCardsNum(len(cardInfo), is_amb_action):
             print(f'{len(cardInfo)=}')
             return idx, cardInfo
 
@@ -151,8 +158,8 @@ def postValidCard(players, situation):
     return True
 
 
-def calcCardsNum(cardNum):
+def calcCardsNum(cardNum, is_amb_action):
     validNum = main.app.game.playerNum * 2 + 1
-    if IS_AMB_ACTION:
+    if is_amb_action:
         validNum += 2
     return cardNum == validNum
