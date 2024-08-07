@@ -50,10 +50,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         EXCHANGE(6, "exchange"),
         COUP(7, "coup"),
         CHALLENGE(8, "challenge"),
-        BLOCK_DUKE(9, "block_duke"),
-        BLOCK_CONTESSA(10, "block_contessa"),
+        PERMIT(9, "permit"),
+        BLOCK_DUKE(10, "block_duke"),
         BLOCK_CAPTAIN(11, "block_captain"),
-        BLOCK_AMBASSADOR(12, "block_ambassador");
+        BLOCK_AMBASSADOR(12, "block_ambassador"),
+        BLOCK_CONTESSA(13, "block_contessa");
 
         private final int value;
         private final String name;
