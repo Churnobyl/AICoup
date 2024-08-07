@@ -165,9 +165,14 @@ const GamePage = () => {
       // handleTarget();
     }
 
-    publishMessage(1, "userA", "myChoice", {
-      select: option,
-    });
+    if (selectedOption === 0) {
+      publishMessage(1, "userA", "nextTurn", {});
+    } else {
+      publishMessage(1, "userA", "myChoice", {
+        select: option,
+      });
+    }
+
     setIsModalOpen(false);
   };
 
