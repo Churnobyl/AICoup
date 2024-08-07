@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from multiset import *
 
 from service.clustering import kMeansClustering
 from utils_main.vector_util import *
@@ -91,12 +92,12 @@ def tracePlayers(inferResult, situation):
                 "left_card": pickLeftCardClass([card for card in clusters[id]['cards']], cardPoints),
                 "right_card": pickRightCardClass([card for card in clusters[id]['cards']], cardPoints),
                 "extra_card": [],
-                "vector_value": clusterVects[id]
+                "center_point": clusters[id]['center']
             } for id in player_cluster_id
         ]
         deck = {
             "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[deckIdx]['cards']],
-            "vector_value": clusterVects[deckIdx]
+            "center_point": clusters[deckIdx]['center']
         }
 
         # validation
@@ -127,6 +128,42 @@ def pickRightCardClass(card_list, card_points):
     mean_v_n = [-1 * mean_v[1], mean_v[0]]
     right_point = a if productVector(a_v, mean_v_n) > 0 else b
     return card_points[right_point]['class_id']
+
+
+def allocate_players_cluster_id(cluster_degree, deck_idx):
+    # firstInfer를 보고 벡터 유사도로 분배하기
+    pass
+
+
+# TODO: 해야함.
+def make_players(clusters, cardPoints, player_cluster_id, deck_idx, action):
+    # firstInfer를 보고 precard 뽑아내기
+    pre_cards = main.app.game.playersCard
+    pre_cards = [[pre_cards[id]['left_card'], pre_cards[id]['right_card']] for id in player_cluster_id]
+
+    # action에 amb_pick보고 extra 만들기
+    extras = [
+              list(Multiset(cardPoints[card]['class_id']) - Multiset(pre))
+              for id in player_cluster_id
+              for card in clusters[id]['cards']
+              for pre in pre_cards
+              ]
+
+    players = [{
+                "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[id]['cards']],
+                # TODO: 함수로 빼기 + 각도 0 근처에서 값 반전 고려
+                "left_card": pickLeftCardClass([card for card in clusters[id]['cards']], cardPoints),
+                "right_card": pickRightCardClass([card for card in clusters[id]['cards']], cardPoints),
+                "extra_card": [],
+                "center_point": clusters[id]['center']
+            } for id in player_cluster_id
+        ]
+    deck = {
+            "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[deck_idx]['cards']],
+            "center_point": clusters[deck_idx]['center']
+        }
+    return players, deck
+
 
 def preValidCard(infers, s_idx=0, is_amb_action=False):
     cardInfo = []
