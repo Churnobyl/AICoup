@@ -14,6 +14,7 @@ export const optionKeyByNumber: { [number: number]: string } = {
 };
 
 export const optionKeyByName: { [name: string]: number } = {
+  "게임 시작": 0,
   수입: 1,
   해외원조: 2,
   징세: 3,
