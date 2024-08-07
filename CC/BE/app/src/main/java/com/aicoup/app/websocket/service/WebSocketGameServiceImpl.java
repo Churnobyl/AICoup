@@ -159,7 +159,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         Map<String, String> returnMessage = new HashMap<>();
         Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
 
-        if (mainMessage.get("cookie") == null || !gameRepository.existsById(mainMessage.get("cookie"))) {
+        if (mainMessage.get("cookie") == null) { // 쿠키 없으면 새 게임
+          returnMessage.put("result", "ok");
+          returnMessage.put("message", "새 게임");
+          return returnMessage;
+        } else if (!gameRepository.existsById(mainMessage.get("cookie"))) { // 쿠키는 있는데 게임 없으면
             returnMessage.put("result", "fail");
             returnMessage.put("message", "유효하지 않은 게임입니다.");
             return returnMessage;
@@ -171,7 +175,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 .map(gameMemberRepository::findById)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .collect(Collectors.toList());
+                .toList();
 
         List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer();
         for (int i = 0; i < members.size(); i++) {

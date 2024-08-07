@@ -8,24 +8,10 @@ import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
-
-const opts: { [key: string]: number } = {
-  수입: 1,
-  해외원조: 2,
-  징세: 3,
-  강탈: 4,
-  암살: 5,
-  교환: 6,
-  쿠: 7,
-  도전: 8,
-  허용: 9,
-  "공작으로 대응": 10,
-  "사령관으로 대응": 11,
-  "귀부인으로 대응": 12,
-};
+import { optionKeyByName } from "@/stores/selectOptions";
 
 const convertOption = (opt: string): number => {
-  return opts[opt] !== undefined ? opts[opt] : -1;
+  return optionKeyByName[opt] !== undefined ? optionKeyByName[opt] : -1;
 };
 
 const shouldHaveTarget = ["강탈", "암살", "쿠"];
@@ -39,6 +25,9 @@ const GamePage = () => {
 
   const [selectedOption, setSelectedOption] = useState<number>(0);
   const [selectedTarget, setSelectedTarget] = useState<number>(0);
+
+  console.log(selectedOption);
+  console.log(selectedTarget);
 
   const publishMessage = useCallback(
     (roomId: number, writer: string, state: string, mainMessage = {}) => {

@@ -9,13 +9,15 @@ type Props = {
 
 export const Player = (props: Props) => {
   const store = useGameStore();
-  const { playerNumber, className, isClickable } = props;
+  const { playerNumber, className, 
+  //isClickable 
+  } = props;
 
-  const handleClick = () => {
-    if (isClickable) {
-      console.log("asdasds");
-    }
-  };
+  // const handleClick = () => {
+  //   if (isClickable) {
+  //     console.log("asdasds");
+  //   }
+  // };
 
   return (
     <div className={`player ${className}`}>
