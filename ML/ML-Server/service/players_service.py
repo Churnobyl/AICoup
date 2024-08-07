@@ -41,6 +41,7 @@ def tracePlayers(inferResult, situation):
                                 "cluster": -1
                                 }
                                 for i in cardInfo]))
+        # TODO: it can be depracted
         for card in cardPoints:
             # angle = getAngleByVector(cardPoints[card]['vector'])
             angle = math.acos(cardPoints[card]['vector'][0] / getVectorSize(cardPoints[card]['vector']))
@@ -57,10 +58,8 @@ def tracePlayers(inferResult, situation):
             image_idx += 1
             continue
 
-        # TODO: 덱 카드와 플레이어 카드 분리
-
         # 벡터변환 및 플레이어 할당
-        clusterPoints = [clusters[k]['center'] for k in clusters]        
+        clusterPoints = [clusters[k]['center'] for k in clusters]
 
         clusterVects  = getVectorValueByCenter(clusterPoints)
         vectorSizes = getVectorSizes(clusterVects)
@@ -89,8 +88,8 @@ def tracePlayers(inferResult, situation):
         players = [{
                 "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[id]['cards']],
                 # TODO: 함수로 빼기 + 각도 0 근처에서 값 반전 고려
-                "left_card": cardPoints[min([card for card in clusters[id]['cards']], key=lambda x : cardPoints[x]['angle'])]['class_id'],
-                "right_card": cardPoints[max([card for card in clusters[id]['cards']], key=lambda x : cardPoints[x]['angle'])]['class_id'],
+                "left_card": pickLeftCardClass([card for card in clusters[id]['cards']], cardPoints),
+                "right_card": pickRightCardClass([card for card in clusters[id]['cards']], cardPoints),
                 "extra_card": [],
                 "vector_value": clusterVects[id]
             } for id in player_cluster_id
@@ -111,10 +110,23 @@ def tracePlayers(inferResult, situation):
     return None
 
 def pickLeftCardClass(card_list, card_points):
-    pass
+    [a, b] = card_list
+    a_v = card_points[a]['vector']
+    b_v = card_points[b]['vector']
+    mean_v = [(a_v[0] + b_v[0])/2, (a_v[1] + b_v[1])/2]
+    mean_v_n = [-1 * mean_v[1], mean_v[0]]
+    left_point = b if productVector(a_v, mean_v_n) > 0 else a
+    return card_points[left_point]['class_id']
+
 
 def pickRightCardClass(card_list, card_points):
-    pass
+    [a, b] = card_list
+    a_v = card_points[a]['vector']
+    b_v = card_points[b]['vector']
+    mean_v = [(a_v[0] + b_v[0])/2, (a_v[1] + b_v[1])/2]
+    mean_v_n = [-1 * mean_v[1], mean_v[0]]
+    right_point = a if productVector(a_v, mean_v_n) > 0 else b
+    return card_points[right_point]['class_id']
 
 def preValidCard(infers, s_idx=0, is_amb_action=False):
     cardInfo = []
