@@ -131,7 +131,7 @@ const GamePage = () => {
     actionStore.setSelectedOption(option);
 
     if (shouldHaveTarget.filter((value) => value === option)) {
-      handleSelectTarget();
+      // handleSelectTarget();
     }
 
     if (option === 0) {
