@@ -308,10 +308,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             int counterActionValue = convertActionToValue(counterAction);
             counterAction(game, counterActioner, counterActionValue);
 
-            boolean playerChallengedCounter = offerPlayerChallenge(game, counterActionValue);
-            if (!playerChallengedCounter) {
-                handleGPTChallengeAgainstCounter(game, counterActionValue);
-            }
+//            boolean playerChallengedCounter = offerPlayerChallenge(game, counterActionValue);
+//            if (!playerChallengedCounter) {
+//                handleGPTChallengeAgainstCounter(game, counterActionValue);
+//            }
+            returnState = "gptCounterAction";
         } else {
             returnState = "gptCounterActionNone";
         }
@@ -657,6 +658,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 System.out.println("game: " + game);
                 GameMember currentPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
                 game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
+                game.setTurn(game.getTurn() + 1);
                 if (isGPTPlayer(currentPlayer)) {
                     performGPTAction(game.getId(), currentPlayer);
                     return "gptAction";
