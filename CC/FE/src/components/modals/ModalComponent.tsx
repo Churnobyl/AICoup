@@ -1,3 +1,4 @@
+import { ActionType } from "@/types/ActionType";
 import Modal from "react-modal";
 import "./ModalComponent.scss";
 import Button from "@/components/ui/button/Button";
@@ -8,8 +9,8 @@ type ModalProps = {
   isOpen: boolean;
   onRequestClose: () => void;
   content: string;
-  onSelect: (a: string) => void;
-  options: string[];
+  onSelect: (a: number) => void;
+  options: ActionType;
 };
 
 const ModalComponent = ({
@@ -19,6 +20,9 @@ const ModalComponent = ({
   onSelect,
   options,
 }: ModalProps) => {
+  const actionArray = Object.entries(options);
+  actionArray.sort((a, b) => a[1] - b[1]);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -30,12 +34,12 @@ const ModalComponent = ({
       <div className="modal-content">
         <p>{content}</p>
         <div className="modal-actions">
-          {options.map((option: string, index: number) => (
+          {actionArray.map((value) => (
             <Button
-              key={index}
+              key={value[1]}
+              children={value[0]}
               size="medium"
-              children={option}
-              onClick={() => onSelect(option)}
+              onClick={() => onSelect(value[1])}
             />
           ))}
         </div>

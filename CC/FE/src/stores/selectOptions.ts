@@ -10,7 +10,8 @@ export const optionKeyByNumber: { [number: number]: string } = {
   9: "허용",
   10: "공작으로 대응",
   11: "사령관으로 대응",
-  12: "귀부인으로 대응",
+  12: "외교관으로 대응",
+  13: "귀부인으로 대응",
 };
 
 export const optionKeyByName: { [name: string]: number } = {
@@ -26,5 +27,6 @@ export const optionKeyByName: { [name: string]: number } = {
   허용: 9,
   "공작으로 대응": 10,
   "사령관으로 대응": 11,
-  "귀부인으로 대응": 12,
+  "외교관으로 대응": 12,
+  "귀부인으로 대응": 13,
 };

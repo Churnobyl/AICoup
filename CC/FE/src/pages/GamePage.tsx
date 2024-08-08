@@ -1,35 +1,29 @@
 /* eslint-disable no-case-declarations */
 import { clientData, connect } from "@/apis/websocketConnect";
-import HistoryBottomSheet from "@/components/ui/sheets/HistoryBottomSheet";
 import ModalComponent from "@/components/modals/ModalComponent";
-import History from "@/types/HistoryInf";
+import HistoryBottomSheet from "@/components/ui/sheets/HistoryBottomSheet";
+import useActionStore from "@/stores/actionStore";
+import { optionKeyByName } from "@/stores/selectOptions";
 import Board from "@components/game/Board";
 import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
-import { optionKeyByName } from "@/stores/selectOptions";
-import { redirect, useNavigate } from "react-router-dom";
+import { ActionType } from "@/types/ActionType";
 
 const convertOption = (opt: string): number => {
   return optionKeyByName[opt] !== undefined ? optionKeyByName[opt] : -1;
 };
 
-const shouldHaveTarget = ["강탈", "암살", "쿠"];
+const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
 const GamePage = () => {
   const store = useGameStore();
   const storeRef = useRef(store);
+  const actionStore = useActionStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState("");
-  const [options, setOptions] = useState<string[]>([]);
-
-  const [selectedOption, setSelectedOption] = useState<number>(0);
-  const [selectedTarget, setSelectedTarget] = useState<number>(0);
-  const navigate = useNavigate();
-
-  console.log(selectedOption);
-  console.log(selectedTarget);
+  const [options, setOptions] = useState<ActionType>({});
 
   const publishMessage = useCallback(
     (roomId: number, writer: string, state: string, mainMessage = {}) => {
@@ -49,58 +43,30 @@ const GamePage = () => {
     []
   );
 
-  const selectOptions = useCallback((history: History[]) => {
-    // 결정 초기화
-    setSelectedOption(0);
-    setSelectedTarget(0);
+  const selectOptions = useCallback(
+    (canAction: ActionType | -1) => {
+      // 결정 초기화
+      actionStore.setSelectedOption(0);
+      actionStore.setSelectedTarget(0);
 
-    switch (history[history.length - 1].actionId) {
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        break;
-      case 4:
-        break;
-      case 5:
-        break;
-      case 6:
-        break;
-      case 7:
-        break;
-      case 8:
-        break;
-      case 9:
-        break;
-      case 10:
-        break;
-      case 11:
-        break;
-      case 12:
-        break;
-      case 13:
-        break;
-      case 14:
-        break;
-      case 15:
-        break;
-      case 16:
-        break;
-      case 17:
-        setOptions(["게임 시작"]);
+      if (canAction === -1) {
+        setOptions({ "게임 시작": 0 });
         setModalContent("게임을 시작하겠습니다.");
         setIsModalOpen(true);
-        break;
-      default:
-        break;
-    }
-  }, []);
+      } else {
+        setOptions(canAction);
+        setModalContent("행동을 선택해주세요.");
+        setIsModalOpen(true);
+      }
+    },
+    [actionStore]
+  );
 
   const handleMessage = useCallback(
     (message: { body: string }) => {
       const parsedMessage = JSON.parse(message.body);
       console.log("Received message: ", parsedMessage);
+      const { mainMessage } = parsedMessage;
 
       switch (parsedMessage.state) {
         case "noGame":
@@ -120,8 +86,7 @@ const GamePage = () => {
           publishMessage(1, "userA", "gameInit");
           break;
         case "gameState":
-          const { mainMessage } = parsedMessage;
-          const { members, turn, history, deck, lastContext } = mainMessage;
+          const { members, turn, history, deck, canAction } = mainMessage;
 
           storeRef.current.setRoomId(parsedMessage.roomId);
           storeRef.current.setState(parsedMessage.state);
@@ -129,16 +94,23 @@ const GamePage = () => {
           storeRef.current.incrementTurn(turn);
           storeRef.current.setHistory(history);
           storeRef.current.setDeck(deck);
-          storeRef.current.setLastContext(lastContext);
 
-          selectOptions(history);
+          if (turn === 0) {
+            selectOptions(-1);
+          } else {
+            selectOptions(canAction);
+          }
+
           break;
-        case "":
+        case "action":
+          actionStore.setSendingState("action");
+          selectOptions(mainMessage.canAction);
+          break;
         default:
           break;
       }
     },
-    [publishMessage, selectOptions]
+    [actionStore, publishMessage, selectOptions]
   );
 
   useEffect(() => {
@@ -153,29 +125,27 @@ const GamePage = () => {
     };
 
     return () => {
-      clientData.deactivate();
+      // clientData.deactivate();
     };
   }, [handleMessage, publishMessage]);
 
   // 선택 결과
-  const handleSelect = (option: string) => {
+  const handleSelect = (option: number) => {
     console.log("Selected option:", option);
 
-    setSelectedOption(convertOption(option));
+    actionStore.setSelectedOption(option);
 
-    if (
-      shouldHaveTarget.filter((v) => {
-        return v == option;
-      })
-    ) {
-      // handleTarget();
-    }
+    // if (shouldHaveTarget.filter((value) => value === actionStore.selectedOption)) {
+    //   handleSelectTarget();
+    // }
 
-    if (selectedOption === 0) {
+    if (option === 0) {
       publishMessage(1, "userA", "nextTurn", {});
     } else {
-      publishMessage(1, "userA", "myChoice", {
-        select: option,
+      publishMessage(1, "userA", actionStore.sendingState, {
+        cookie: Cookies.get("gameId"),
+        action: option.toString(),
+        targetPlayerName: actionStore.selectedTarget.toString(),
       });
     }
 
