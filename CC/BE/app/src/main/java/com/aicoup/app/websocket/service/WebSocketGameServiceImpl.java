@@ -116,7 +116,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
 
         String actionName = ActionType.findActionName(actionValue);
-        if(validateAction(gameId, playerName, actionName)){
+        if (validateAction(gameId, playerName, actionName)) {
             recordHistory(game.getId(), actionValue, "0", targetPlayerName);
             handleGPTChallenge(game, actionValue);
             handleGPTCounterAction(game, actionValue);
@@ -164,12 +164,12 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
 
         if (mainMessage.get("cookie") == null) { // 쿠키 없으면 새 게임
-          returnMessage.put("result", "ok");
-          returnMessage.put("message", "새 게임");
-          return returnMessage;
+            returnMessage.put("result", "ok");
+            returnMessage.put("message", "새 게임");
+            return returnMessage;
         } else if (!gameRepository.existsById(mainMessage.get("cookie"))) { // 쿠키는 있는데 게임 없으면
-            returnMessage.put("result", "fail");
-            returnMessage.put("message", "유효하지 않은 게임입니다.");
+            returnMessage.put("result", "noGame");
+            returnMessage.put("message", "게임이 없습니다.");
             return returnMessage;
         }
 
@@ -249,7 +249,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
 
-        if(actionValue==10) {
+        if (actionValue == 10) {
             handlePlayerChallenge(message);
         } else {
             handlePlayerCounterAction(message);
@@ -402,14 +402,22 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     // 액션 문자열을 숫자로 변환하는 메서드
     private int convertActionToValue(String action) {
         switch (action.toLowerCase()) {
-            case "income": return 1;
-            case "foreign_aid": return 2;
-            case "tax": return 3;
-            case "steal": return 4;
-            case "assassinate": return 5;
-            case "exchange": return 6;
-            case "coup": return 7;
-            default: throw new IllegalArgumentException("Unknown action: " + action);
+            case "income":
+                return 1;
+            case "foreign_aid":
+                return 2;
+            case "tax":
+                return 3;
+            case "steal":
+                return 4;
+            case "assassinate":
+                return 5;
+            case "exchange":
+                return 6;
+            case "coup":
+                return 7;
+            default:
+                throw new IllegalArgumentException("Unknown action: " + action);
         }
     }
 
@@ -649,7 +657,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             Optional<Game> existGame = gameRepository.findById(mainMessage.get("cookie"));
             if (existGame.isPresent()) {
                 Game game = existGame.get();
-                System.out.println("game: "+game);
+                System.out.println("game: " + game);
                 GameMember currentPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
                 game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
                 if (isGPTPlayer(currentPlayer)) {

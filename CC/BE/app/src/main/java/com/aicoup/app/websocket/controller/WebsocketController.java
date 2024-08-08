@@ -27,8 +27,8 @@ public class WebsocketController {
         // 서버와 현실 일치 검증
         Map<String, String> validateResult = webSocketGameService.validate(message);
 
-        if (!validateResult.get("result").equals("ok")) {
-            newMessage.setState("validationFail");
+        if (validateResult.get("result").equals("noGame")) {
+            newMessage.setState("noGame");
             newMessage.setMainMessage(validateResult);
             sendMessage(roomId, newMessage);
             return;
