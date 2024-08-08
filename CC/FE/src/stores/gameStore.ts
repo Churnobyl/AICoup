@@ -64,6 +64,11 @@ const useGameStore = create<ReturnType & Actions>()(
               ? `${gptLine}\n\n${actionDescription}`
               : actionDescription;
 
+            // 이전 메시지를 초기화
+            state.members.forEach((member) => {
+              member.message = ""; // 모든 플레이어의 메시지를 초기화
+            });
+
             // playerTrying에 해당하는 멤버의 메시지 상태 업데이트
             if (state.members[playerTrying]) {
               state.members[playerTrying].message = messageContent;
