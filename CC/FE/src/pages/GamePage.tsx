@@ -3,17 +3,12 @@ import { clientData, connect } from "@/apis/websocketConnect";
 import ModalComponent from "@/components/modals/ModalComponent";
 import HistoryBottomSheet from "@/components/ui/sheets/HistoryBottomSheet";
 import useActionStore from "@/stores/actionStore";
-import { optionKeyByName } from "@/stores/selectOptions";
+import { ActionType } from "@/types/ActionType";
 import Board from "@components/game/Board";
 import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
-import { ActionType } from "@/types/ActionType";
-
-const convertOption = (opt: string): number => {
-  return optionKeyByName[opt] !== undefined ? optionKeyByName[opt] : -1;
-};
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -135,9 +130,9 @@ const GamePage = () => {
 
     actionStore.setSelectedOption(option);
 
-    // if (shouldHaveTarget.filter((value) => value === actionStore.selectedOption)) {
-    //   handleSelectTarget();
-    // }
+    if (shouldHaveTarget.filter((value) => value === option)) {
+      handleSelectTarget();
+    }
 
     if (option === 0) {
       publishMessage(1, "userA", "nextTurn", {});
