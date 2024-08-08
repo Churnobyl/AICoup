@@ -44,4 +44,19 @@ public class GameMember extends MutableBaseEntity {
         }
         return false;
     }
+
+    @Override
+    public String toString() {
+        return "GameMember{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", isPlayer=" + isPlayer +
+                ", coin=" + coin +
+                ", leftCard=" + leftCard +
+                ", rightCard=" + rightCard +
+                ", leftCardInfo=" + leftCardInfo +
+                ", rightCardInfo=" + rightCardInfo +
+                ", actionHistory=" + actionHistory +
+                '}';
+    }
 }

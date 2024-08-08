@@ -39,7 +39,7 @@ public class WebsocketController {
         GameStateDto gameStateDto = null;
         String returnState = null;
 
-        System.out.println(state);
+        System.out.println("state: "+state);
 
         switch (state) {
             case "gameCheck":
@@ -123,8 +123,6 @@ public class WebsocketController {
         if (gameStateDto != null) {
             newMessage.setMainMessage(objectMapper.convertValue(gameStateDto, Map.class));
         }
-        System.out.println("gameStateDto = " + gameStateDto);
-
         sendMessage(roomId, newMessage);
     }
 

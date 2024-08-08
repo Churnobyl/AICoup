@@ -110,12 +110,13 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     public void performPlayerAction(MessageDto message) {
         Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
         String gameId = mainMessage.get("cookie");
-        String playerName = message.getWriter();
+        Game game = returnGame(message);
+        System.out.println("whoseTurn: "+game.getWhoseTurn());
+        GameMember currentPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
+        String playerName = currentPlayer.getId();
         int actionValue = Integer.parseInt(mainMessage.get("action"));
+        System.out.println("actionValue: "+actionValue);
         String targetPlayerName = mainMessage.get("targetPlayerName");
-
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
 
         String actionName = ActionType.findActionName(actionValue);
         if (validateAction(gameId, playerName, actionName)) {
@@ -338,7 +339,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
         GameStateDto gameState;
         if (isChallenge) {
-            int actionValue = game.getAwaitingChallengeActionValue();
             gameState = buildGameState(game.getId());
 
             boolean challengeSuccessful = gameState.isChallengeSuccessful();
@@ -655,8 +655,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             Optional<Game> existGame = gameRepository.findById(mainMessage.get("cookie"));
             if (existGame.isPresent()) {
                 Game game = existGame.get();
-                System.out.println("game: " + game);
                 GameMember currentPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
+                System.out.println("GameMember: "+currentPlayer);
                 game.setTurn(game.getTurn() + 1);
                 if (isGPTPlayer(currentPlayer)) {
                     performGPTAction(game.getId(), currentPlayer);
