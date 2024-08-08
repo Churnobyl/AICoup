@@ -70,9 +70,6 @@ const GamePage = () => {
     (message: { body: string }) => {
       const parsedMessage = JSON.parse(message.body);
       console.log("Received message: ", parsedMessage);
-      const { mainMessage } = parsedMessage;
-      const { members, turn, history, deck, lastContext, canAction } =
-        mainMessage;
 
       switch (parsedMessage.state) {
         case "noGame":
