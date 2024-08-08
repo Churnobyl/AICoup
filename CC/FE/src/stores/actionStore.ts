@@ -5,11 +5,13 @@ import { immer } from "zustand/middleware/immer";
 type State = {
   selectedOption: number;
   selectedTarget: number;
+  sendingState: string;
 };
 
 type Action = {
   setSelectedOption: (select: number) => void;
   setSelectedTarget: (select: number) => void;
+  setSendingState: (state: string) => void;
 };
 
 const useActionStore = create<State & Action>()(
@@ -17,6 +19,7 @@ const useActionStore = create<State & Action>()(
     immer((set) => ({
       selectedOption: -1,
       selectedTarget: -1,
+      sendingState: "",
 
       setSelectedOption: (select) => {
         set((state) => {
@@ -26,6 +29,11 @@ const useActionStore = create<State & Action>()(
       setSelectedTarget: (select) => {
         set((state) => {
           state.selectedTarget = select;
+        });
+      },
+      setSendingState: (a) => {
+        set((state) => {
+          state.sendingState = a;
         });
       },
     }))

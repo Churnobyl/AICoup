@@ -2,14 +2,14 @@
 import { clientData, connect } from "@/apis/websocketConnect";
 import ModalComponent from "@/components/modals/ModalComponent";
 import HistoryBottomSheet from "@/components/ui/sheets/HistoryBottomSheet";
+import useActionStore from "@/stores/actionStore";
 import { optionKeyByName } from "@/stores/selectOptions";
-import History from "@/types/HistoryInf";
 import Board from "@components/game/Board";
 import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
-import useActionStore from "@/stores/actionStore";
+import { ActionType } from "@/types/ActionType";
 
 const convertOption = (opt: string): number => {
   return optionKeyByName[opt] !== undefined ? optionKeyByName[opt] : -1;
@@ -44,51 +44,23 @@ const GamePage = () => {
   );
 
   const selectOptions = useCallback(
-    (history: History[]) => {
+    (canAction: ActionType | -1) => {
       // 결정 초기화
       actionStore.setSelectedOption(0);
       actionStore.setSelectedTarget(0);
 
-      switch (history[history.length - 1].actionId) {
-        case 1:
-          break;
-        case 2:
-          break;
-        case 3:
-          break;
-        case 4:
-          break;
-        case 5:
-          break;
-        case 6:
-          break;
-        case 7:
-          break;
-        case 8:
-          break;
-        case 9:
-          break;
-        case 10:
-          break;
-        case 11:
-          break;
-        case 12:
-          break;
-        case 13:
-          break;
-        case 14:
-          break;
-        case 15:
-          break;
-        case 16:
-          break;
-        case 17:
-          setOptions(["게임 시작"]);
-          setModalContent("게임을 시작하겠습니다.");
-          setIsModalOpen(true);
-          break;
-        default:
-          break;
+      if (canAction === -1) {
+        setOptions(["게임 시작"]);
+        setModalContent("게임을 시작하겠습니다.");
+        setIsModalOpen(true);
+      } else {
+        setOptions(
+          Object.entries(canAction)
+            .sort((a, b) => a[1] - b[1])
+            .map(([key, _]) => key)
+        );
+        setModalContent("행동을 선택해주세요.");
+        setIsModalOpen(true);
       }
     },
     [actionStore]
@@ -98,9 +70,6 @@ const GamePage = () => {
     (message: { body: string }) => {
       const parsedMessage = JSON.parse(message.body);
       console.log("Received message: ", parsedMessage);
-      const { mainMessage } = parsedMessage;
-      const { members, turn, history, deck, lastContext, canAction } =
-        mainMessage;
 
       switch (parsedMessage.state) {
         case "noGame":
@@ -120,6 +89,10 @@ const GamePage = () => {
           publishMessage(1, "userA", "gameInit");
           break;
         case "gameState":
+          const { mainMessage } = parsedMessage;
+          const { members, turn, history, deck, lastContext, canAction } =
+            mainMessage;
+
           storeRef.current.setRoomId(parsedMessage.roomId);
           storeRef.current.setState(parsedMessage.state);
           storeRef.current.setMembers(members);
@@ -128,16 +101,21 @@ const GamePage = () => {
           storeRef.current.setDeck(deck);
           storeRef.current.setLastContext(lastContext);
 
-          selectOptions(history);
+          if (turn === 0) {
+            selectOptions(-1);
+          } else {
+            selectOptions(canAction);
+          }
           break;
         case "action":
-          selectOptions();
+          actionStore.setSendingState("action");
+          selectOptions(mainMessage.canAction);
           break;
         default:
           break;
       }
     },
-    [publishMessage, selectOptions]
+    [actionStore, publishMessage, selectOptions]
   );
 
   useEffect(() => {
@@ -169,8 +147,10 @@ const GamePage = () => {
     if (actionStore.selectedOption === 0) {
       publishMessage(1, "userA", "nextTurn", {});
     } else {
-      publishMessage(1, "userA", "myChoice", {
-        c,
+      publishMessage(1, "userA", actionStore.sendingState, {
+        cookie: Cookies.get("gameId"),
+        action: actionStore.selectedOption,
+        targetPlayerName: actionStore.selectedTarget,
       });
     }
 
