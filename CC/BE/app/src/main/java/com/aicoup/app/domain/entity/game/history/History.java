@@ -1,10 +1,7 @@
 package com.aicoup.app.domain.entity.game.history;
 
 import jakarta.persistence.Id;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.index.Indexed;
 
@@ -20,6 +17,7 @@ import org.springframework.data.redis.core.index.Indexed;
  */
 @RedisHash(value = "history", timeToLive = 3600L)
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter @Setter
 public class History {
 
@@ -27,6 +25,7 @@ public class History {
     private String id;
     private int turn;
     private Integer actionId;
+    private Boolean actionState;
     private String playerTrying;
     private String playerTried;
 

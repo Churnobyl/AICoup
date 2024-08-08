@@ -17,6 +17,8 @@ public class GameStateDto {
     private List<GameMember> members = new ArrayList<>();
     private int whoseTurn;
     private History lastContext;
+    private int action;
+    private String target;
     private Map<String, Integer> canAction = new HashMap<>();
     private List<History> history;
     private int[] deck = new int[6];

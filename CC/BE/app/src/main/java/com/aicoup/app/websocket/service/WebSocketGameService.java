@@ -9,7 +9,7 @@ public interface WebSocketGameService {
     Map<String, String> validate(MessageDto message);
 //    GameStateDto processAction(MessageDto message);
     GameStateDto getGameState(String gameId);
-    void recordHistory(String gameId, Integer actionNumber, String playerTrying, String playerTried);
+    void recordHistory(String gameId, Integer actionNumber, Boolean actionState, String playerTrying, String playerTried);
     String nextTurn(MessageDto messageDto);
     String myChoice(MessageDto messageDto);
 }

@@ -66,6 +66,28 @@ public class WebsocketController {
                 returnState = "actionPending";
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 break;
+            case "anyChallenge":
+                returnState = webSocketGameService.handleGPTChallenge(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+                if(!returnState.equals("gptChallengeNone")) {
+                    wrapMessage(newMessage, gameStateDto, roomId, "gptChallenge");
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
+                    returnState = "endGame";
+                } else {
+                }
+                break;
+            case "performGame":
+                webSocketGameService.performAction(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+                returnState = "gameState";
+                break;
+            case "anyCounterAction":
+                returnState = webSocketGameService.handleGPTCounterAction(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+                if(!returnState.equals("gptChallengeNone")) {
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
+                }
+                break;
             case "actionProcessed":
                 webSocketGameService.processAction(message);
                 returnState = "actionProcessed";
@@ -89,7 +111,10 @@ public class WebsocketController {
             default:
                 throw new IllegalArgumentException("웹소켓 메시지 잘못 접근함");
         }
+        wrapMessage(newMessage, gameStateDto, roomId, returnState);
+    }
 
+    private void wrapMessage(MessageDto newMessage, GameStateDto gameStateDto, String roomId, String returnState) {
         // 로직 이후 보낼 메시지에 state 설정
         newMessage.setState(returnState);
 
