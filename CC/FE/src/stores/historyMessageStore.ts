@@ -72,9 +72,8 @@ const historyMessagingConverter = (
     case 18:
       convertedMessage = `플레이어 턴입니다.`;
       break;
-
-      return convertedMessage;
   }
+  return convertedMessage;
 };
 
 const useHistoryStore = create<HistoryMessage & Action>()(
