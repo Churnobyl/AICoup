@@ -23,7 +23,7 @@ const GamePage = () => {
   const actionStore = useActionStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState("");
-  const [options, setOptions] = useState<string[]>([]);
+  const [options, setOptions] = useState<ActionType>({});
 
   const publishMessage = useCallback(
     (roomId: number, writer: string, state: string, mainMessage = {}) => {
@@ -50,15 +50,11 @@ const GamePage = () => {
       actionStore.setSelectedTarget(0);
 
       if (canAction === -1) {
-        setOptions(["게임 시작"]);
+        setOptions({ "게임 시작": 0 });
         setModalContent("게임을 시작하겠습니다.");
         setIsModalOpen(true);
       } else {
-        setOptions(
-          Object.entries(canAction)
-            .sort((a, b) => a[1] - b[1])
-            .map(([key, _]) => key)
-        );
+        setOptions(canAction);
         setModalContent("행동을 선택해주세요.");
         setIsModalOpen(true);
       }
@@ -70,6 +66,7 @@ const GamePage = () => {
     (message: { body: string }) => {
       const parsedMessage = JSON.parse(message.body);
       console.log("Received message: ", parsedMessage);
+      const { mainMessage } = parsedMessage;
 
       switch (parsedMessage.state) {
         case "noGame":
@@ -89,9 +86,7 @@ const GamePage = () => {
           publishMessage(1, "userA", "gameInit");
           break;
         case "gameState":
-          const { mainMessage } = parsedMessage;
-          const { members, turn, history, deck, lastContext, canAction } =
-            mainMessage;
+          const { members, turn, history, deck, canAction } = mainMessage;
 
           storeRef.current.setRoomId(parsedMessage.roomId);
           storeRef.current.setState(parsedMessage.state);
@@ -99,13 +94,13 @@ const GamePage = () => {
           storeRef.current.incrementTurn(turn);
           storeRef.current.setHistory(history);
           storeRef.current.setDeck(deck);
-          storeRef.current.setLastContext(lastContext);
 
           if (turn === 0) {
             selectOptions(-1);
           } else {
             selectOptions(canAction);
           }
+
           break;
         case "action":
           actionStore.setSendingState("action");
@@ -130,27 +125,27 @@ const GamePage = () => {
     };
 
     return () => {
-      clientData.deactivate();
+      // clientData.deactivate();
     };
   }, [handleMessage, publishMessage]);
 
   // 선택 결과
-  const handleSelect = (option: string) => {
+  const handleSelect = (option: number) => {
     console.log("Selected option:", option);
 
-    actionStore.setSelectedOption(convertOption(option));
+    actionStore.setSelectedOption(option);
 
     // if (shouldHaveTarget.filter((value) => value === actionStore.selectedOption)) {
     //   handleSelectTarget();
     // }
 
-    if (actionStore.selectedOption === 0) {
+    if (option === 0) {
       publishMessage(1, "userA", "nextTurn", {});
     } else {
       publishMessage(1, "userA", actionStore.sendingState, {
         cookie: Cookies.get("gameId"),
-        action: actionStore.selectedOption,
-        targetPlayerName: actionStore.selectedTarget,
+        action: option.toString(),
+        targetPlayerName: actionStore.selectedTarget.toString(),
       });
     }
 
