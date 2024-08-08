@@ -9,6 +9,7 @@ import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
 import { optionKeyByName } from "@/stores/selectOptions";
+import { redirect, useNavigate } from "react-router-dom";
 
 const convertOption = (opt: string): number => {
   return optionKeyByName[opt] !== undefined ? optionKeyByName[opt] : -1;
@@ -25,6 +26,7 @@ const GamePage = () => {
 
   const [selectedOption, setSelectedOption] = useState<number>(0);
   const [selectedTarget, setSelectedTarget] = useState<number>(0);
+  const navigate = useNavigate();
 
   console.log(selectedOption);
   console.log(selectedTarget);
@@ -101,6 +103,10 @@ const GamePage = () => {
       console.log("Received message: ", parsedMessage);
 
       switch (parsedMessage.state) {
+        case "noGame":
+          Cookies.remove("aiCoup");
+          publishMessage(1, "userA", "gameInit");
+          break;
         case "cookieSet":
           Cookies.set("aiCoup", parsedMessage.mainMessage.message, {
             expires: 1,
