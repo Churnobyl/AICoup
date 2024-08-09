@@ -55,10 +55,25 @@ public class GPTConverter {
             Map<Integer, CardInfo> cardInfoMap = cardInfoRepository.findAll().stream()
                     .collect(Collectors.toMap(CardInfo::getId, Function.identity()));
 
-            System.out.println("cardInfoMap: " + cardInfoMap);
+            members.forEach(member -> {
+                if (member.getLeftCard() != null) {
+                    CardInfo leftCardInfo = cardInfoMap.get(Math.abs(member.getLeftCard()));
+                    member.setLeftCardInfo(leftCardInfo);
+                }
+                if (member.getRightCard() != null) {
+                    CardInfo rightCardInfo = cardInfoMap.get(Math.abs(member.getRightCard()));
+                    member.setRightCardInfo(rightCardInfo);
+                }
+            });
+
+            System.out.println("cardInfoMap = " + cardInfoMap);
 
             for (int i = 1; i <= members.size(); i++) {
-                players.put(i, new GPTPlayer(Arrays.asList(cardInfoMap.get(members.get(i - 1).getLeftCard()).getEnglishName(), cardInfoMap.get(members.get(i - 1).getRightCard()).getEnglishName()), Arrays.asList(members.get(0).getLeftCard() <= 0, members.get(0).getRightCard() <= 0), members.get(i - 1).getCoin()));
+                players.put(i, new GPTPlayer(
+                        Arrays.asList(cardInfoMap.get(Math.abs(members.get(i - 1).getLeftCard())).getEnglishName(),
+                                cardInfoMap.get(Math.abs(members.get(i - 1).getRightCard())).getEnglishName()),
+                        Arrays.asList(members.get(0).getLeftCard() <= 0, members.get(0).getRightCard() <= 0),
+                        members.get(i - 1).getCoin()));
             }
 
             GPTGameState gameState = new GPTGameState(players);
