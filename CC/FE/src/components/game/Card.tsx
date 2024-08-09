@@ -13,7 +13,13 @@ const Card = (props: Props) => {
   return (
     <div
       className={`cardItem card card-${
-        player ? cardNumber : cardNumber < 0 ? -cardNumber : 0
+        player
+          ? cardNumber < 0
+            ? -cardNumber
+            : cardNumber
+          : cardNumber < 0
+          ? -cardNumber
+          : 0
       } ${player && cardNumber < 0 ? "dead" : ""}`}
     >
       {player

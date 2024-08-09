@@ -102,6 +102,15 @@ const GamePage = () => {
         case "endGame":
           publishMessage(1, "userA", "performGame");
           break;
+        case "gptChallengeNone":
+          publishMessage(1, "userA", "anyCounterAction");
+          break;
+        case "gptCounterAction":
+          // 허용 ->
+          // 반박
+          break;
+        case "":
+          break;
         default:
           break;
       }
