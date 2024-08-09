@@ -35,11 +35,22 @@ public class GameMember extends MutableBaseEntity {
         this.name = name;
     }
 
-    public boolean hasCard(Integer cardId) {
-        if (leftCardInfo != null && Objects.equals(leftCardInfo.getId(), cardId)) {
+    public boolean hasCard(Integer actionValue) {
+        System.out.println("actionVallue : " + actionValue);
+        Integer cardId = switch (actionValue) {
+            case 3 -> 1;
+            case 4 -> 2;
+            case 5 -> 3;
+            case 6 -> 5;
+            default -> 0;
+        };
+        System.out.println("cardId : " + cardId);
+        System.out.println("leftCard : " + leftCard);
+        System.out.println("rightCard : " + rightCard);
+        if (Objects.equals(leftCard, cardId)) {
             return true;
         }
-        if (rightCardInfo != null && Objects.equals(rightCardInfo.getId(), cardId)) {
+        if (Objects.equals(rightCard, cardId)) {
             return true;
         }
         return false;

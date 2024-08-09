@@ -28,4 +28,14 @@ public class CardInfo {
     @Column(name = "english_name")
     private String englishName;
     private String imageUrl;
+
+    @Override
+    public String toString() {
+        return "CardInfo{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", englishName='" + englishName + '\'' +
+                ", imageUrl='" + imageUrl + '\'' +
+                '}';
+    }
 }

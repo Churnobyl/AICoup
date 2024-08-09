@@ -727,7 +727,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         History lastAction = game.getHistory().get(game.getHistory().size()-1);
         ActionType lastActionType = ActionType.fromActionValue(lastAction.getActionId());
         GameMember target = findPlayerByName(game, lastAction.getPlayerTrying());
-
+        System.out.println("target : " + target);
+        System.out.println(lastActionType.getValue());
         // 도전 성공 여부 확인
         boolean challengeSuccess = !target.hasCard(lastActionType.getValue());
 

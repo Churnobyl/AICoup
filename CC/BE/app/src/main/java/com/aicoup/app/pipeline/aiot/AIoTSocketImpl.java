@@ -27,7 +27,7 @@ public class AIoTSocketImpl implements AIoTSocket {
 
     String mockupData = "[\n" +
             "    {\n" +
-            "        \"left_card\": 4,\n" +
+            "        \"left_card\": 1,\n" +
             "        \"right_card\": 3,\n" +
             "        \"extra_card\": []\n" +
             "    },\n" +
