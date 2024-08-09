@@ -8,9 +8,11 @@ import main
 
 # TMP: variables, constances
 IMAGE_NUM = 3
-IS_AMB_ACTION = False
-AMB_PLAYER_IDX = 0
+## deprecated
+# IS_AMB_ACTION = False
+# AMB_PLAYER_IDX = 0
 CARD_REALLOC_SITUATION = ['amb_pick', 'amb_done', 'ch_win']
+PLAYER_INIT_VECTOR = [[0, -1], [-1, 0], [0, 1], [1, 0]]
 
 # TODO: ambassador action param
 def tracePlayers(inferResult, situation):
@@ -75,7 +77,9 @@ def tracePlayers(inferResult, situation):
         degrees.sort(key=lambda x : x[1])
 
         # TODO: cluster 분배 정책이 되는 함수 구현
-        player_cluster_id = [cluster_id for (cluster_id, _) in degrees[::-1] if cluster_id != deckIdx]
+        player_cluster_id = allocate_players_cluster_id(clusters, deckIdx)
+        # player_cluster_id = [cluster_id for (cluster_id, _) in degrees[::-1] if cluster_id != deckIdx]
+        print(f'{player_cluster_id=}')
 
         # 시각화
         plotInformations(cardInfo=cardInfo, clusters=clusters, block=True, show=False, save=True)
@@ -99,6 +103,7 @@ def tracePlayers(inferResult, situation):
         return (players, deck)
     
     return None
+
 
 def pickLeftCardClass(card_list, card_points):
     [a, b] = card_list
@@ -125,8 +130,41 @@ def pickRightCardClass(card_list, card_points):
     return card_points[right_point]['class_id']
 
 
-def allocate_players_cluster_id(cluster_degree, deck_idx):
-    pass
+def allocate_players_cluster_id(clusters, deck_idx):
+    player_num = main.app.game.playerNum
+    preCard = main.app.game.playersCard
+    preClusters = [{'center_vector': card['center_vector'], 'similarlity': {}} for card in preCard] if preCard is not None else [{'center_vector': vector, 'similarlity': {}} for vector in PLAYER_INIT_VECTOR]
+
+    for pre_cluster in preClusters:
+        for id in clusters:
+            if id == deck_idx:
+                continue
+            # print(pre_cluster['center_vector'])
+            # print(clusters[id]['vector'])
+            print(pre_cluster)
+            pre_cluster['similarlity'][id] = calcCosSimilarlity(pre_cluster['center_vector'], clusters[id]['vector'])
+
+
+    matchingList = [(p_id, c_id, pre['similarlity'][c_id]) for p_id, pre in enumerate(preClusters) for c_id in pre['similarlity']]
+    matchingList.sort(key=lambda x: -x[2])
+
+    player_table = dict()
+    selected = []
+    for matching in matchingList:
+        if not matching[0] in player_table.keys():
+            if matching[1] in selected:
+                continue
+            player_table[matching[0]] = matching[1:]
+            selected.append(matching[1])
+            print(player_table)
+        if len(player_table) == player_num:
+            break
+    
+    ret = []
+    for idx in range(player_num):
+        ret.append(player_table[idx][0])
+    
+    return ret
 
 
 # TODO: 해야함.
@@ -170,7 +208,7 @@ def make_players(clusters, cardPoints, player_cluster_id, deck_idx, action):
             "left_card": left_card,
             "right_card": right_card,
             "extra_card": extra,
-            "center_point": clusters[id]['center']
+            "center_vector": getVectorValueByCenter(clusters[id]['center'])
         })
 
     # players = [{
