@@ -35,4 +35,16 @@ public class History {
         this.playerTrying = playerTrying;
         this.playerTried = playerTried;
     }
+
+    @Override
+    public String toString() {
+        return "History{" +
+                "id='" + id + '\'' +
+                ", turn=" + turn +
+                ", actionId=" + actionId +
+                ", actionState=" + actionState +
+                ", playerTrying='" + playerTrying + '\'' +
+                ", playerTried='" + playerTried + '\'' +
+                '}';
+    }
 }

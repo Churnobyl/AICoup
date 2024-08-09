@@ -457,10 +457,17 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     public void performAction(MessageDto message) {
         Game game = returnGame(message);
-        History history = game.getHistory().get(game.getHistory().size()-1);
+        int index = game.getHistory().size()-1;
+        History history = game.getHistory().get(index);
+        while(history.getActionId()>7) {
+            index--;
+            history = game.getHistory().get(index);
+        }
+        System.out.println(history);
         int actionValue = history.getActionId();
         GameMember player = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
-        String targetPlayerName = history.getPlayerTried();
+        String targetPlayerName = game.getMemberIds().get(game.getWhoseTurn());
+        System.out.println(targetPlayerName);
         ActionType actionType = ActionType.fromActionValue(actionValue);
         Action action = actionRepository.findByEnglishName(actionType.name())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid action: " + actionType.name()));
@@ -507,8 +514,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 throw new IllegalArgumentException("Invalid action: " + actionType.name());
         }
         game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
+        game.setTurn(game.getTurn()+1);
         recordHistory(game.getId(), action.getId(), true, player.getName(), targetPlayerName);
         gameMemberRepository.save(player);
+        gameRepository.save(game);
+        buildGameState(game.getId());
         if (target != null) {
             gameMemberRepository.save(target);
         }
@@ -525,6 +535,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 (target.getRightCard() == null || target.getRightCard() < 0)) {
             target.setPlayer(false);
         }
+        gameMemberRepository.save(target);
     }
 
     private GameMember findPlayerByName(Game game, String playerId) {
