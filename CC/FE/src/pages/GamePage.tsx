@@ -131,6 +131,56 @@ const GamePage = () => {
           break;
         case "counterActionChallengeFail":
           break;
+        case "gptAction":
+          const his = mainMessage.history;
+          const gptActionId = his[his.length - 1].actionId;
+
+          switch (gptActionId) {
+            case 1: // income
+              publishMessage(1, "userA", "performGame");
+              break;
+            case 2: // foreign aid
+              setOptions({ 허용: 9, "공작으로 방해": 10 });
+              setModalContent("행동을 선택해주세요.");
+              setIsModalOpen(true);
+              break;
+            case 3: // tax
+              setOptions({ 허용: 9, 의심: 8, "공작으로 방해": 10 });
+              setModalContent("행동을 선택해주세요.");
+              setIsModalOpen(true);
+              break;
+            case 4: // steal
+              setOptions({
+                허용: 9,
+                의심: 8,
+                "사령관으로 방해": 11,
+                "외교관으로 방해": 12,
+              });
+              setModalContent("행동을 선택해주세요.");
+              setIsModalOpen(true);
+              break;
+            case 5: // assassinate
+              setOptions({
+                허용: 9,
+                의심: 8,
+                "귀부인으로 방해": 13,
+              });
+              setModalContent("행동을 선택해주세요.");
+              setIsModalOpen(true);
+              break;
+            case 6: // exchange
+              setOptions({
+                허용: 9,
+                의심: 8,
+              });
+              setModalContent("행동을 선택해주세요.");
+              setIsModalOpen(true);
+              break;
+            case 7: // coup
+              publishMessage(1, "userA", "performGame");
+              break;
+          }
+          break;
 
         default:
           break;
@@ -165,11 +215,22 @@ const GamePage = () => {
     //   await handleSelectTarget();
     // }
 
-    if (option === 0) {
+    const currentState = store.state;
+
+    switch (option) {
+      case 0: // 게임 시작
       publishMessage(1, "userA", "nextTurn", {});
-    } else if (option === -2) {
+        break;
+      case -2: // gameState시 다음 턴
       publishMessage(1, "userA", "nextTurn", {});
-    } else {
+        break;
+      case 9:
+        if (currentState === "gptCounterAction") {
+          publishMessage(1, "userA", "permit", {});
+        }
+
+        break;
+      default:
       publishMessage(1, "userA", actionStore.sendingState, {
         cookie: Cookies.get("gameId"),
         action: option.toString(),
