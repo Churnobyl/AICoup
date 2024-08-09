@@ -62,5 +62,5 @@ def anglesToDegrees(angles):
 
 # cos 유사도 함수
 def calcCosSimilarlity(v1, v2):
-    return productVector(v1, v2) / (getVectorSize([v1])[0]*getVectorSize([v2])[0])
+    return productVector(v1, v2) / (getVectorSize(v1)*getVectorSize(v2))
 
