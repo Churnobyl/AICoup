@@ -4,7 +4,11 @@ def calDistPoint(pos1, pos2):
     return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
 
 
-def getVectorValueByCenter(dots):
+def getVectorValueByCenter(pos): 
+    return [pos[0] - 0.5, pos[1] - 0.5]
+
+
+def getVectorValuesByCenters(dots):
     ret = []
     for dot in dots:
         ret.append([dot[0] - 0.5, dot[1] - 0.5])
