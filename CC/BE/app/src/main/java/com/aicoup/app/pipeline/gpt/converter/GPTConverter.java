@@ -55,6 +55,8 @@ public class GPTConverter {
             Map<Integer, CardInfo> cardInfoMap = cardInfoRepository.findAll().stream()
                     .collect(Collectors.toMap(CardInfo::getId, Function.identity()));
 
+            System.out.println("cardInfoMap: " + cardInfoMap);
+
             for (int i = 1; i <= members.size(); i++) {
                 players.put(i, new GPTPlayer(Arrays.asList(cardInfoMap.get(members.get(i - 1).getLeftCard()).getEnglishName(), cardInfoMap.get(members.get(i - 1).getRightCard()).getEnglishName()), Arrays.asList(members.get(0).getLeftCard() <= 0, members.get(0).getRightCard() <= 0), members.get(i - 1).getCoin()));
             }

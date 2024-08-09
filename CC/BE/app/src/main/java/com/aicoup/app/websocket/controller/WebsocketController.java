@@ -76,8 +76,7 @@ public class WebsocketController {
                 }
                 break;
             case "performGame":
-                webSocketGameService.performAction(message);
-                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+                gameStateDto = webSocketGameService.performAction(message);
                 returnState = "gameState";
                 break;
             case "anyCounterAction":
@@ -89,8 +88,18 @@ public class WebsocketController {
                 returnState = "endGame";
                 break;
             case "counterActionChallenge":
-                gameStateDto = webSocketGameService.handlePlayerChallenge(message);
+                webSocketGameService.handlePlayerChallenge(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 returnState = "challengeProcessed";
+                break;
+            case "counterActionPermit":
+                returnState = webSocketGameService.handleGPTCounterActionChallenge(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+                if(!returnState.equals("gptChallengeNone")) {
+                    wrapMessage(newMessage, gameStateDto, roomId, "gptChallenge"); //gptChallenge
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState); //gptChallengeSuccess or gptChallengeFail
+                    returnState = "endGame"; //endGame
+                }
                 break;
             case "actionProcessed":
                 webSocketGameService.processAction(message);
@@ -102,10 +111,10 @@ public class WebsocketController {
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 returnState = "challengeProcessed";
                 break;
-            case "challenge":
-                gameStateDto = webSocketGameService.handlePlayerChallenge(message);
-                returnState = "challengeProcessed";
-                break;
+//            case "challenge":
+//                gameStateDto = webSocketGameService.handlePlayerChallenge(message);
+//                returnState = "challengeProcessed";
+//                break;
             case "counterAction":
                 gameStateDto = webSocketGameService.handlePlayerCounterAction(message);
                 returnState = "counterActionProcessed";
