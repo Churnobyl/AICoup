@@ -29,12 +29,17 @@ const GamePage = () => {
   const [options, setOptions] = useState<ActionType>({}); // 선택지
 
   /**
+   * 선택 관련
+   */
+  const [isClickable, setIsClickable] = useState(false);
+
+  /**
    * 커스텀 훅
    */
   const publishMessage = usePublishMessage(clientData); // 서버로 메세지 전송
 
   const selectOptions = useCallback(
-    (canAction: ActionType | -1) => {
+    (canAction: ActionType | -1 | -2) => {
       // 결정 초기화
       actionStore.setSelectedOption(0);
       actionStore.setSelectedTarget(0);
@@ -42,6 +47,10 @@ const GamePage = () => {
       if (canAction === -1) {
         setOptions({ "게임 시작": 0 });
         setModalContent("게임을 시작하겠습니다.");
+        setIsModalOpen(true);
+      } else if (canAction === -2) {
+        setOptions({ "다음 턴": -2 });
+        setModalContent("다음 턴으로");
         setIsModalOpen(true);
       } else {
         setOptions(canAction);
@@ -76,7 +85,7 @@ const GamePage = () => {
           publishMessage(1, "userA", "gameInit");
           break;
         case "gameState":
-          const { members, turn, history, deck, canAction } = mainMessage;
+          const { members, turn, history, deck } = mainMessage;
 
           storeRef.current.setRoomId(parsedMessage.roomId);
           storeRef.current.setState(parsedMessage.state);
@@ -88,7 +97,7 @@ const GamePage = () => {
           if (turn === 0) {
             selectOptions(-1);
           } else {
-            selectOptions(canAction);
+            selectOptions(-2);
           }
 
           break;
@@ -99,18 +108,30 @@ const GamePage = () => {
         case "actionPending":
           publishMessage(1, "userA", "anyChallenge");
           break;
-        case "endGame":
+        case "endGame": // 한턴 끝남 평가 메시지 날려줘
           publishMessage(1, "userA", "performGame");
+          break;
+        case "gptChallenge":
+          // GPT가 뭐 챌린지함
+          // gptChallengeSuccess or gptChallengeFail
           break;
         case "gptChallengeNone":
           publishMessage(1, "userA", "anyCounterAction");
           break;
         case "gptCounterAction":
-          // 허용 ->
-          // 반박
+          selectOptions({
+            도전: 8,
+            허용: 9,
+          });
+          // 허용 -> counterActionPermit
+          // 반박 -> counterActionChallenge
+
           break;
-        case "":
+        case "counterActionChallengeSuccess":
           break;
+        case "counterActionChallengeFail":
+          break;
+
         default:
           break;
       }
@@ -135,24 +156,24 @@ const GamePage = () => {
   }, [handleMessage, publishMessage]);
 
   // 선택 결과
-  const handleSelect = (option: number) => {
+  const handleSelect = async (option: number) => {
     console.log("Selected option:", option);
 
     actionStore.setSelectedOption(option);
 
-    let selectedTarget = -1;
-
-    if (shouldHaveTarget.filter((value) => value === option)) {
-      selectedTarget = handleSelectTarget();
-    }
+    // if (shouldHaveTarget.filter((value) => value === option)) {
+    //   await handleSelectTarget();
+    // }
 
     if (option === 0) {
+      publishMessage(1, "userA", "nextTurn", {});
+    } else if (option === -2) {
       publishMessage(1, "userA", "nextTurn", {});
     } else {
       publishMessage(1, "userA", actionStore.sendingState, {
         cookie: Cookies.get("gameId"),
         action: option.toString(),
-        targetPlayerName: selectedTarget.toString(),
+        targetPlayerId: actionStore.selectedTarget.toString(),
       });
     }
 
@@ -160,12 +181,22 @@ const GamePage = () => {
   };
 
   const handleSelectTarget = () => {
-    return 1;
+    console.log("handleSelectTarget");
+    setIsClickable(true);
+  };
+
+  const handleClick = (playerNumber: number) => {
+    actionStore.setSelectedTarget(playerNumber);
+    console.log(actionStore.selectedTarget);
   };
 
   return (
     <div className="gamePage" id="gamePage">
-      <Board className="board" />
+      <Board
+        className="board"
+        isClickable={isClickable}
+        // onPlayerClick={handleClick}
+      />
       <HistoryBottomSheet />
       <ModalComponent
         isOpen={isModalOpen}
