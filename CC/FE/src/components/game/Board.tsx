@@ -5,6 +5,7 @@ import "./Board.scss";
 
 type Props = {
   className: string;
+  isClickable: boolean;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
