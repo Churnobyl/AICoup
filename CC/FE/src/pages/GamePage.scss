@@ -1,6 +1,6 @@
 .gamePage {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   flex-direction: row;
   gap: 10px;
 
@@ -18,10 +18,24 @@
   }
 }
 
+.board {
+  margin-left: 300px;
+  animation: moveLeft 1s ease-in-out forwards;
+}
+
+@keyframes moveLeft {
+  from {
+    margin-left: 300px;
+  }
+  to {
+    margin-left: 100px;
+  }
+}
+
 .modal {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 80%;
   right: auto;
   bottom: auto;
   margin-right: -50%;
@@ -30,6 +44,7 @@
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  opacity: 80%;
 }
 
 .overlay {
