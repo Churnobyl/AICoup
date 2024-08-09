@@ -9,34 +9,29 @@ import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
+import usePublishMessage from "@/hooks/usePublishMessage";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
 const GamePage = () => {
-  const store = useGameStore();
-  const storeRef = useRef(store);
-  const actionStore = useActionStore();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState("");
-  const [options, setOptions] = useState<ActionType>({});
+  /**
+   * Store 관련
+   */
+  const store = useGameStore(); // 게임 정보 Zustand Store
+  const storeRef = useRef(store); // 리랜더링 방지 위해 Ref로 감싸서 사용
+  const actionStore = useActionStore(); // Action 관련 정보 Zustand Store
 
-  const publishMessage = useCallback(
-    (roomId: number, writer: string, state: string, mainMessage = {}) => {
-      clientData.publish({
-        destination: "/pub/chat/message",
-        body: JSON.stringify({
-          roomId,
-          writer,
-          mainMessage: {
-            ...mainMessage,
-            cookie: Cookies.get("aiCoup"),
-          },
-          state,
-        }),
-      });
-    },
-    []
-  );
+  /**
+   * 모달 관련
+   */
+  const [isModalOpen, setIsModalOpen] = useState(false); // 선택지 모달 ON/OFF 관리
+  const [modalContent, setModalContent] = useState(""); // 모달에 들어갈 설명
+  const [options, setOptions] = useState<ActionType>({}); // 선택지
+
+  /**
+   * 커스텀 훅
+   */
+  const publishMessage = usePublishMessage(clientData); // 서버로 메세지 전송
 
   const selectOptions = useCallback(
     (canAction: ActionType | -1) => {
@@ -101,6 +96,9 @@ const GamePage = () => {
           actionStore.setSendingState("action");
           selectOptions(mainMessage.canAction);
           break;
+        case "actionPending":
+          publishMessage(1, "userA", "anyChallenge");
+          break;
         default:
           break;
       }
@@ -109,19 +107,19 @@ const GamePage = () => {
   );
 
   useEffect(() => {
-    connect();
+    connect(); // 웹소켓 연결
 
+    // 연결됐을 때
     clientData.onConnect = () => {
-      console.log("Connected to WebSocket");
-      clientData.subscribe("/sub/chat/room/1", handleMessage);
+      console.log("Connected to WebSocket"); // 디버깅 메세지
+      clientData.subscribe("/sub/chat/room/1", handleMessage); // room1 subscribe
       publishMessage(1, "userA", "gameCheck", {
-        cookie: Cookies.get("gameId"),
+        // 게임 상태 체크 "gameCheck"
+        cookie: Cookies.get("gameId"), // 쿠키 정보 담아서 보냄
       });
     };
 
-    return () => {
-      // clientData.deactivate();
-    };
+    return () => {}; // 웹소켓 disconnect없이 지속
   }, [handleMessage, publishMessage]);
 
   // 선택 결과
