@@ -99,6 +99,9 @@ const GamePage = () => {
         case "actionPending":
           publishMessage(1, "userA", "anyChallenge");
           break;
+        case "endGame":
+          publishMessage(1, "userA", "performGame");
+          break;
         default:
           break;
       }
