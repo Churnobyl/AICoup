@@ -219,10 +219,10 @@ const GamePage = () => {
 
     switch (option) {
       case 0: // 게임 시작
-      publishMessage(1, "userA", "nextTurn", {});
+        publishMessage(1, "userA", "nextTurn", {});
         break;
       case -2: // gameState시 다음 턴
-      publishMessage(1, "userA", "nextTurn", {});
+        publishMessage(1, "userA", "nextTurn", {});
         break;
       case 9:
         if (currentState === "gptCounterAction") {
@@ -231,11 +231,11 @@ const GamePage = () => {
 
         break;
       default:
-      publishMessage(1, "userA", actionStore.sendingState, {
-        cookie: Cookies.get("gameId"),
-        action: option.toString(),
-        targetPlayerId: actionStore.selectedTarget.toString(),
-      });
+        publishMessage(1, "userA", actionStore.sendingState, {
+          cookie: Cookies.get("gameId"),
+          action: option.toString(),
+          targetPlayerId: actionStore.selectedTarget.toString(),
+        });
     }
 
     setIsModalOpen(false);
