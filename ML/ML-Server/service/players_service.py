@@ -38,7 +38,7 @@ def tracePlayers(inferResult, situation):
         cardPoints = dict(enumerate([{
                                 "class_id": i['class_id'],
                                 "center": (i['x'], i['y']),
-                                "vector": getVectorValueByCenter([[i['x'], i['y']]])[0],
+                                "vector": getVectorValuesByCenters([[i['x'], i['y']]])[0],
                                 "cluster": -1
                                 }
                                 for i in cardInfo]))
@@ -60,9 +60,11 @@ def tracePlayers(inferResult, situation):
             continue
 
         # 벡터변환 및 플레이어 할당
+        for k in clusters:
+            clusters[k]['vector'] = getVectorValueByCenter(clusters[k]['center'])
         clusterPoints = [clusters[k]['center'] for k in clusters]
 
-        clusterVects  = getVectorValueByCenter(clusterPoints)
+        clusterVects  = getVectorValuesByCenters(clusterPoints)
         vectorSizes = getVectorSizes(clusterVects)
         products = [productVector(vec, [1, 0]) for vec in clusterVects]
 
@@ -86,19 +88,7 @@ def tracePlayers(inferResult, situation):
 
         # TODO: 이전 정보 가져와서 extra 분류해야함
         # 함수로 아래 빼기. - extra 분류, min/max가 에러 해결, cos 유사 판별
-        players = [{
-                "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[id]['cards']],
-                # TODO: 함수로 빼기 + 각도 0 근처에서 값 반전 고려
-                "left_card": pickLeftCardClass([card for card in clusters[id]['cards']], cardPoints),
-                "right_card": pickRightCardClass([card for card in clusters[id]['cards']], cardPoints),
-                "extra_card": [],
-                "center_point": clusters[id]['center']
-            } for id in player_cluster_id
-        ]
-        deck = {
-            "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[deckIdx]['cards']],
-            "center_point": clusters[deckIdx]['center']
-        }
+        players, deck = make_players(clusters, cardPoints, player_cluster_id, deckIdx, situation)
 
         # validation
         # TODO: validation 부분 구현
@@ -120,6 +110,11 @@ def pickLeftCardClass(card_list, card_points):
     return card_points[left_point]['class_id']
 
 
+def sortByLeftToRight(card_list, card_points, cluster_vector):
+    cluster_v_n = [-1 * cluster_vector[1], cluster_vector[0]]
+    return sorted([card_points[card] for card in card_list], key=lambda x: productVector(cluster_v_n, x['vector']))
+
+
 def pickRightCardClass(card_list, card_points):
     [a, b] = card_list
     a_v = card_points[a]['vector']
@@ -131,33 +126,61 @@ def pickRightCardClass(card_list, card_points):
 
 
 def allocate_players_cluster_id(cluster_degree, deck_idx):
-    # firstInfer를 보고 벡터 유사도로 분배하기
     pass
 
 
 # TODO: 해야함.
 def make_players(clusters, cardPoints, player_cluster_id, deck_idx, action):
-    # firstInfer를 보고 precard 뽑아내기
-    pre_cards = main.app.game.playersCard
-    pre_cards = [[pre_cards[id]['left_card'], pre_cards[id]['right_card']] for id in player_cluster_id]
+    pre_cards_class = main.app.game.playersCard
+    if main.app.game.playersCard is not None:
+        pre_cards_class = [[pre['left_card'], pre['right_card']] for pre in pre_cards_class]
 
-    # action에 amb_pick보고 extra 만들기
-    extras = [
-              list(Multiset(cardPoints[card]['class_id']) - Multiset(pre))
-              for id in player_cluster_id
-              for card in clusters[id]['cards']
-              for pre in pre_cards
-              ]
+    players = []
+    for index, id in enumerate(player_cluster_id):
+        print('player_id: ', id)
+        cards = sortByLeftToRight([card for card in clusters[id]['cards']], cardPoints, clusters[id]['vector']) # TODO: 'center' 고치자
+        left_card = cards[0]['class_id'] # TODO: 위 함수 enumerate 필요한가? indic 바꾸기
+        right_card = cards[1]['class_id']
+        extra = []
+        # action에 amb_pick보고 extra 만들기
+        # card 객체로 다시 뽑아야함... 생각보다 긴 코드가 될 듯
+        if index == action['player_id'] and action['name'] == 'amb_pick' and pre_cards_class is not None:    # TODO: 뒤 condition error raise로 아래로 빼주기
+            amb_player = action['player_id']
+            print(f'{clusters=}')
+            amb_cards = clusters[player_cluster_id[amb_player]]['cards']   # TODO: player_id => clusters index로 바꿔서 넣어야함
+            amb_hand_cards = []
+            print(f'{cards=}')
+            print(f'{amb_cards=}')
+            print(f'{[cardPoints[ix]["class_id"] for ix in amb_cards]=}')
+            # amb pre point
+            for card in cards:      # 꼴보기 싫음. 코드 바꿔야함 fuxxin TODO ㅗㅗ
+                print('pick: --', card)
+                if card['class_id'] in [cardPoints[ix]['class_id'] for ix in amb_cards]:
+                    amb_hand_cards.append(card)
+                if len(amb_hand_cards) == 2:
+                    break
+            # amb_pre = [card for card in amb_cards if card['class_id'] in pre_cards_class] # 이거 안됌... TODO: 바꾸기 - 1 두개면 상황에 따라 logic error
+            extra = list(Multiset([card['class_id'] for card in cards])
+                        - Multiset([pre for pre in pre_cards_class[amb_player]]))
+            print(f'{amb_hand_cards=}')
+            left_card = amb_hand_cards[0]['class_id']
+            right_card = amb_hand_cards[1]['class_id']
+        players.append({
+            "cards": cards,
+            "left_card": left_card,
+            "right_card": right_card,
+            "extra_card": extra,
+            "center_point": clusters[id]['center']
+        })
 
-    players = [{
-                "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[id]['cards']],
-                # TODO: 함수로 빼기 + 각도 0 근처에서 값 반전 고려
-                "left_card": pickLeftCardClass([card for card in clusters[id]['cards']], cardPoints),
-                "right_card": pickRightCardClass([card for card in clusters[id]['cards']], cardPoints),
-                "extra_card": [],
-                "center_point": clusters[id]['center']
-            } for id in player_cluster_id
-        ]
+    # players = [{
+    #             "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[id]['cards']],
+    #             # TODO: 함수로 빼기 + 각도 0 근처에서 값 반전 고려
+    #             "left_card": pickLeftCardClass([card for card in clusters[id]['cards']], cardPoints),
+    #             "right_card": pickRightCardClass([card for card in clusters[id]['cards']], cardPoints),
+    #             "extra_card": [],
+    #             "center_point": clusters[id]['center']
+    #         } for id in player_cluster_id]
     deck = {
             "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[deck_idx]['cards']],
             "center_point": clusters[deck_idx]['center']
@@ -198,6 +221,8 @@ def clusterValid(clusters):
 def postValidCard(players, situation):
     if main.app.game.playersCard is not None:
         for idx, (pre, cur) in enumerate(zip(main.app.game.playersCard, players)):
+            # print(f'{pre=}')
+            # print(f'{cur=}')
             if situation['name'] in CARD_REALLOC_SITUATION and idx == situation['player_id']:
                 continue
             if pre['left_card'] != cur['left_card']:
