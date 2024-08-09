@@ -289,6 +289,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
         String returnState = "";
         if (!"none".equals(challenger)) {
+            challenger = game.getMemberIds().get(Integer.parseInt(challenger)-1);
             returnState = challenge(game.getId(), challenger);
         } else {
             returnState = "gptChallengeNone";
@@ -333,36 +334,35 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     public GameStateDto handlePlayerChallenge(MessageDto message) {
         Game game = returnGame(message);
-//        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
-//        boolean isChallenge = Boolean.parseBoolean(mainMessage.get("isChallenge"));
-//
-//        if (!game.isAwaitingChallenge()) {
-//            throw new IllegalStateException("Challenge is not allowed at this time");
-//        }
-//
-//        GameStateDto gameState;
-//        if (isChallenge) {
-//            gameState = buildGameState(game.getId());
-//
-//            boolean challengeSuccessful = gameState.isChallengeSuccessful();
-//
-//            if (challengeSuccessful) {
-//                game.setCurrentActionState("CHALLENGE_SUCCESSFUL");
-//            } else {
-//                GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
-//                gameState = completePlayerAction(message, game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
-//            }
-//        } else {
-//            GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
-//            gameState = completePlayerAction(message, game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
-//        }
-//
-//        game.setAwaitingChallenge(false);
-//        game.setAwaitingChallengeActionValue(null);
-//        gameRepository.save(game);
-//
-//        return gameState;
-        challenge(game.getId(), );
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+        boolean isChallenge = Boolean.parseBoolean(mainMessage.get("isChallenge"));
+
+        if (!game.isAwaitingChallenge()) {
+            throw new IllegalStateException("Challenge is not allowed at this time");
+        }
+
+        GameStateDto gameState;
+        if (isChallenge) {
+            gameState = buildGameState(game.getId());
+
+            boolean challengeSuccessful = gameState.isChallengeSuccessful();
+
+            if (challengeSuccessful) {
+                game.setCurrentActionState("CHALLENGE_SUCCESSFUL");
+            } else {
+                GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
+                gameState = completePlayerAction(message, game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
+            }
+        } else {
+            GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
+            gameState = completePlayerAction(message, game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
+        }
+
+        game.setAwaitingChallenge(false);
+        game.setAwaitingChallengeActionValue(null);
+        gameRepository.save(game);
+
+        return gameState;
     }
 
     public GameStateDto handlePlayerCounterAction(MessageDto message) {
@@ -703,7 +703,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         GameMember challenger = findPlayerByName(game, challengerName);
 
         // 마지막 액션 가져오기
-        History lastAction = game.getActionContext().getLast();
+        History lastAction = game.getHistory().get(game.getHistory().size()-1);
         ActionType lastActionType = ActionType.fromActionValue(lastAction.getActionId());
         GameMember target = findPlayerByName(game, lastAction.getPlayerTrying());
 
