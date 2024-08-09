@@ -1,0 +1,78 @@
+{
+  "player_num": 4,
+  "current_player": 1,
+  "counter_actioner": 4,
+  "counter_action": "contessa",
+  "playerinfo": [
+    {
+      "1": {
+        "cards": ["assassin", "assassin"],
+        "cards_open": [false, false],
+        "coins": 5
+      },
+      "2": {
+        "cards": ["ambassador", "captain"],
+        "cards_open": [false, false],
+        "coins": 2
+      },
+      "3": {
+        "cards": ["duke", "contessa"],
+        "cards_open": [false, false],
+        "coins": 3
+      },
+      "4": {
+        "cards": ["assassin", "captain"],
+        "cards_open": [true, false],
+        "coins": 4
+      }
+    }
+  ],
+  "history": {
+    "1": ["tax"],
+    "2": ["exchange"],
+    "3": ["tax"],
+    "4": ["steal"]
+  }
+},
+{
+  "challenger": 4
+},
+{
+  "player_num": 4,
+  "current_player": 1,
+  "counter_actioner": 3,
+  "counter_action": "contessa",
+  "playerinfo": [
+    {
+      "1": {
+        "cards": ["assassin", "assassin"],
+        "cards_open": [true, false],
+        "coins": 3
+      },
+      "2": {
+        "cards": ["ambassador", "captain"],
+        "cards_open": [false, false],
+        "coins": 8
+      },
+      "3": {
+        "cards": ["duke", "contessa"],
+        "cards_open": [false, false],
+        "coins": 11
+      },
+      "4": {
+        "cards": ["assassin", "captain"],
+        "cards_open": [true, true],
+        "coins": 4
+      }
+    }
+  ],
+  "history": {
+    "1": ["tax", "assasinate", "income", "income", "income"],
+    "2": ["exchange", "steal", "steal", "steal", "exchange"],
+    "3": ["tax", "tax", "tax", "tax ", "tax"],
+    "4": ["steal"]
+  }
+},
+{
+  "challenger": 1
+},

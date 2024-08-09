@@ -1,0 +1,39 @@
+{
+  "player_num": 4,
+  "current_player": 3,
+  "counter_actioner": 4,
+  "counter_action": "duke",
+  "playerinfo": [
+    {
+    "1": {
+      "cards": ["assassin", "captain"],
+      "cards_open": [true, false],
+      "coins": 6
+    },
+    "2": {
+      "cards": ["duke", "duke"],
+      "cards_open": [true, true],
+      "coins": 6
+  },
+    "3": {
+      "cards": ["assassin", "contessa"],
+      "cards_open": [false, true],
+      "coins": 1
+    },
+    "4": {
+      "cards": ["assassin", "contessa"],
+      "cards_open": [false, false],
+      "coins": 0
+    }
+    }
+  ],
+  "history": {
+    "1": ["tax", "steal", "steal"],
+    "2": ["tax", "tax"],
+    "3": ["tax", "income"],
+    "4": ["income", "assassinate"]
+  }
+},
+{
+  "challenger": "none"
+},
