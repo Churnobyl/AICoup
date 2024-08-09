@@ -70,10 +70,9 @@ public class WebsocketController {
                 returnState = webSocketGameService.handleGPTChallenge(message);
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 if(!returnState.equals("gptChallengeNone")) {
-                    wrapMessage(newMessage, gameStateDto, roomId, "gptChallenge");
-                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
-                    returnState = "endGame";
-                } else {
+                    wrapMessage(newMessage, gameStateDto, roomId, "gptChallenge"); //gptChallenge
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState); //gptChallengeSuccess or gptChallengeFail
+                    returnState = "endGame"; //endGame
                 }
                 break;
             case "performGame":
@@ -88,6 +87,10 @@ public class WebsocketController {
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
                 }
                 returnState = "endGmae";
+                break;
+            case "counterActionChallenge":
+                gameStateDto = webSocketGameService.handlePlayerChallenge(message);
+                returnState = "challengeProcessed";
                 break;
             case "actionProcessed":
                 webSocketGameService.processAction(message);
