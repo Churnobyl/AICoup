@@ -78,6 +78,8 @@ public class WebsocketController {
             case "performGame":
                 gameStateDto = webSocketGameService.performAction(message);
                 returnState = "gameState";
+                System.out.println(gameStateDto.getMembers());
+                wrapMessage(newMessage, gameStateDto, roomId, "gameState");
                 break;
             case "anyCounterAction":
                 returnState = webSocketGameService.handleGPTCounterAction(message);

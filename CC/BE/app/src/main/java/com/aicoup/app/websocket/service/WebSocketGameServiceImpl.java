@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.socket.server.WebSocketService;
 
 import java.util.*;
@@ -468,6 +469,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         };
     }
 
+    @Transactional
     public GameStateDto performAction(MessageDto message) {
         Game game = returnGame(message);
         int index = game.getHistory().size()-1;
@@ -529,11 +531,12 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
         game.setTurn(game.getTurn()+1);
         recordHistory(game.getId(), action.getId(), true, player.getName(), targetPlayerName);
-        gameMemberRepository.save(player);
         gameRepository.save(game);
+        gameMemberRepository.save(player);
         if (target != null) {
             gameMemberRepository.save(target);
         }
+        System.out.println(gameMemberRepository.findById("1"));
         return buildGameState(game.getId());
     }
 
@@ -567,7 +570,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         List<GameMember> members = game.getMemberIds().stream()
                 .map(id -> gameMemberRepository.findById(id).orElseThrow())
                 .collect(Collectors.toList());
-
+        System.out.println("getGameState : " + members);
         Map<Integer, CardInfo> cardInfoMap = cardInfoRepository.findAll().stream()
                 .collect(Collectors.toMap(CardInfo::getId, Function.identity()));
 
@@ -657,17 +660,21 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         gameRepository.save(game);
     }
 
+    @Transactional
     public GameStateDto buildGameState(String gameId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new RuntimeException("Game not found with ID: " + gameId));
-
+        List<GameMember> members = game.getMemberIds().stream()
+                .map(id -> gameMemberRepository.findById(id).orElseThrow())
+                .collect(Collectors.toList());
+        System.out.println(members);
         GameStateDto gameStateDto = getGameState(gameId);
         gameStateDto.setMessage(gameId);
         gameStateDto.setAwaitingChallenge(game.isAwaitingChallenge());
         gameStateDto.setAwaitingCounterAction(game.isAwaitingCounterAction());
         gameStateDto.setAwaitingChallengeActionValue(game.getAwaitingChallengeActionValue());
         gameStateDto.setAwaitingCounterActionValue(game.getAwaitingCounterActionValue());
-
+        System.out.println(gameStateDto.getMembers());
         return gameStateDto;
     }
 
