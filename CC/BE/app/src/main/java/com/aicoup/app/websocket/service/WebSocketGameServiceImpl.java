@@ -283,6 +283,10 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         Game game = returnGame(message);
         String[] challengeResult = gptResponseGetter.challengeApi(game.getId());
         String challenger = challengeResult[0];
+        while(challenger.equals("1")) {
+            challengeResult = gptResponseGetter.challengeApi(game.getId());
+            challenger = challengeResult[0];
+        }
         String returnState = "";
         if (!"none".equals(challenger)) {
             returnState = challenge(game.getId(), challenger);
@@ -308,7 +312,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         if (!"none".equals(counterActioner)) {
             int counterActionValue = convertActionToValue(counterAction);
             counterAction(game, counterActioner, counterActionValue);
-
 //            boolean playerChallengedCounter = offerPlayerChallenge(game, counterActionValue);
 //            if (!playerChallengedCounter) {
 //                handleGPTChallengeAgainstCounter(game, counterActionValue);
@@ -330,35 +333,36 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     public GameStateDto handlePlayerChallenge(MessageDto message) {
         Game game = returnGame(message);
-        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
-        boolean isChallenge = Boolean.parseBoolean(mainMessage.get("isChallenge"));
-
-        if (!game.isAwaitingChallenge()) {
-            throw new IllegalStateException("Challenge is not allowed at this time");
-        }
-
-        GameStateDto gameState;
-        if (isChallenge) {
-            gameState = buildGameState(game.getId());
-
-            boolean challengeSuccessful = gameState.isChallengeSuccessful();
-
-            if (challengeSuccessful) {
-                game.setCurrentActionState("CHALLENGE_SUCCESSFUL");
-            } else {
-                GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
-                gameState = completePlayerAction(message, game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
-            }
-        } else {
-            GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
-            gameState = completePlayerAction(message, game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
-        }
-
-        game.setAwaitingChallenge(false);
-        game.setAwaitingChallengeActionValue(null);
-        gameRepository.save(game);
-
-        return gameState;
+//        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+//        boolean isChallenge = Boolean.parseBoolean(mainMessage.get("isChallenge"));
+//
+//        if (!game.isAwaitingChallenge()) {
+//            throw new IllegalStateException("Challenge is not allowed at this time");
+//        }
+//
+//        GameStateDto gameState;
+//        if (isChallenge) {
+//            gameState = buildGameState(game.getId());
+//
+//            boolean challengeSuccessful = gameState.isChallengeSuccessful();
+//
+//            if (challengeSuccessful) {
+//                game.setCurrentActionState("CHALLENGE_SUCCESSFUL");
+//            } else {
+//                GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
+//                gameState = completePlayerAction(message, game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
+//            }
+//        } else {
+//            GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
+//            gameState = completePlayerAction(message, game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
+//        }
+//
+//        game.setAwaitingChallenge(false);
+//        game.setAwaitingChallengeActionValue(null);
+//        gameRepository.save(game);
+//
+//        return gameState;
+        challenge(game.getId(), );
     }
 
     public GameStateDto handlePlayerCounterAction(MessageDto message) {
@@ -430,15 +434,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         GameMember player = findPlayerByName(game, playerName);
         Action action = actionRepository.findByEnglishName(actionName)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid action: " + actionName));
-
         int requiredCoins = getRequiredCoinsForAction(actionName);
         if (player.getCoin() < requiredCoins) {
-//            throw new IllegalArgumentException("Not enough coins to perform the action.");
             return false;
         }
-
         if (player.getCoin() >= 10 && !actionName.equals("Coup")) {
-//            throw new IllegalArgumentException("Player must perform Coup when having 10 or more coins.");
             return false;
         }
         return true;
@@ -528,7 +528,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     }
 
     private GameMember findPlayerByName(Game game, String playerId) {
-        System.out.println("playerId: " + playerId);
         return game.getMemberIds().stream()
                 .map(id -> gameMemberRepository.findById(id).orElseThrow())
                 .filter(member -> member.getId().equals(playerId))
