@@ -1,4 +1,4 @@
-import GamePage from "@/pages/GamePage.tsx";
+import GamePage from "@/pages/GamePage";
 import GameStatusPage from "@/pages/GameStatusPage.tsx";
 import ReactDOM from "react-dom/client";
 import {
