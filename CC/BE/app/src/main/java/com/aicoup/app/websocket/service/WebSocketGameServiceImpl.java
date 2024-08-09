@@ -333,12 +333,19 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         String counterAction = counterActionResult[1];
         String returnState;
         if (!"none".equals(counterActioner)) {
-            int counterActionValue = convertActionToValue(counterAction);
+            History lastAction = game.getHistory().get(game.getHistory().size()-1);
+            ActionType originalActionType = ActionType.fromActionValue(lastAction.getActionId());
+            ActionType counterActionType =  ActionType.fromActionValue(convertCounterActionToValue(counterAction));
+            while(isCounterActionValid(originalActionType, counterActionType)) {
+                counterActionResult = gptResponseGetter.counterActionApi(game.getId());
+                counterActioner = counterActionResult[0];
+                counterAction = counterActionResult[1];
+                if(counterAction.equals("none")) {
+                    return "gptCounterActionNone";
+                }
+            }
+            int counterActionValue = convertCounterActionToValue(counterAction);
             counterAction(game, counterActioner, counterActionValue);
-//            boolean playerChallengedCounter = offerPlayerChallenge(game, counterActionValue);
-//            if (!playerChallengedCounter) {
-//                handleGPTChallengeAgainstCounter(game, counterActionValue);
-//            }
             returnState = "gptCounterAction";
         } else {
             returnState = "gptCounterActionNone";
@@ -354,36 +361,9 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
     }
 
-    public void handlePlayerChallenge(MessageDto message) {
+    public String handlePlayerChallenge(MessageDto message) {
         Game game = returnGame(message);
-//        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
-//        boolean isChallenge = Boolean.parseBoolean(mainMessage.get("isChallenge"));
-//
-//        if (!game.isAwaitingChallenge()) {
-//            throw new IllegalStateException("Challenge is not allowed at this time");
-//        }
-//
-//        GameStateDto gameState;
-//        if (isChallenge) {
-//            gameState = buildGameState(game.getId());
-//
-//            boolean challengeSuccessful = gameState.isChallengeSuccessful();
-//
-//            if (challengeSuccessful) {
-//                game.setCurrentActionState("CHALLENGE_SUCCESSFUL");
-//            } else {
-//                GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
-//                gameState = completePlayerAction(message, game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
-//            }
-//        } else {
-//            GameMember player = findPlayerByName(game, game.getCurrentPlayerName());
-//            gameState = completePlayerAction(message, game, player.getName(), game.getCurrentAction(), game.getCurrentTargetName());
-//        }
-//
-//        game.setAwaitingChallenge(false);
-//        game.setAwaitingChallengeActionValue(null);
-//        gameRepository.save(game);
-        challenge(game, "1");
+        return challenge(game, "1");
     }
 
     public GameStateDto handlePlayerCounterAction(MessageDto message) {
@@ -444,6 +424,21 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 return 13;
             default:
                 throw new IllegalArgumentException("Unknown action: " + action);
+        }
+    }
+
+    private int convertCounterActionToValue(String counterAction) {
+        switch (counterAction.toLowerCase()) {
+            case "duke":
+                return 10;
+            case "captain":
+                return 11;
+            case "ambassador":
+                return 12;
+            case "contessa":
+                return 13;
+            default:
+                throw new IllegalArgumentException("Unknown counterAction: " + counterAction);
         }
     }
 
@@ -791,21 +786,27 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return challengeSuccess?"challengeSuccess":"challengeFail";
     }
 
-    public GameStateDto counterAction(Game game, String counterActorName, Integer actionValue) {
-        GameMember counterActor = findPlayerByName(game, counterActorName);
+    public GameStateDto counterAction(Game game, String counterActioner, Integer actionValue) {
+        String counterActionerId = game.getMemberIds().get(Integer.parseInt(counterActioner)-1);
+        GameMember counterActor = findPlayerByName(game, counterActionerId);
 
         // 마지막 액션 가져오기
-        History lastAction = game.getActionContext().getLast();
+        int index = game.getHistory().size()-1;
+        History lastAction = game.getHistory().get(index);
+        while(lastAction.getActionId()>7) {
+            index--;
+            lastAction = game.getHistory().get(index);
+        }
         ActionType originalActionType = ActionType.fromActionValue(lastAction.getActionId());
         ActionType counterActionType = ActionType.fromActionValue(actionValue);
 
         // 대응 가능한 액션인지 확인
         if (!isCounterActionValid(originalActionType, counterActionType)) {
-            throw new IllegalArgumentException("Invalid counter action");
+            return null;
         }
 
         // 대응 액션 추가
-        game.addHistory(new History(UUID.randomUUID().toString(), actionValue, counterActorName, lastAction.getPlayerTrying()));
+        game.addHistory(new History(UUID.randomUUID().toString(), actionValue, counterActionerId, lastAction.getPlayerTrying()));
         gameRepository.save(game);
 
         return buildGameState(game.getId());

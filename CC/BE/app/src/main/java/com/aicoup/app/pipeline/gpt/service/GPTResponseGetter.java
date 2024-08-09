@@ -64,6 +64,9 @@ public class GPTResponseGetter {
 
         // API 호출
         String dataFromGptApiForCounterAction = chatGPTSocket.getDataFromGptApiForCounteractionAgainstAction(systemPrompt, userPrompt);
+
+        //dataFromGptApiForCounterAction 이 데이터가 형식에 맞는지 맞지 않는지 검증이 필요하다.
+
         // JSONObject 생성
         JSONObject jsonObject = new JSONObject(dataFromGptApiForCounterAction);
 

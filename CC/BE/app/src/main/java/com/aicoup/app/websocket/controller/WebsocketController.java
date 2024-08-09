@@ -87,7 +87,6 @@ public class WebsocketController {
                 if(!returnState.equals("gptCounterActionNone")) {
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
                 }
-                returnState = "endGame";
                 break;
             case "counterActionChallenge":
                 webSocketGameService.handlePlayerChallenge(message);
@@ -113,10 +112,10 @@ public class WebsocketController {
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 returnState = "challengeProcessed";
                 break;
-//            case "challenge":
-//                gameStateDto = webSocketGameService.handlePlayerChallenge(message);
-//                returnState = "challengeProcessed";
-//                break;
+            case "challenge":
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+                returnState = webSocketGameService.handlePlayerChallenge(message);
+                break;
             case "counterAction":
                 gameStateDto = webSocketGameService.handlePlayerCounterAction(message);
                 returnState = "counterActionProcessed";
