@@ -28,8 +28,8 @@ public class GPTResponseGetter {
         JSONObject jsonObject = new JSONObject(dataFromGptApiForAction);
 
         // 키값과 밸류값 추출
-        String action = jsonObject.getString("action");
-        String target = jsonObject.getString("target");
+        String action = jsonObject.get("action").toString();
+        String target = jsonObject.get("target").toString();
         String[] actionArr = new String[2];
         actionArr[0] = action;
         actionArr[1] = target;
@@ -51,7 +51,7 @@ public class GPTResponseGetter {
 
         // 키값과 밸류값 추출
         String[] challenger = new String[1];
-        challenger[0] = jsonObject.getString("challenger");
+        challenger[0] = jsonObject.get("challenger").toString();
         System.out.println(dataFromGptApiForChallenge);
         return challenger;
     }
@@ -68,8 +68,8 @@ public class GPTResponseGetter {
         JSONObject jsonObject = new JSONObject(dataFromGptApiForCounterAction);
 
         // 키값과 밸류값 추출
-        String counterActioner = jsonObject.getString("counter_actioner");
-        String counterAction = jsonObject.getString("counter_action");
+        String counterActioner = jsonObject.get("counter_actioner").toString();
+        String counterAction = jsonObject.get("counter_action").toString();
         String[] actionArr = new String[2];
         actionArr[0] = counterActioner;
         actionArr[1] = counterAction;
@@ -91,7 +91,7 @@ public class GPTResponseGetter {
 
         // 키값과 밸류값 추출
         String[] challenger = new String[1];
-        challenger[0] = jsonObject.getString("challenger");
+        challenger[0] = jsonObject.get("challenger").toString();
         System.out.println(dataFromGptApiForCounterActionChallenge);
         return challenger;
     }
