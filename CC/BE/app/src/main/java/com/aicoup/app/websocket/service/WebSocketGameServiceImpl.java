@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.socket.server.WebSocketService;
 
 import java.util.*;
@@ -477,7 +476,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         };
     }
 
-    @Transactional
     public GameStateDto performAction(MessageDto message) {
         Game game = returnGame(message);
         int index = game.getHistory().size()-1;
@@ -486,9 +484,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             index--;
             history = game.getHistory().get(index);
         }
+        System.out.println(history);
         int actionValue = history.getActionId();
         GameMember player = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
         String targetPlayerName = game.getMemberIds().get(game.getWhoseTurn());
+        System.out.println(targetPlayerName);
         ActionType actionType = ActionType.fromActionValue(actionValue);
         Action action = actionRepository.findByEnglishName(actionType.name())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid action: " + actionType.name()));
@@ -537,11 +537,13 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
         game.setTurn(game.getTurn()+1);
         recordHistory(game.getId(), action.getId(), true, player.getName(), targetPlayerName);
+        gameMemberRepository.save(player);
         gameRepository.save(game);
-        // 임시로 저희 target 1로 하기로 했었음!!
-        //        if (target != null) {
-        //            gameMemberRepository.save(target);
-        //        }
+
+// 임시로 저희 target 1로 하기로 했었음!!
+//        if (target != null) {
+//            gameMemberRepository.save(target);
+//        }
         return buildGameState(game.getId());
     }
 
@@ -575,7 +577,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         List<GameMember> members = game.getMemberIds().stream()
                 .map(id -> gameMemberRepository.findById(id).orElseThrow())
                 .collect(Collectors.toList());
-        System.out.println("getGameState : " + members);
+
         Map<Integer, CardInfo> cardInfoMap = cardInfoRepository.findAll().stream()
                 .collect(Collectors.toMap(CardInfo::getId, Function.identity()));
 
@@ -665,21 +667,17 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         gameRepository.save(game);
     }
 
-    @Transactional
     public GameStateDto buildGameState(String gameId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new RuntimeException("Game not found with ID: " + gameId));
-        List<GameMember> members = game.getMemberIds().stream()
-                .map(id -> gameMemberRepository.findById(id).orElseThrow())
-                .collect(Collectors.toList());
-        System.out.println(members);
+
         GameStateDto gameStateDto = getGameState(gameId);
         gameStateDto.setMessage(gameId);
         gameStateDto.setAwaitingChallenge(game.isAwaitingChallenge());
         gameStateDto.setAwaitingCounterAction(game.isAwaitingCounterAction());
         gameStateDto.setAwaitingChallengeActionValue(game.getAwaitingChallengeActionValue());
         gameStateDto.setAwaitingCounterActionValue(game.getAwaitingCounterActionValue());
-        System.out.println(gameStateDto.getMembers());
+
         return gameStateDto;
     }
 
