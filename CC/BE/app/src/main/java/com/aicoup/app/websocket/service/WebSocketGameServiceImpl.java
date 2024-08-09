@@ -434,6 +434,14 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 return 6;
             case "coup":
                 return 7;
+            case "duke":
+                return 10;
+            case "captain":
+                return 11;
+            case "ambassador":
+                return 12;
+            case "contessa":
+                return 13;
             default:
                 throw new IllegalArgumentException("Unknown action: " + action);
         }
@@ -476,11 +484,9 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             index--;
             history = game.getHistory().get(index);
         }
-        System.out.println(history);
         int actionValue = history.getActionId();
         GameMember player = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
         String targetPlayerName = game.getMemberIds().get(game.getWhoseTurn());
-        System.out.println(targetPlayerName);
         ActionType actionType = ActionType.fromActionValue(actionValue);
         Action action = actionRepository.findByEnglishName(actionType.name())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid action: " + actionType.name()));
@@ -531,9 +537,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         recordHistory(game.getId(), action.getId(), true, player.getName(), targetPlayerName);
         gameMemberRepository.save(player);
         gameRepository.save(game);
-        if (target != null) {
-            gameMemberRepository.save(target);
-        }
+
+// 임시로 저희 target 1로 하기로 했었음!!
+//        if (target != null) {
+//            gameMemberRepository.save(target);
+//        }
         return buildGameState(game.getId());
     }
 
