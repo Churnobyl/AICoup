@@ -38,4 +38,8 @@
   &.card-5 {
     background-position: 0% -500%;
   }
+
+  &.dead {
+    filter: brightness(70%);
+  }
 }

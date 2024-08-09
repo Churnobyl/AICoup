@@ -131,8 +131,10 @@ const GamePage = () => {
 
     actionStore.setSelectedOption(option);
 
+    let selectedTarget = -1;
+
     if (shouldHaveTarget.filter((value) => value === option)) {
-      // handleSelectTarget();
+      selectedTarget = handleSelectTarget();
     }
 
     if (option === 0) {
@@ -141,11 +143,15 @@ const GamePage = () => {
       publishMessage(1, "userA", actionStore.sendingState, {
         cookie: Cookies.get("gameId"),
         action: option.toString(),
-        targetPlayerName: actionStore.selectedTarget.toString(),
+        targetPlayerName: selectedTarget.toString(),
       });
     }
 
     setIsModalOpen(false);
+  };
+
+  const handleSelectTarget = () => {
+    return 1;
   };
 
   return (

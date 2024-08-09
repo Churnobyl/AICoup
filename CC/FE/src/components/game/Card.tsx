@@ -14,7 +14,7 @@ const Card = (props: Props) => {
     <div
       className={`cardItem card card-${
         player ? cardNumber : cardNumber < 0 ? -cardNumber : 0
-      }`}
+      } ${player && cardNumber < 0 ? "dead" : ""}`}
     >
       {player
         ? store.cardname[cardNumber > 0 ? cardNumber : -cardNumber]
