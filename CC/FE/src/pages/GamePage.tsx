@@ -208,6 +208,9 @@ const GamePage = () => {
    * 메시지 큐 처리
    */
   const processMessageQueue = useCallback(() => {
+    // 지연시간 설정
+    const DELAY_TIME = 1000;
+
     if (isProcessing || messageQueue.current.length === 0) return;
 
     const { message, receivedTime } = messageQueue.current[0]; // 큐에서 첫 번째 메시지와 시간 가져오기
@@ -216,7 +219,7 @@ const GamePage = () => {
 
     setIsProcessing(true); // 메시지 처리 중 상태 설정
 
-    if (timeDiff >= 1000) {
+    if (timeDiff >= DELAY_TIME) {
       // 1초가 지났으면 처리
       messageQueue.current.shift(); // 메시지 큐에서 제거
       handleMessage(message); // 메시지 처리
@@ -227,7 +230,7 @@ const GamePage = () => {
         messageQueue.current.shift(); // 메시지 큐에서 제거
         handleMessage(message); // 메시지 처리
         setIsProcessing(false); // 처리 후 상태 해제
-      }, 1000 - timeDiff);
+      }, DELAY_TIME - timeDiff);
     }
   }, [handleMessage, isProcessing]);
 
@@ -250,7 +253,7 @@ const GamePage = () => {
     };
 
     const intervalId = setInterval(() => {
-      processMessageQueue(); // 1초마다 메시지 처리
+      processMessageQueue(); // 0.1초마다 큐에 메시지 있는지 확인
     }, 100);
 
     // 웹소켓 disconnect없이 지속
