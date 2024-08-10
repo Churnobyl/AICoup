@@ -1,7 +1,8 @@
 export default interface History {
   actionId: number;
   id: string;
-  playerTrying: number;
-  playerTried: number;
+  playerTrying: string;
+  playerTried: string;
   turn: number;
+  actionState: boolean;
 }

@@ -14,11 +14,12 @@ type Actions = {
   setState: (states: string) => void;
   setDeck: (deck: number[]) => void;
   setLastContext: (historyItem: History[]) => void;
+  getMemberNameById: (id: string) => string | undefined;
 };
 
 const useGameStore = create<ReturnType & Actions>()(
   devtools(
-    immer((set) => ({
+    immer((set, get) => ({
       history: [],
       members: [],
       message: "",
@@ -66,6 +67,13 @@ const useGameStore = create<ReturnType & Actions>()(
         set((state) => {
           state.lastContext = historyItem;
         });
+      },
+      getMemberNameById: (id: string | undefined) => {
+        if (id === undefined) return "";
+
+        const members = get().members;
+        const member = members.find((m) => m.id === id);
+        return member ? member.name : undefined;
       },
     }))
   )
