@@ -55,7 +55,15 @@ public class GPTResponseGetter {
         }
 
         String action = jsonObject.getString("action");
-        String target = jsonObject.getString("target");
+
+        String target;
+        // 정수형 -> 문자열 처리
+        Object targetObj = jsonObject.get("target");
+        if (targetObj instanceof Integer) {
+            target = String.valueOf(targetObj);
+        } else {
+            target = targetObj.toString();
+        }
         String[] actionArr = new String[2];
         actionArr[0] = action;
         actionArr[1] = target;
@@ -79,7 +87,7 @@ public class GPTResponseGetter {
             try {
                 jsonObject = new JSONObject(dataFromGptApiForChallenge);
                 if (jsonObject.has("challenger")) {
-                    break;  // "challenger" key가 존재하면 루프 탈출
+                    break;  // "challenger" key 존재 확인
                 }
             } catch (JSONException e) {
                 // JSON 파싱이 실패하면 api 재호출
@@ -101,10 +109,18 @@ public class GPTResponseGetter {
             return new String[]{"none"};
         }
 
-        String[] challenger = new String[1];
-        challenger[0] = jsonObject.get("challenger").toString();
+        String challenger;
+        // 정수형 -> 문자열 처리
+        Object challengerObj = jsonObject.get("challenger");
+        if (challengerObj instanceof Integer) {
+            challenger = String.valueOf(challengerObj);
+        } else {
+            challenger = challengerObj.toString();
+        }
+        String[] challengerArr = new String[1];
+        challengerArr[0] = challenger;
         System.out.println(dataFromGptApiForChallenge);
-        return challenger;
+        return challengerArr;
     }
 
     public String[] counterActionApi(String gameId) {
@@ -146,10 +162,17 @@ public class GPTResponseGetter {
             return new String[]{"none", "none"};
         }
 
-        String action = jsonObject.getString("counter_actioner");
+        String counterAction;
+        // 정수형 -> 문자열 처리
+        Object counterActionObj = jsonObject.get("counter_actioner");
+        if (counterActionObj instanceof Integer) {
+            counterAction = String.valueOf(counterActionObj);
+        } else {
+            counterAction = counterActionObj.toString();
+        }
         String target = jsonObject.getString("counter_action");
         String[] actionArr = new String[2];
-        actionArr[0] = action;
+        actionArr[0] = counterAction;
         actionArr[1] = target;
         System.out.println(dataFromGptApiForCounterAction);
         return actionArr;
@@ -172,7 +195,7 @@ public class GPTResponseGetter {
             try {
                 jsonObject = new JSONObject(dataFromGptApiForChallenge);
                 if (jsonObject.has("challenger")) {
-                    break;  // "challenger" key가 존재하면 루프 탈출
+                    break;  // "challenger" key 존재 확인
                 }
             } catch (JSONException e) {
                 // JSON 파싱이 실패하면 api 재호출
@@ -194,9 +217,17 @@ public class GPTResponseGetter {
             return new String[]{"none"};
         }
 
-        String[] challenger = new String[1];
-        challenger[0] = jsonObject.get("challenger").toString();
+        String challenger;
+        // 정수형 -> 문자열 처리
+        Object challengerObj = jsonObject.get("challenger");
+        if (challengerObj instanceof Integer) {
+            challenger = String.valueOf(challengerObj);
+        } else {
+            challenger = challengerObj.toString();
+        }
+        String[] challengerArr = new String[1];
+        challengerArr[0] = challenger;
         System.out.println(dataFromGptApiForChallenge);
-        return challenger;
+        return challengerArr;
     }
 }
