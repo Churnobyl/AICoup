@@ -729,15 +729,16 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         boolean challengeSuccess = !target.hasCard(lastActionType.getValue());
 
         if (challengeSuccess) {
+            // 도전 성공 내역 히스토리에 기록
+            recordHistory(game, 14, true, "0", "0");
+
             // 도전 성공: 타겟 플레이어가 영향력 상실
-            // 도전 성공 시 다음 턴으로 이동
             loseInfluence(target);
+
+            // 도전 성공 시 다음 턴으로 이동
             game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
             game.setTurn(game.getTurn()+1);
             gameRepository.save(game);
-
-            // 도전 성공 내역 히스토리에 기록
-            recordHistory(game, 14, true, "0", "0");
         } else {
             // 도전 실패: 도전자가 영향력 상실
             loseInfluence(challenger);
