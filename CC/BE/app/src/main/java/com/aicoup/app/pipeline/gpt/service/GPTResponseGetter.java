@@ -2,6 +2,7 @@ package com.aicoup.app.pipeline.gpt.service;
 
 import com.aicoup.app.pipeline.gpt.ChatGPTSocket;
 import lombok.RequiredArgsConstructor;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
@@ -16,20 +17,45 @@ public class GPTResponseGetter {
     private final CounterActionChallengeDataService counterActionChallengeDataService;
 
     public String[] actionApi(String gameId) {
-        String systemPrompt = "You are an API that receives information of every turn of the Coup board game and outputs what current player has to do. Take the current turn information in JSON format and output the result in JSON format.cards_open indicates whether the card has lost its influence. if input is \\\"cards\\\": [\\\"duke\\\", \\\"ambassador\\\"], \\\"cards_open\\\": [true, false] means that the duke has lost its influence, and ambassador is influential. coins shows how much coins each player has. history shows what each player acts before.the goal of the game is to elimate the influence card of all other players and be the last survivor.when a player lose all their influence card he lose the game.Every turn, current_player perform one action they want and can afford.- income: current_player get 1 coin.- foreign_aid: current_player get 2 coins. other duke can perform counter_action.- coup: cost 7 coins. choose one player and force to give up an influence card. if current_player start turn with 10 or more, current_player must coup.- tax: current_player get 3 coins. can be challenged.- steal: choose one player and take 2 coins. can be challeged. chosen player can perform counter_action with captain or ambassador.- exchange: draw 2 influence card. place 2 influence card back. can be challeged.- assassinate: cost 3 coins. choose one player and force to give up an influence card. can be challenged. chosen player can perform counter_action with contessa.Every counter_action, current_player'action is canceled, or current_player can challenge to player performing counter_action. if challenge is success, counter_action is canceled.Every challenge, the player who lose challenge is forced to give up an influence card.";
+        String systemPrompt = "You are an API that receives information of every turn of the Coup board game and outputs what current player has to do. Take the current turn information in JSON format and output the result in JSON format.cards_open indicates whether the card has lost its influence. if input is \"cards\": [\"duke\", \"ambassador\"], \"cards_open\": [true, false] means that the duke has lost its influence, and ambassador is influential. coins shows how much coins each player has. history shows what each player acts before.the goal of the game is to elimate the influence card of all other players and be the last survivor.when a player lose all their influence card he lose the game.Every turn, current_player perform one action they want and can afford.- income: current_player get 1 coin.- foreign_aid: current_player get 2 coins. other duke can perform counter_action.- coup: cost 7 coins. choose one player and force to give up an influence card. if current_player start turn with 10 or more, current_player must coup.- tax: current_player get 3 coins. can be challenged.- steal: choose one player and take 2 coins. can be challeged. chosen player can perform counter_action with captain or ambassador.- exchange: draw 2 influence card. place 2 influence card back. can be challeged.- assassinate: cost 3 coins. choose one player and force to give up an influence card. can be challenged. chosen player can perform counter_action with contessa.Every counter_action, current_player'action is canceled, or current_player can challenge to player performing counter_action. if challenge is success, counter_action is canceled.Every challenge, the player who lose challenge is forced to give up an influence card.";
 
-        // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
         String userPrompt = actionDataService.getFormattedGameDataAsJson(gameId);
 
-        // API 호출
-        String dataFromGptApiForAction = chatGPTSocket.getDataFromGptApiForAction(systemPrompt, userPrompt);
+        String dataFromGptApiForAction = "";
+        JSONObject jsonObject = null;
+        int maxAttempts = 3;
+        int attempts = 0;
 
-        // JSONObject 생성
-        JSONObject jsonObject = new JSONObject(dataFromGptApiForAction);
+        while (attempts < maxAttempts) {
+            dataFromGptApiForAction = chatGPTSocket.getDataFromGptApiForAction(systemPrompt, userPrompt);
 
-        // 키값과 밸류값 추출
-        String action = jsonObject.get("action").toString();
-        String target = jsonObject.get("target").toString();
+            try {
+                jsonObject = new JSONObject(dataFromGptApiForAction);
+                if (jsonObject.has("action") && jsonObject.has("target")) {
+                    break;  // "action && target key 존재 확인"
+                }
+            } catch (JSONException e) {
+                // JSON 파싱이 실패하면 api 재호출
+            }
+
+            attempts++;
+            if (attempts < maxAttempts) {
+                // 재호출 전에 기다리는 로직
+                try {
+                    Thread.sleep(1000);  // 1초 기다림
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
+        if (jsonObject == null || !jsonObject.has("action") || !jsonObject.has("target")) {
+            // 3번 시도해도 형식에 맞지 않으면 그냥 {"action' : "income", "target" : "none"} 으로 고정
+            return new String[]{"income", "none"};
+        }
+
+        String action = jsonObject.getString("action");
+        String target = jsonObject.getString("target");
         String[] actionArr = new String[2];
         actionArr[0] = action;
         actionArr[1] = target;
@@ -38,18 +64,43 @@ public class GPTResponseGetter {
     }
 
     public String[] challengeApi(String gameId) {
-        String systemPrompt = "You are an API that receives information of every turn of the Coup board game and current_player's action and target. you should output which player should challenge as a challenger for current_player's action. if there is no proper challenger, you should ouput \\\"none\\\". Take information in JSON format and output the result in JSON format.cards_open indicates whether the card has lost its influence. if input is \\\"cards\\\": [\\\"duke\\\", \\\"ambassador\\\"], \\\"cards_open\\\": [true, false] means that the duke has lost its influence, and ambassador is influential. coins shows how much coins each player has. history shows what each player acts before. history show what action was taken by each player. if input is \\\"history\\\": {\\\"1\\\": [\\\"tax\\\", \\\"exchange\\\", \\\"steal\\\"],\\\"2\\\": [\\\"steal\\\", \\\"steal\\\", \\\"steal\\\"],\\\"3\\\": [\\\"tax\\\", \\\"tax\\\"],\\\"4\\\": [\\\"income\\\", \\\"assassinate\\\"]} and current_player is 1, current_player's last two action is exchange and steal.any other player can challenge to a current_player regardless of whether they are the involved in action.player may be telling the truth or bluffing.the goal of the game is to elimate the influence card of all other players and be the last survivor.when a player lose all their influence card he lose the game.whoever loses the challenge immediately loses an influence card.challenger is usually a player in order of player who is target, player who has most influence card.it is suspicious if current_action is not match with the recent actions.";
+        String systemPrompt = "You are an API that receives information of every turn of the Coup board game and current_player's action and target. you should output which player should challenge as a challenger for current_player's action. if there is no proper challenger, you should ouput \"none\". Take information in JSON format and output the result in JSON format.cards_open indicates whether the card has lost its influence. if input is \"cards\": [\"duke\", \"ambassador\"], \"cards_open\": [true, false] means that the duke has lost its influence, and ambassador is influential. coins shows how much coins each player has. history shows what each player acts before. history show what action was taken by each player. if input is \"history\": {\"1\": [\"tax\", \"exchange\", \"steal\"],\"2\": [\"steal\", \"steal\", \"steal\"],\"3\": [\"tax\", \"tax\"],\"4\": [\"income\", \"assassinate\"]} and current_player is 1, current_player's last two action is exchange and steal.any other player can challenge to a current_player regardless of whether they are the involved in action.player may be telling the truth or bluffing.the goal of the game is to elimate the influence card of all other players and be the last survivor.when a player lose all their influence card he lose the game.whoever loses the challenge immediately loses an influence card.challenger is usually a player in order of player who is target, player who has most influence card.it is suspicious if current_action is not match with the recent actions.";
 
-        // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
         String userPrompt = challengeDataService.getFormattedGameDataAsJson(gameId);
 
-        // API 호출
-        String dataFromGptApiForChallenge = chatGPTSocket.getDataFromGptApiForChallengeAgainstAction(systemPrompt, userPrompt);
+        String dataFromGptApiForChallenge = "";
+        JSONObject jsonObject = null;
+        int maxAttempts = 3;
+        int attempts = 0;
 
-        // JSONObject 생성
-        JSONObject jsonObject = new JSONObject(dataFromGptApiForChallenge);
+        while (attempts < maxAttempts) {
+            dataFromGptApiForChallenge = chatGPTSocket.getDataFromGptApiForChallengeAgainstAction(systemPrompt, userPrompt);
 
-        // 키값과 밸류값 추출
+            try {
+                jsonObject = new JSONObject(dataFromGptApiForChallenge);
+                if (jsonObject.has("challenger")) {
+                    break;  // "challenger" key가 존재하면 루프 탈출
+                }
+            } catch (JSONException e) {
+                // JSON 파싱이 실패하면 api 재호출
+            }
+
+            attempts++;
+            if (attempts < maxAttempts) {
+                // 재호출 전에 기다리는 로직
+                try {
+                    Thread.sleep(1000);  // 1초 기다림
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
+        if (jsonObject == null || !jsonObject.has("challenger")) {
+            // 3번 시도해도 형식에 맞지 않으면 그냥 {"challenger" : "none"} 으로 고정
+            return new String[]{"none"};
+        }
+
         String[] challenger = new String[1];
         challenger[0] = jsonObject.get("challenger").toString();
         System.out.println(dataFromGptApiForChallenge);
@@ -62,20 +113,44 @@ public class GPTResponseGetter {
         // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
         String userPrompt = counterActionDataService.getFormattedGameDataAsJson(gameId);
 
-        // API 호출
-        String dataFromGptApiForCounterAction = chatGPTSocket.getDataFromGptApiForCounteractionAgainstAction(systemPrompt, userPrompt);
+        String dataFromGptApiForCounterAction = "";
+        JSONObject jsonObject = null;
+        int maxAttempts = 3;
+        int attempts = 0;
 
-        //dataFromGptApiForCounterAction 이 데이터가 형식에 맞는지 맞지 않는지 검증이 필요하다.
+        while (attempts < maxAttempts) {
+            dataFromGptApiForCounterAction = chatGPTSocket.getDataFromGptApiForCounteractionAgainstAction(systemPrompt, userPrompt);
 
-        // JSONObject 생성
-        JSONObject jsonObject = new JSONObject(dataFromGptApiForCounterAction);
+            try {
+                jsonObject = new JSONObject(dataFromGptApiForCounterAction);
+                if (jsonObject.has("counter_actioner") && jsonObject.has("counter_action")) {
+                    break;  // "counter_actioner && counter_action key 존재 확인"
+                }
+            } catch (JSONException e) {
+                // JSON 파싱이 실패하면 api 재호출
+            }
 
-        // 키값과 밸류값 추출
-        String counterActioner = jsonObject.get("counter_actioner").toString();
-        String counterAction = jsonObject.get("counter_action").toString();
+            attempts++;
+            if (attempts < maxAttempts) {
+                // 재호출 전에 기다리는 로직
+                try {
+                    Thread.sleep(1000);  // 1초 기다림
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
+        if (jsonObject == null || !jsonObject.has("counter_actioner") || !jsonObject.has("counter_action")) {
+            // 3번 시도해도 형식에 맞지 않으면 그냥 {"counter_actioner' : "none", "counter_action" : "none"} 으로 고정
+            return new String[]{"none", "none"};
+        }
+
+        String action = jsonObject.getString("counter_actioner");
+        String target = jsonObject.getString("counter_action");
         String[] actionArr = new String[2];
-        actionArr[0] = counterActioner;
-        actionArr[1] = counterAction;
+        actionArr[0] = action;
+        actionArr[1] = target;
         System.out.println(dataFromGptApiForCounterAction);
         return actionArr;
     }
@@ -86,16 +161,42 @@ public class GPTResponseGetter {
         // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
         String userPrompt = counterActionChallengeDataService.getFormattedGameDataAsJson(gameId);
 
-        // API 호출
-        String dataFromGptApiForCounterActionChallenge = chatGPTSocket.getDataFromGptApiForChallengeAgainstCounteraction(systemPrompt, userPrompt);
+        String dataFromGptApiForChallenge = "";
+        JSONObject jsonObject = null;
+        int maxAttempts = 3;
+        int attempts = 0;
 
-        // JSONObject 생성
-        JSONObject jsonObject = new JSONObject(dataFromGptApiForCounterActionChallenge);
+        while (attempts < maxAttempts) {
+            dataFromGptApiForChallenge = chatGPTSocket.getDataFromGptApiForChallengeAgainstAction(systemPrompt, userPrompt);
 
-        // 키값과 밸류값 추출
+            try {
+                jsonObject = new JSONObject(dataFromGptApiForChallenge);
+                if (jsonObject.has("challenger")) {
+                    break;  // "challenger" key가 존재하면 루프 탈출
+                }
+            } catch (JSONException e) {
+                // JSON 파싱이 실패하면 api 재호출
+            }
+
+            attempts++;
+            if (attempts < maxAttempts) {
+                // 재호출 전에 기다리는 로직
+                try {
+                    Thread.sleep(1000);  // 1초 기다림
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
+        if (jsonObject == null || !jsonObject.has("challenger")) {
+            // 3번 시도해도 형식에 맞지 않으면 그냥 challenger : none으로 고정
+            return new String[]{"none"};
+        }
+
         String[] challenger = new String[1];
         challenger[0] = jsonObject.get("challenger").toString();
-        System.out.println(dataFromGptApiForCounterActionChallenge);
+        System.out.println(dataFromGptApiForChallenge);
         return challenger;
     }
 }
