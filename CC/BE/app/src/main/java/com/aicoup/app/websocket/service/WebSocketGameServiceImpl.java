@@ -107,7 +107,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return player.getName().startsWith("GPT");
     }
 
-    public void performPlayerAction(MessageDto message) {
+    public String performPlayerAction(MessageDto message) {
         Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
         String gameId = mainMessage.get("cookie");
         int actionValue = Integer.parseInt(mainMessage.get("action"));
@@ -117,6 +117,9 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         String actionName = ActionType.findActionName(actionValue);
         if (validateAction(game, playerId, actionName)) {
             recordHistory(game.getId(), actionValue, null, playerId, targetPlayerId);
+            return "actionPending";
+        } else {
+            return "action";
         }
     }
 
@@ -452,7 +455,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         Action action = actionRepository.findByEnglishName(actionName)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid action: " + actionName));
         int requiredCoins = getRequiredCoinsForAction(actionName);
-        if ((player.getCoin() < requiredCoins) || (player.getCoin() >= 10 && !actionName.equals("Coup"))) {
+        if ((player.getCoin() < requiredCoins) || (player.getCoin() >= 10 && !actionName.equals("coup"))) {
             return false;
         }
         return true;
@@ -460,8 +463,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     private int getRequiredCoinsForAction(String actionName) {
         return switch (actionName) {
-            case "Coup" -> 7;
-            case "Assassinate" -> 3;
+            case "coup" -> 7;
+            case "assassinate" -> 3;
             default -> 0;
         };
     }

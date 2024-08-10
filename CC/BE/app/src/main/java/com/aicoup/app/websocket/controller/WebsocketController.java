@@ -62,8 +62,7 @@ public class WebsocketController {
                 hideOtherPlayersCards(gameStateDto);
                 break;
             case "action":
-                webSocketGameService.performPlayerAction(message);
-                returnState = "actionPending";
+                returnState = webSocketGameService.performPlayerAction(message);
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 break;
             case "anyChallenge":
