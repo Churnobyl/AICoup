@@ -5,7 +5,6 @@ import "./Board.scss";
 
 type Props = {
   className: string;
-  isClickable: boolean;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -14,12 +13,12 @@ const Board = (_props: Props) => {
 
   return (
     <div className="board">
-      {store.members.map((_member, index) => (
+      {store.members.map((member, index) => (
         <Player
           key={index}
           playerNumber={index}
+          playerId={member.id}
           className={`player ${index !== 0 ? "active" : ""}`}
-          isClickable={index !== 0}
         />
       ))}
       <div style={{ position: "absolute" }}>

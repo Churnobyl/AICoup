@@ -2,29 +2,24 @@ import Card from "@/components/game/Card";
 import "./CardHolder.scss";
 import useGameStore from "@/stores/gameStore";
 import classNames from "classnames";
+import useActionStore from "@/stores/actionStore";
 
 type Props = {
   playerNumber: number;
   className?: string;
-  isClickable: boolean;
 };
 
 const CardHolder = (props: Props) => {
   const store = useGameStore();
-  const { playerNumber, className, isClickable } = props;
-
-  const handleClick = () => {
-    if (isClickable) {
-      console.log("asdasds");
-    }
-  };
+  const actionStore = useActionStore();
+  const { playerNumber, className } = props;
 
   return (
     <div
-      className={classNames(className, {
-        clickable: isClickable,
-      })}
-      onClick={handleClick}
+      className={classNames(
+        className,
+        actionStore.isClickable && playerNumber !== 0 ? "clickable" : ""
+      )}
     >
       <Card
         player={store.members[playerNumber].player}
