@@ -477,20 +477,18 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             index--;
             history = game.getHistory().get(index);
         }
-        System.out.println(history);
         int actionValue = history.getActionId();
-        GameMember player = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
-        String targetPlayerName = game.getMemberIds().get(game.getWhoseTurn());
-        System.out.println(targetPlayerName);
+        GameMember player = findPlayerByName(game, history.getPlayerTrying());
+        String targetPlayerId = history.getPlayerTried();
+        System.out.println("targetPlayerName: " + targetPlayerId);
         ActionType actionType = ActionType.fromActionValue(actionValue);
         Action action = actionRepository.findByEnglishName(actionType.name())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid action: " + actionType.name()));
 
         GameMember target = null;
-        if (targetPlayerName != null && !targetPlayerName.isEmpty()) {
-            target = findPlayerByName(game, targetPlayerName);
+        if (targetPlayerId != null && !targetPlayerId.isEmpty()) {
+            target = findPlayerByName(game, targetPlayerId);
         }
-
 
         switch (actionType) {
             case INCOME:
@@ -529,14 +527,12 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
         game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
         game.setTurn(game.getTurn()+1);
-        recordHistory(game.getId(), action.getId(), true, player.getName(), targetPlayerName);
+        recordHistory(game.getId(), action.getId(), true, player.getName(), targetPlayerId);
         gameMemberRepository.save(player);
+        if (targetPlayerId != null) {
+            gameMemberRepository.save(target);
+        }
         gameRepository.save(game);
-
-// 임시로 저희 target 1로 하기로 했었음!!
-//        if (target != null) {
-//            gameMemberRepository.save(target);
-//        }
         return buildGameState(game.getId());
     }
 
