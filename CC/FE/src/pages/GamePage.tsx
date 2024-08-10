@@ -2,15 +2,15 @@
 import { clientData, connect } from "@/apis/websocketConnect";
 import ModalComponent from "@/components/modals/ModalComponent";
 import HistoryBottomSheet from "@/components/ui/sheets/HistoryBottomSheet";
+import usePublishMessage from "@/hooks/usePublishMessage";
 import useActionStore from "@/stores/actionStore";
 import { ActionType } from "@/types/ActionType";
 import Board from "@components/game/Board";
+import { IMessage } from "@stomp/stompjs";
 import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
-import usePublishMessage from "@/hooks/usePublishMessage";
-import { IMessage } from "@stomp/stompjs";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -30,11 +30,6 @@ const GamePage = () => {
   const [options, setOptions] = useState<ActionType>({}); // 선택지
 
   /**
-   * 선택 관련
-   */
-  const [isClickable, setIsClickable] = useState(false);
-
-  /**
    * 커스텀 훅
    */
   const publishMessage = usePublishMessage(clientData); // 서버로 메세지 전송
@@ -51,7 +46,7 @@ const GamePage = () => {
     (canAction: ActionType | -1 | -2) => {
       // 결정 초기화
       actionStore.setSelectedOption(0);
-      actionStore.setSelectedTarget(0);
+      actionStore.setSelectedTarget("");
 
       if (canAction === -1) {
         setOptions({ "게임 시작": 0 });
@@ -263,30 +258,39 @@ const GamePage = () => {
     };
   }, [handleMessage, publishMessage, processMessageQueue]);
 
-  // 선택 결과
-  const handleSelect = async (option: number) => {
+  // 선택 결과 보내기
+  const handleSelect = (option: number) => {
     console.log("Selected option:", option);
 
     actionStore.setSelectedOption(option);
 
-    // if (shouldHaveTarget.filter((value) => value === option)) {
-    //   await handleSelectTarget();
-    // }
+    if (shouldHaveTarget.includes(option)) {
+      actionStore.setIsClickable();
+      actionStore.setSelectedTarget("");
+      setIsModalOpen(false);
+      return;
+    }
 
+    handleDirectSelect(option);
+  };
+
+  /**
+   * 타겟 설정 메서드
+   */
+  const handleDirectSelect = (option: number) => {
     const currentState = store.state;
 
     switch (option) {
-      case 0: // 게임 시작
+      case 0:
         publishMessage(1, "userA", "nextTurn", {});
         break;
-      case -2: // gameState시 다음 턴
+      case -2:
         publishMessage(1, "userA", "nextTurn", {});
         break;
       case 9:
         if (currentState === "gptCounterAction") {
           publishMessage(1, "userA", "permit", {});
         }
-
         break;
       default:
         publishMessage(1, "userA", actionStore.sendingState, {
@@ -299,23 +303,31 @@ const GamePage = () => {
     setIsModalOpen(false);
   };
 
-  const handleSelectTarget = () => {
-    console.log("handleSelectTarget");
-    setIsClickable(true);
-  };
+  const handleSelectWithTarget = useCallback(() => {
+    publishMessage(1, "userA", actionStore.sendingState, {
+      cookie: Cookies.get("gameId"),
+      action: actionStore.selectedOption.toString(),
+      targetPlayerId: actionStore.selectedTarget.toString(),
+    });
 
-  const handleClick = (playerNumber: number) => {
-    actionStore.setSelectedTarget(playerNumber);
-    console.log(actionStore.selectedTarget);
-  };
+    setIsModalOpen(false);
+  }, [publishMessage, actionStore]);
+
+  useEffect(() => {
+    if (!actionStore.isClickable && actionStore.selectedTarget) {
+      actionStore.setSelectedTarget(actionStore.selectedTarget);
+      handleSelectWithTarget();
+    }
+  }, [
+    actionStore,
+    actionStore.isClickable,
+    actionStore.selectedTarget,
+    handleSelectWithTarget,
+  ]);
 
   return (
     <div className="gamePage" id="gamePage">
-      <Board
-        className="board"
-        isClickable={isClickable}
-        // onPlayerClick={handleClick}
-      />
+      <Board className="board" />
       <HistoryBottomSheet />
       <ModalComponent
         isOpen={isModalOpen}
