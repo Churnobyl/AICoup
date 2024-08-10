@@ -10,6 +10,7 @@ import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
 import usePublishMessage from "@/hooks/usePublishMessage";
+import { IMessage } from "@stomp/stompjs";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -38,6 +39,14 @@ const GamePage = () => {
    */
   const publishMessage = usePublishMessage(clientData); // 서버로 메세지 전송
 
+  /**
+   * 메시지 처리
+   */
+  const messageQueue = useRef<{ message: IMessage; receivedTime: number }[]>(
+    []
+  );
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+
   const selectOptions = useCallback(
     (canAction: ActionType | -1 | -2) => {
       // 결정 초기화
@@ -61,8 +70,14 @@ const GamePage = () => {
     [actionStore]
   );
 
+  /**
+   * Sub에서 온 메시지 처리 메서드
+   */
   const handleMessage = useCallback(
-    (message: { body: string }) => {
+    (message: IMessage | undefined) => {
+      // 메시지 undefined면 취소
+      if (message == undefined) return;
+
       const parsedMessage = JSON.parse(message.body);
       console.log("Received message: ", parsedMessage);
       const { mainMessage } = parsedMessage;
@@ -189,21 +204,64 @@ const GamePage = () => {
     [actionStore, publishMessage, selectOptions]
   );
 
+  /**
+   * 메시지 큐 처리
+   */
+  const processMessageQueue = useCallback(() => {
+    // 지연시간 설정
+    const DELAY_TIME = 1000;
+
+    if (isProcessing || messageQueue.current.length === 0) return;
+
+    const { message, receivedTime } = messageQueue.current[0]; // 큐에서 첫 번째 메시지와 시간 가져오기
+    const currentTime = Date.now();
+    const timeDiff = currentTime - receivedTime;
+
+    setIsProcessing(true); // 메시지 처리 중 상태 설정
+
+    if (timeDiff >= DELAY_TIME) {
+      // 1초가 지났으면 처리
+      messageQueue.current.shift(); // 메시지 큐에서 제거
+      handleMessage(message); // 메시지 처리
+      setIsProcessing(false); // 처리 후 상태 해제
+    } else {
+      // 1초가 안 지났으면 남은 시간만큼 대기 후 처리
+      setTimeout(() => {
+        messageQueue.current.shift(); // 메시지 큐에서 제거
+        handleMessage(message); // 메시지 처리
+        setIsProcessing(false); // 처리 후 상태 해제
+      }, DELAY_TIME - timeDiff);
+    }
+  }, [handleMessage, isProcessing]);
+
   useEffect(() => {
     connect(); // 웹소켓 연결
 
     // 연결됐을 때
     clientData.onConnect = () => {
       console.log("Connected to WebSocket"); // 디버깅 메세지
-      clientData.subscribe("/sub/chat/room/1", handleMessage); // room1 subscribe
+      clientData.subscribe("/sub/chat/room/1", (message) => {
+        messageQueue.current.push({
+          message,
+          receivedTime: Date.now(),
+        });
+      }); // room1 subscribe
       publishMessage(1, "userA", "gameCheck", {
         // 게임 상태 체크 "gameCheck"
         cookie: Cookies.get("gameId"), // 쿠키 정보 담아서 보냄
       });
     };
 
-    return () => {}; // 웹소켓 disconnect없이 지속
-  }, [handleMessage, publishMessage]);
+    const intervalId = setInterval(() => {
+      processMessageQueue(); // 0.1초마다 큐에 메시지 있는지 확인
+    }, 100);
+
+    // 웹소켓 disconnect없이 지속
+    // 컴포넌트 언마운트할 때 인터벌 정리
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [handleMessage, publishMessage, processMessageQueue]);
 
   // 선택 결과
   const handleSelect = async (option: number) => {
