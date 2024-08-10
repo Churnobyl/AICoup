@@ -328,29 +328,24 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     public String handleGPTCounterAction(MessageDto message) {
         Game game = returnGame(message);
-        String[] counterActionResult = gptResponseGetter.counterActionApi(game.getId());
+        String[] counterActionResult; // 대응자와 대응을 저장할 배열
+        History lastAction = game.getHistory().get(game.getHistory().size() - 1);
+        ActionType originalActionType = ActionType.fromActionValue(lastAction.getActionId()); // 해당 턴의 액션
+        ActionType counterActionType; // 액션에 대한 대응
+        do {
+            counterActionResult = gptResponseGetter.counterActionApi(game.getId());
+            if ("none".equals(counterActionResult[1])) { // 대응이 없으면 gptCounterActionNone 리턴
+                return "gptCounterActionNone";
+            }
+            counterActionType = ActionType.fromActionValue(convertCounterActionToValue(counterActionResult[1]));
+        } while (!isCounterActionValid(originalActionType, counterActionType)); // 대응이 있으면 유효성 검증 후 유효하지 않다면 gpt api 재호출
         String counterActioner = counterActionResult[0];
         String counterAction = counterActionResult[1];
-        String returnState;
-        if (!"none".equals(counterActioner)) {
-            History lastAction = game.getHistory().get(game.getHistory().size()-1);
-            ActionType originalActionType = ActionType.fromActionValue(lastAction.getActionId());
-            ActionType counterActionType =  ActionType.fromActionValue(convertCounterActionToValue(counterAction));
-            while(isCounterActionValid(originalActionType, counterActionType)) {
-                counterActionResult = gptResponseGetter.counterActionApi(game.getId());
-                counterActioner = counterActionResult[0];
-                counterAction = counterActionResult[1];
-                if(counterAction.equals("none")) {
-                    return "gptCounterActionNone";
-                }
-            }
-            int counterActionValue = convertCounterActionToValue(counterAction);
-            counterAction(game, counterActioner, counterActionValue);
-            returnState = "gptCounterAction";
-        } else {
-            returnState = "gptCounterActionNone";
-        }
-        return returnState;
+        int counterActionValue = convertCounterActionToValue(counterAction); // 대응에 해당하는 넘버 추출
+        String counterActionerId = game.getMemberIds().get(Integer.parseInt(counterActioner)-1); // 대응자의 id 추출
+        recordHistory(game.getId(), counterActionValue, null, counterActionerId, lastAction.getPlayerTrying()); // 히스토리에 기록
+        gameRepository.save(game); // DB에 저장
+        return "gptCounterAction"; // gptCounterAction 리턴
     }
 
     private void handleGPTChallengeAgainstCounter(Game game, int counterActionValue) {
@@ -753,7 +748,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         game.addHistory(new History(UUID.randomUUID().toString(), ActionType.CHALLENGE.getValue(), challengerId, target.getName()));
         gameRepository.save(game);
 
-        return challengeSuccess?"challengeSuccess":"challengeFail";
+        return challengeSuccess?"gptChallengeSuccess":"gptChallengeFail";
     }
 
     public String counterActionChallenge(Game game, String challengerId) {
@@ -786,9 +781,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return challengeSuccess?"challengeSuccess":"challengeFail";
     }
 
-    public GameStateDto counterAction(Game game, String counterActioner, Integer actionValue) {
-        String counterActionerId = game.getMemberIds().get(Integer.parseInt(counterActioner)-1);
-        GameMember counterActor = findPlayerByName(game, counterActionerId);
+    public GameStateDto counterAction(Game game, String counterActioner, Integer counterAction) {
+        String counterActionerId = game.getMemberIds().get(Integer.parseInt(counterActioner)-1); // 대응자의 id 추출
 
         // 마지막 액션 가져오기
         int index = game.getHistory().size()-1;
@@ -797,16 +791,12 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             index--;
             lastAction = game.getHistory().get(index);
         }
-        ActionType originalActionType = ActionType.fromActionValue(lastAction.getActionId());
-        ActionType counterActionType = ActionType.fromActionValue(actionValue);
 
-        // 대응 가능한 액션인지 확인
-        if (!isCounterActionValid(originalActionType, counterActionType)) {
-            return null;
-        }
+        ActionType originalActionType = ActionType.fromActionValue(lastAction.getActionId());
+        ActionType counterActionType = ActionType.fromActionValue(counterAction);
 
         // 대응 액션 추가
-        game.addHistory(new History(UUID.randomUUID().toString(), actionValue, counterActionerId, lastAction.getPlayerTrying()));
+        game.addHistory(new History(UUID.randomUUID().toString(), counterAction, counterActionerId, lastAction.getPlayerTrying()));
         gameRepository.save(game);
 
         return buildGameState(game.getId());
