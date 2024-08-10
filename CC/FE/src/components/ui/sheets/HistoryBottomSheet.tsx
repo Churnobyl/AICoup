@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { BottomSheet, BottomSheetRef } from "react-spring-bottom-sheet";
 import "react-spring-bottom-sheet/dist/style.css";
 import "./HistoryBottomSheet.scss";
+import useHistoryStore from "@/stores/historyMessageStore";
 
 function HistoryBottomSheet() {
   const sheetRef = useRef<BottomSheetRef>(null);
@@ -10,6 +11,7 @@ function HistoryBottomSheet() {
   const [open, setOpen] = useState(true);
   const store = useGameStore();
   const { history } = store;
+  const { historyMessage } = useHistoryStore();
 
   const handleDismiss = () => {
     setOpen(false);
@@ -34,12 +36,12 @@ function HistoryBottomSheet() {
         expandOnContentDrag={true}
       >
         <ul>
-          {history.map((value, index) => (
+          {historyMessage.map((value, index) => (
             <li
-              key={value.id}
-              ref={index === history.length - 1 ? lastItemRef : null}
+              key={index}
+              ref={index === historyMessage.length - 1 ? lastItemRef : null}
             >
-              {value.actionId}
+              {value}
             </li>
           ))}
         </ul>

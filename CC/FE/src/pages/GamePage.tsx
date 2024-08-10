@@ -11,6 +11,8 @@ import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
+import useHistoryStore from "@/stores/historyMessageStore";
+import History from "@/types/HistoryInf";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -21,6 +23,7 @@ const GamePage = () => {
   const store = useGameStore(); // 게임 정보 Zustand Store
   const storeRef = useRef(store); // 리랜더링 방지 위해 Ref로 감싸서 사용
   const actionStore = useActionStore(); // Action 관련 정보 Zustand Store
+  const historyStore = useHistoryStore(); // 히스토리 Zustand Store
 
   /**
    * 모달 관련
@@ -101,7 +104,24 @@ const GamePage = () => {
           storeRef.current.setState(parsedMessage.state);
           storeRef.current.setMembers(members);
           storeRef.current.incrementTurn(turn);
+          const bfHistory = [...store.history];
+          console.log("bfHisotry : ", bfHistory);
           storeRef.current.setHistory(history);
+          console.log("history :", history);
+
+          const newHistoryItems = history.filter(
+            (newItem: History) =>
+              !bfHistory.some((oldItem) => oldItem.id === newItem.id)
+          );
+
+          newHistoryItems.forEach((item: History) =>
+            historyStore.addMessage(
+              item.actionId,
+              store.getMemberNameById(item.playerTrying) || "",
+              store.getMemberNameById(item.playerTried),
+              item.actionState
+            )
+          );
           storeRef.current.setDeck(deck);
 
           if (turn === 0) {
