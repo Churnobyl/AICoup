@@ -72,7 +72,8 @@ public class WebsocketController {
                 if(!returnState.equals("gptChallengeNone")) {
                     wrapMessage(newMessage, gameStateDto, roomId, "gptChallenge"); //gptChallenge
                     wrapMessage(newMessage, gameStateDto, roomId, returnState); //gptChallengeSuccess or gptChallengeFail
-                    returnState = "endGame"; //endGame
+                    if(returnState.equals("gptChallengeSuccess")) returnState = "gameState"; //gptChallengeSuccess 이면 performAction 수행 X
+                    else returnState = "endGame"; //gptChallengeFail 이면 performAction 수행 O
                 }
                 break;
             case "performGame":
@@ -83,9 +84,7 @@ public class WebsocketController {
             case "anyCounterAction":
                 returnState = webSocketGameService.handleGPTCounterAction(message);
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
-                if(!returnState.equals("gptCounterActionNone")) {
-                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
-                } else {
+                if(returnState.equals("gptCounterActionNone")) {
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
                     returnState = "endGame";
                 }
