@@ -102,11 +102,6 @@ public class WebsocketController {
                     returnState = "endGame"; //endGame
                 }
                 break;
-            case "actionProcessed":
-                webSocketGameService.processAction(message);
-                returnState = "actionProcessed";
-                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
-                break;
             case "myChoice":
                 webSocketGameService.myChoice(message);
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));

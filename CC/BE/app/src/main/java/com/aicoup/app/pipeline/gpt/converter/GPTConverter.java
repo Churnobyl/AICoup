@@ -66,8 +66,6 @@ public class GPTConverter {
                 }
             });
 
-            System.out.println("cardInfoMap = " + cardInfoMap);
-
             for (int i = 1; i <= members.size(); i++) {
                 players.put(i, new GPTPlayer(
                         Arrays.asList(cardInfoMap.get(Math.abs(members.get(i - 1).getLeftCard())).getEnglishName(),

@@ -22,7 +22,7 @@ public class AIoTGameGenerator implements GameGenerator {
     private final GameMemberRepository gameMemberRepository;
     private final AIoTSocket aIoTSocket;
 
-    public String init(String roomId) {
+    public Game init(String roomId) {
         Game newGame = new Game(roomId);
         newGame.setTurn(0);
         newGame.setInitCards();
@@ -62,7 +62,7 @@ public class AIoTGameGenerator implements GameGenerator {
         }
 
         gameRepository.save(newGame);
-        return newGame.getId();
+        return newGame;
     }
 
     private void GPTPlayerCreate(List<GameMember> participantList, int participants) {
