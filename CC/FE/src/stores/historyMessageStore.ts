@@ -34,7 +34,11 @@ export const historyMessagingConverter = (
 
   switch (messageNum) {
     case 1:
-      convertedMessage = `${trying}님이 수입으로 1원을 얻습니다.`;
+      if (actionState === null) {
+        convertedMessage = `${trying}님이 1원을 얻기 위해 ${optionKeyByNumber[messageNum]}를 시도합니다.`;
+      } else if (actionState) {
+        convertedMessage = `${trying}님이 수입으로 1원을 얻습니다.`;
+      }
       break;
     case 2:
       if (actionState === null) {
@@ -168,7 +172,9 @@ const useHistoryStore = create<HistoryMessage & Action>()(
             tried,
             actionState
           );
-          state.historyMessage.push(newMessage);
+          if (newMessage !== null) {
+            state.historyMessage.push(newMessage);
+          }
         });
       },
     }))
