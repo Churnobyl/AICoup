@@ -246,14 +246,14 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     public String handleGPTChallenge(MessageDto message) {
         Game game = returnGame(message);
         String returnState;
-        if(!shouldPerformChallenge(game.getHistory().get(game.getHistory().size()-1).getActionId())) {
-            returnState = "gptChallengeNone";
+        if(!shouldPerformChallenge(game.getHistory().get(game.getHistory().size()-1).getActionId())) { // 도전 가능한 액션이 아니라면
+            returnState = "gptChallengeNone"; // gptChallengeNone 메세지 전송
             return returnState;
         }
-        String[] challengeResult = gptResponseGetter.challengeApi(game.getId());
+        String[] challengeResult = gptResponseGetter.challengeApi(game.getId()); // gpt의 도전 응답 추출
         String challenger = challengeResult[0];
 
-        // 카드 공개 로직 추가
+        // 해당 턴의 액션 히스토리 추출
         int index = game.getHistory().size()-1;
         History history = game.getHistory().get(index);
         while(history.getActionId()>7) {
@@ -263,18 +263,22 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         int actionValue = history.getActionId(); // 의심한 액션 추출
         String actionerId = history.getPlayerTrying(); // 해당 행동 수행한 사람의 아이디 추출
         GameMember actioner = findPlayerByName(game, actionerId); // 해당 행동 수행한 플레이어 추출
-        if(!isGPTPlayer(actioner)) {
+        if(!isGPTPlayer(actioner)) { // 해당 턴에 액션을 행한 주체가 플레이어라면
             while(!challenger.equals("2")&&!challenger.equals("3")&&!challenger.equals("4")&&!challenger.equals("none")) {
                 challengeResult = gptResponseGetter.challengeApi(game.getId());
                 challenger = challengeResult[0];
             }
             if (!"none".equals(challenger)) {
                 returnState = "gptChallenge";
+                String challengerId = game.getMemberIds().get(Integer.parseInt(challenger)-1);
+                // 게임 상태 업데이트(우선 챌린지 한 내역을 히스토리에 기록)
+                recordHistory(game, 8, null, challengerId, actionerId);
+
             } else {
                 returnState = "gptChallengeNone";
             }
             return returnState;
-        } else {
+        } else { // 해당 턴에 액션을 행한 주체가 gpt 라면
             GameStateDto gameState;
             gameState = buildGameState(game.getId());
             if(actioner.getLeftCard()==actionValue) { // 만약 왼쪽 카드가 해당 행동과 일치하면
@@ -773,19 +777,22 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         GameMember challenger = findPlayerByName(game, challengerId);
 
         // 마지막 액션 가져오기
-        History lastAction = game.getHistory().get(game.getHistory().size()-1);
+        int index = game.getHistory().size()-1;
+        History lastAction = game.getHistory().get(index);
+        while(lastAction.getActionId()>7) {
+            index--;
+            lastAction = game.getHistory().get(index);
+        }
+        History history = game.getHistory().get(game.getHistory().size()-1);
         ActionType lastActionType = ActionType.fromActionValue(lastAction.getActionId());
-        GameMember target = findPlayerByName(game, lastAction.getPlayerTrying());
-
-        // 게임 상태 업데이트(우선 챌린지 한 내역을 히스토리에 기록)
-        recordHistory(game, 8, null, challengerId, target.getId());
+        GameMember target = findPlayerByName(game, history.getPlayerTried());
 
         // 도전 성공 여부 확인
         boolean challengeSuccess = !target.hasCard(lastActionType.getValue(), cardOpen);
 
         if (challengeSuccess) {
             // 도전 성공 내역 히스토리에 기록
-            recordHistory(game, 14, true, "0", "0");
+            recordHistory(game, 14, true, challengerId, target.getId());
 
             // 도전 성공: 타겟 플레이어가 영향력 상실
             loseInfluence(target);
@@ -798,7 +805,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             // 도전 실패: 도전자가 영향력 상실
             loseInfluence(challenger);
             // 도전 실패 내역 히스토리에 기록
-            recordHistory(game, 14, false, "0", "0");
+            recordHistory(game, 14, false, challengerId, target.getId());
             // 타겟 플레이어는 새 카드를 받음
             giveNewCard(target);
         }
