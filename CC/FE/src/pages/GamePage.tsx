@@ -4,15 +4,15 @@ import ModalComponent from "@/components/modals/ModalComponent";
 import HistoryBottomSheet from "@/components/ui/sheets/HistoryBottomSheet";
 import usePublishMessage from "@/hooks/usePublishMessage";
 import useActionStore from "@/stores/actionStore";
+import useHistoryStore from "@/stores/historyMessageStore";
 import { ActionType } from "@/types/ActionType";
+import History from "@/types/HistoryInf";
 import Board from "@components/game/Board";
 import { IMessage } from "@stomp/stompjs";
 import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
-import useHistoryStore from "@/stores/historyMessageStore";
-import History from "@/types/HistoryInf";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -68,6 +68,46 @@ const GamePage = () => {
     [actionStore]
   );
 
+  const updateHistory = useCallback(
+    (newHistory: History[], bfHistory: History[]) => {
+      const newHistoryItems = newHistory.filter(
+        (newItem: History) =>
+          !bfHistory.some((oldItem) => oldItem.id === newItem.id)
+      );
+
+      newHistoryItems.forEach((item: History) =>
+        historyStore.addMessage(
+          item.actionId,
+          store.getMemberNameById(item.playerTrying) || "",
+          store.getMemberNameById(item.playerTried),
+          item.actionState
+        )
+      );
+    },
+    [historyStore, store]
+  );
+
+  const setupGameState = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (parsedMessage: any) => {
+      const mainMessage = parsedMessage.mainMessage;
+      const { members, turn, history, deck } = mainMessage;
+
+      storeRef.current.setRoomId(parsedMessage.roomId);
+      storeRef.current.setState(parsedMessage.state);
+      storeRef.current.setMembers(members);
+      storeRef.current.incrementTurn(turn);
+
+      const bfHistory = [...store.history];
+      storeRef.current.setHistory(history);
+
+      updateHistory(history, bfHistory); // Call the history update method
+
+      storeRef.current.setDeck(deck);
+    },
+    [store.history, updateHistory]
+  );
+
   /**
    * Sub에서 온 메시지 처리 메서드
    */
@@ -98,31 +138,9 @@ const GamePage = () => {
           publishMessage(1, "userA", "gameInit");
           break;
         case "gameState":
-          const { members, turn, history, deck } = mainMessage;
+          setupGameState(parsedMessage);
 
-          storeRef.current.setRoomId(parsedMessage.roomId);
-          storeRef.current.setState(parsedMessage.state);
-          storeRef.current.setMembers(members);
-          storeRef.current.incrementTurn(turn);
-          const bfHistory = [...store.history];
-          storeRef.current.setHistory(history);
-
-          const newHistoryItems = history.filter(
-            (newItem: History) =>
-              !bfHistory.some((oldItem) => oldItem.id === newItem.id)
-          );
-
-          newHistoryItems.forEach((item: History) =>
-            historyStore.addMessage(
-              item.actionId,
-              store.getMemberNameById(item.playerTrying) || "",
-              store.getMemberNameById(item.playerTried),
-              item.actionState
-            )
-          );
-          storeRef.current.setDeck(deck);
-
-          if (turn === 0) {
+          if (parsedMessage.mainMessage.turn === 0) {
             selectOptions(-1);
           } else {
             selectOptions(-2);
@@ -130,23 +148,29 @@ const GamePage = () => {
 
           break;
         case "action":
+          setupGameState(parsedMessage);
           actionStore.setSendingState("action");
           selectOptions(mainMessage.canAction);
           break;
         case "actionPending":
+          setupGameState(parsedMessage);
           publishMessage(1, "userA", "anyChallenge");
           break;
         case "endGame": // 한턴 끝남 평가 메시지 날려줘
+          setupGameState(parsedMessage);
           publishMessage(1, "userA", "performGame");
           break;
         case "gptChallenge":
+          setupGameState(parsedMessage);
           // GPT가 뭐 챌린지함
           // gptChallengeSuccess or gptChallengeFail
           break;
         case "gptChallengeNone":
+          setupGameState(parsedMessage);
           publishMessage(1, "userA", "anyCounterAction");
           break;
         case "gptCounterAction":
+          setupGameState(parsedMessage);
           selectOptions({
             도전: 8,
             허용: 9,
@@ -156,12 +180,17 @@ const GamePage = () => {
 
           break;
         case "counterActionChallengeSuccess":
+          setupGameState(parsedMessage);
           break;
         case "counterActionChallengeFail":
+          setupGameState(parsedMessage);
           break;
         case "gptAction":
+          setupGameState(parsedMessage);
           const his = mainMessage.history;
           const gptActionId = his[his.length - 1].actionId;
+
+          updateHistory(his, store.history);
 
           switch (gptActionId) {
             case 1: // income
@@ -214,7 +243,14 @@ const GamePage = () => {
           break;
       }
     },
-    [actionStore, historyStore, publishMessage, selectOptions, store]
+    [
+      actionStore,
+      publishMessage,
+      selectOptions,
+      setupGameState,
+      store.history,
+      updateHistory,
+    ]
   );
 
   /**
@@ -297,6 +333,7 @@ const GamePage = () => {
    */
   const handleDirectSelect = (option: number) => {
     const currentState = store.state;
+    console.log("currentState : ", store.state);
 
     switch (option) {
       case 0:
@@ -305,8 +342,17 @@ const GamePage = () => {
       case -2:
         publishMessage(1, "userA", "nextTurn", {});
         break;
+      case 8:
+        if (currentState === "gptCounterAction") {
+          publishMessage(1, "userA", "counterActionChallenge", {});
+        } else if (currentState === "gptAction") {
+          publishMessage(1, "userA", "challenge", {});
+        }
+        break;
       case 9:
         if (currentState === "gptCounterAction") {
+          publishMessage(1, "userA", "counterActionPermit", {});
+        } else if (currentState === "gptAction") {
           publishMessage(1, "userA", "permit", {});
         }
         break;

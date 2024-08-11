@@ -16,7 +16,7 @@ type Action = {
   ) => void;
 };
 
-const historyMessagingConverter = (
+export const historyMessagingConverter = (
   messageNum: number,
   trying: string,
   tried?: string,
@@ -38,7 +38,7 @@ const historyMessagingConverter = (
       break;
     case 2:
       if (actionState === null) {
-        convertedMessage = `${trying}님이 2원을 얻기 위해 <div>${optionKeyByNumber[messageNum]}</div>를 시도합니다.`;
+        convertedMessage = `${trying}님이 2원을 얻기 위해 ${optionKeyByNumber[messageNum]}를 시도합니다.`;
       } else if (actionState) {
         convertedMessage = `${trying}님이 ${optionKeyByNumber[messageNum]}를 성공해 2원을 얻습니다.`;
       } else if (!actionState) {
