@@ -115,34 +115,34 @@ export const historyMessagingConverter = (
       break;
     case 10:
       if (actionState === null) {
-        convertedMessage = `${trying}님이 공작을 갖고 있다고 주장하여 ${tried}이 ${optionKeyByNumber[messageNum]}을 시도합니다.`;
+        convertedMessage = `${tried}님이 공작을 갖고 있다고 주장하여 ${trying}이 ${optionKeyByNumber[messageNum]}을 시도합니다.`;
       }
       break;
     case 11:
       if (actionState === null) {
-        convertedMessage = `${trying}님이 사령관을 갖고 있다고 주장하여 ${tried}이 ${optionKeyByNumber[messageNum]}을 시도합니다.`;
+        convertedMessage = `${tried}님이 사령관을 갖고 있다고 주장하여 ${trying}이 ${optionKeyByNumber[messageNum]}을 시도합니다.`;
       }
 
       break;
     case 12:
       if (actionState === null) {
-        convertedMessage = `${trying}님이 외교관을 갖고 있다고 주장하여 ${tried}이 ${optionKeyByNumber[messageNum]}을 시도합니다.`;
+        convertedMessage = `${tried}님이 외교관을 갖고 있다고 주장하여 ${trying}이 ${optionKeyByNumber[messageNum]}을 시도합니다.`;
       }
 
       break;
     case 13:
       if (actionState === null) {
-        convertedMessage = `${trying}님이 귀부인을 갖고 있다고 주장하여 ${tried}이 ${optionKeyByNumber[messageNum]}을 시도합니다.`;
+        convertedMessage = `${tried}님이 귀부인을 갖고 있다고 주장하여 ${trying}이 ${optionKeyByNumber[messageNum]}을 시도합니다.`;
       }
 
       break;
     case 14:
       if (actionState) {
         // convertedMessage = `${trying}님이 ${characterCard}을 공개합니다.`;
-        convertedMessage = `${trying}님이 카드를 공개합니다.`;
+        convertedMessage = `${trying}님의 거짓말이 들통났습니다.`;
       } else if (!actionState) {
         // convertedMessage = `${trying}님이 ${characterCard}을 공개하여 거짓말이 들통났습니다!`;
-        convertedMessage = `${trying}님의 거짓말이 들통났습니다.`;
+        convertedMessage = `${trying}님이 카드를 공개합니다.`;
       }
 
       break;

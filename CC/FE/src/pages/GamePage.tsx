@@ -127,27 +127,35 @@ const GamePage = () => {
       console.log("Received message: ", parsedMessage);
       const { mainMessage } = parsedMessage;
 
+      if (isSpinnerOpen) {
+        setIsSpinnerOpen(false);
+      }
+
       switch (parsedMessage.state) {
         case "noGame":
           Cookies.remove("aiCoup");
           publishMessage(1, "userA", "gameInit");
           break;
         case "cookieSet":
-          setSpinnerText("새 게임 정보 저장하는 중..");
+          setSpinnerText("새 게임 정보를 저장하는 중..");
+          setIsSpinnerOpen(true);
           Cookies.set("aiCoup", parsedMessage.mainMessage.message, {
             expires: 1,
           });
           break;
         case "exist":
-          setSpinnerText("기존 게임 불러오는 중..");
+          setSpinnerText("기존 게임을 불러오는 중..");
+          setIsSpinnerOpen(true);
           publishMessage(1, "userA", "gameState");
           break;
         case "gameMade":
-          setSpinnerText("새 게임 불러오는 중..");
+          setSpinnerText("새 게임을 불러오는 중..");
+          setIsSpinnerOpen(true);
           publishMessage(1, "userA", "gameState");
           break;
         case "noExist":
           setSpinnerText("새 게임을 만드는 중..");
+          setIsSpinnerOpen(true);
           publishMessage(1, "userA", "gameInit");
           break;
         case "gameState":
@@ -178,10 +186,14 @@ const GamePage = () => {
           break;
         case "actionPending":
           setupGameState(parsedMessage);
+          setSpinnerText("GPT의 도전 여부를 기다리는 중..");
+          setIsSpinnerOpen(true);
           publishMessage(1, "userA", "anyChallenge");
           break;
         case "endGame": // 한턴 끝남 평가 메시지 날려줘
           setupGameState(parsedMessage);
+          setSpinnerText("서버의 평가를 기다리는 중..");
+          setIsSpinnerOpen(true);
           publishMessage(1, "userA", "performGame");
           break;
         case "gptChallenge":
@@ -191,6 +203,8 @@ const GamePage = () => {
           break;
         case "gptChallengeNone":
           setupGameState(parsedMessage);
+          setSpinnerText("GPT의 대응 여부를 기다리는 중..");
+          setIsSpinnerOpen(true);
           publishMessage(1, "userA", "anyCounterAction");
           break;
         case "gptCounterAction":
@@ -273,7 +287,7 @@ const GamePage = () => {
    */
   const processMessageQueue = useCallback(() => {
     // 지연시간 설정
-    const DELAY_TIME = 2000;
+    const DELAY_TIME = 3000;
 
     if (isProcessing || messageQueue.current.length === 0) return;
 
@@ -352,6 +366,9 @@ const GamePage = () => {
   const handleDirectSelect = (option: number) => {
     const currentState = store.state;
     console.log("currentState : ", store.state);
+
+    setSpinnerText("서버의 응답을 기다리는 중..");
+    setIsSpinnerOpen(true);
 
     switch (option) {
       case 0:
