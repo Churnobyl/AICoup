@@ -105,9 +105,7 @@ const GamePage = () => {
           storeRef.current.setMembers(members);
           storeRef.current.incrementTurn(turn);
           const bfHistory = [...store.history];
-          console.log("bfHisotry : ", bfHistory);
           storeRef.current.setHistory(history);
-          console.log("history :", history);
 
           const newHistoryItems = history.filter(
             (newItem: History) =>
@@ -216,7 +214,7 @@ const GamePage = () => {
           break;
       }
     },
-    [actionStore, publishMessage, selectOptions]
+    [actionStore, historyStore, publishMessage, selectOptions, store]
   );
 
   /**
