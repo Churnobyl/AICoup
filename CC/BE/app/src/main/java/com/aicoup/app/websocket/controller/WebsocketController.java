@@ -105,6 +105,7 @@ public class WebsocketController {
                 break;
             case "performChallenge":
                 returnState = webSocketGameService.handlePlayerPerformChallenge(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 if(returnState.equals("challengeSuccess")) {
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
                     returnState = "gameState"; // 플레이어 도전이 성공하면 액션 처리 없이 gameState
@@ -115,6 +116,7 @@ public class WebsocketController {
                 break;
             case "cardOpen":
                 returnState = webSocketGameService.handleGPTPerformChallenge(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 if(returnState.equals("challengeSuccess")) {
                     returnState = "gptChallengeSuccess";
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
@@ -127,6 +129,7 @@ public class WebsocketController {
                 break;
             case "counterActionCardOpen":
                 returnState = webSocketGameService.handleGPTPerformCounterActionChallenge(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 if(returnState.equals("challengeSuccess")) {
                     returnState = "gptCounterActionChallengeSuccess";
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
