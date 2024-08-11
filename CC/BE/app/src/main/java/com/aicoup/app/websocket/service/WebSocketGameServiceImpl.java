@@ -285,19 +285,15 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     public String handleGPTCounterActionChallenge(MessageDto message) {
         Game game = returnGame(message);
         String returnState;
-        if(!shouldPerformChallenge(game.getHistory().get(game.getHistory().size()-1).getActionId())) {
-            returnState = "gptChallengeNone";
-            return returnState;
-        }
-        String[] challengeResult = gptResponseGetter.challengeApi(game.getId());
-        String challenger = challengeResult[0];
-        while(!challenger.equals("2")&&!challenger.equals("3")&&!challenger.equals("4")&&!challenger.equals("none")) {
+        String[] challengeResult;
+        String challenger;
+        do{
             challengeResult = gptResponseGetter.challengeApi(game.getId());
             challenger = challengeResult[0];
-        }
+        }while(!challenger.equals("2")&&!challenger.equals("3")&&!challenger.equals("4")&&!challenger.equals("none"));
         if (!"none".equals(challenger)) {
             String challengerId = game.getMemberIds().get(Integer.parseInt(challenger)-1);
-            returnState = counterActionChallenge(game, challengerId);
+            returnState = challenge(game, challengerId);
         } else {
             returnState = "gptChallengeNone";
         }
@@ -747,7 +743,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             // 타겟 플레이어는 새 카드를 받음
             giveNewCard(target);
         }
-        return challengeSuccess?"gptChallengeSuccess":"gptChallengeFail";
+        return challengeSuccess?"challengeSuccess":"challengeFail";
     }
 
     public String counterActionChallenge(Game game, String challengerId) {
