@@ -20,7 +20,7 @@ const Card = (props: Props) => {
           : cardNumber < 0
           ? -cardNumber
           : 0
-      } ${player && cardNumber < 0 ? "dead" : ""}`}
+      } ${cardNumber < 0 ? "dead" : ""}`}
     >
       {player
         ? store.cardname[cardNumber > 0 ? cardNumber : -cardNumber]
