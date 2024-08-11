@@ -2,6 +2,7 @@
 import { clientData, connect } from "@/apis/websocketConnect";
 import ModalComponent from "@/components/modals/ModalComponent";
 import HistoryBottomSheet from "@/components/ui/sheets/HistoryBottomSheet";
+import Spinner from "@/components/ui/spinner/Spinner";
 import usePublishMessage from "@/hooks/usePublishMessage";
 import useActionStore from "@/stores/actionStore";
 import useHistoryStore from "@/stores/historyMessageStore";
@@ -17,6 +18,12 @@ import "./GamePage.scss";
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
 const GamePage = () => {
+  /**
+   * Spinner State
+   */
+  const [isSpinnerOpen, setIsSpinnerOpen] = useState(false);
+  const [spinnerText, setSpinnerText] = useState("");
+
   /**
    * Store 관련
    */
@@ -126,18 +133,27 @@ const GamePage = () => {
           publishMessage(1, "userA", "gameInit");
           break;
         case "cookieSet":
+          setSpinnerText("새 게임 정보 저장하는 중..");
           Cookies.set("aiCoup", parsedMessage.mainMessage.message, {
             expires: 1,
           });
           break;
         case "exist":
+          setSpinnerText("기존 게임 불러오는 중..");
+          publishMessage(1, "userA", "gameState");
+          break;
         case "gameMade":
+          setSpinnerText("새 게임 불러오는 중..");
           publishMessage(1, "userA", "gameState");
           break;
         case "noExist":
+          setSpinnerText("새 게임을 만드는 중..");
           publishMessage(1, "userA", "gameInit");
           break;
         case "gameState":
+          if (isSpinnerOpen) {
+            setIsSpinnerOpen(false);
+          }
           setupGameState(parsedMessage);
 
           if (parsedMessage.mainMessage.turn === 0) {
@@ -245,6 +261,7 @@ const GamePage = () => {
     },
     [
       actionStore,
+      isSpinnerOpen,
       publishMessage,
       selectOptions,
       setupGameState,
@@ -295,6 +312,9 @@ const GamePage = () => {
           receivedTime: Date.now(),
         });
       }); // room1 subscribe
+
+      setSpinnerText("게임이 있는지 확인하는 중..");
+      setIsSpinnerOpen(true);
       publishMessage(1, "userA", "gameCheck", {
         // 게임 상태 체크 "gameCheck"
         cookie: Cookies.get("gameId"), // 쿠키 정보 담아서 보냄
@@ -400,6 +420,7 @@ const GamePage = () => {
         options={options}
         onSelect={handleSelect}
       />
+      <Spinner isLoading={isSpinnerOpen} text={spinnerText} />
     </div>
   );
 };
