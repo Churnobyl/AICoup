@@ -284,7 +284,14 @@ const GamePage = () => {
           break;
       }
     },
-    [actionStore, isSpinnerOpen, publishMessage, selectOptions, setupGameState]
+    [
+      actionStore,
+      cardSelectStore,
+      isSpinnerOpen,
+      publishMessage,
+      selectOptions,
+      setupGameState,
+    ]
   );
 
   /**
