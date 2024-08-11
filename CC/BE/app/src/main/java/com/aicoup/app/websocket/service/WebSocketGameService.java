@@ -12,5 +12,4 @@ public interface WebSocketGameService {
     GameStateDto getGameState(String gameId);
     void recordHistory(Game game, Integer actionNumber, Boolean actionState, String playerTrying, String playerTried);
     String nextTurn(MessageDto messageDto);
-    String myChoice(MessageDto messageDto);
 }

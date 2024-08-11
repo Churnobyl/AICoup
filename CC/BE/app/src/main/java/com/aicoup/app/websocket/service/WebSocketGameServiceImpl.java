@@ -201,26 +201,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return buildGameState(game.getId());
     }
 
-    @Override
-    public String myChoice(MessageDto message) {
-        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
-        String gameId = mainMessage.get("cookie");
-        String playerName = message.getWriter();
-        int actionValue = Integer.parseInt(mainMessage.get("action"));
-        String targetPlayerName = mainMessage.get("targetPlayerName");
-
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
-
-        if (actionValue == 10) {
-            handlePlayerChallenge(message);
-        } else {
-            handlePlayerCounterAction(message);
-        }
-
-        return "";
-    }
-
     private boolean offerPlayerChallenge(Game game, int actionValue) {
         game.setAwaitingChallenge(true);
         game.setAwaitingChallengeActionValue(actionValue);
@@ -262,6 +242,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
     }
 
+    // gpt의 액션을 플레이어가 허용했을 때 다른 gpt가 도전하는 경우 처리 로직 필요
     public String handleGPTChallenge(MessageDto message) {
         Game game = returnGame(message);
         String returnState;
@@ -271,16 +252,43 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
         String[] challengeResult = gptResponseGetter.challengeApi(game.getId());
         String challenger = challengeResult[0];
-        while(!challenger.equals("2")&&!challenger.equals("3")&&!challenger.equals("4")&&!challenger.equals("none")) {
-            challengeResult = gptResponseGetter.challengeApi(game.getId());
-            challenger = challengeResult[0];
+
+        // 카드 공개 로직 추가
+        int index = game.getHistory().size()-1;
+        History history = game.getHistory().get(index);
+        while(history.getActionId()>7) {
+            index--;
+            history = game.getHistory().get(index);
         }
-        if (!"none".equals(challenger)) {
-            returnState = "gptChallenge";
+        int actionValue = history.getActionId(); // 의심한 액션 추출
+        String actionerId = history.getPlayerTrying(); // 해당 행동 수행한 사람의 아이디 추출
+        GameMember actioner = findPlayerByName(game, actionerId); // 해당 행동 수행한 플레이어 추출
+        if(!isGPTPlayer(actioner)) {
+            while(!challenger.equals("2")&&!challenger.equals("3")&&!challenger.equals("4")&&!challenger.equals("none")) {
+                challengeResult = gptResponseGetter.challengeApi(game.getId());
+                challenger = challengeResult[0];
+            }
+            if (!"none".equals(challenger)) {
+                returnState = "gptChallenge";
+            } else {
+                returnState = "gptChallengeNone";
+            }
+            return returnState;
         } else {
-            returnState = "gptChallengeNone";
+            GameStateDto gameState;
+            gameState = buildGameState(game.getId());
+            if(actioner.getLeftCard()==actionValue) { // 만약 왼쪽 카드가 해당 행동과 일치하면
+                gameState.setCardOpen(0); // 왼쪽 카드 오픈
+            } else if(actioner.getRightCard()==actionValue) { // 만약 오른쪽 카드가 해당 행동과 일치하면
+                gameState.setCardOpen(1); // 오른쪽 카드 오픈
+            } else { // 만약 해당 카드가 없다면
+                Random random = new Random();
+                gameState.setCardOpen(random.nextInt(1)); // 왼쪽, 오른쪽 랜덤 오픈
+            }
+            game.setCardOpen(gameState.getCardOpen());
+            gameRepository.save(game);
+            return "cardOpen";
         }
-        return returnState;
     }
 
     public String handleGPTPerformChallenge(MessageDto message) {
@@ -566,6 +574,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
         recordHistory(game, action.getId(), true, player.getId(), targetPlayerId);
         game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
+        // 죽은 플레이어 턴 스킵 로직 추가
+        GameMember nextPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn())); // 다음 플레이어가
+        while(nextPlayer.getLeftCard()<0 && nextPlayer.getRightCard()<0) { // 죽었으면
+            game.setWhoseTurn((game.getWhoseTurn() + 1) % 4); // 다음 플레이어로 턴 증가
+        }
         game.setTurn(game.getTurn()+1);
         gameMemberRepository.save(player);
         if (targetPlayerId != null && !targetPlayerId.isEmpty() && !targetPlayerId.equals("none")) {

@@ -99,11 +99,6 @@ public class WebsocketController {
                 returnState = webSocketGameService.handleGPTCounterActionChallenge(message);
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 break;
-            case "myChoice":
-                webSocketGameService.myChoice(message);
-                returnState = "challengeProcessed";
-                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
-                break;
             case "challenge":
                 returnState = "cardOpen";
                 gameStateDto = webSocketGameService.handlePlayerChallenge(message);
@@ -147,6 +142,8 @@ public class WebsocketController {
                 gameStateDto = webSocketGameService.handlePlayerCounterAction(message);
                 break;
             case "permit":
+                returnState = webSocketGameService.handleGPTChallenge(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 break;
             default:
                 throw new IllegalArgumentException("웹소켓 메시지 잘못 접근함");
