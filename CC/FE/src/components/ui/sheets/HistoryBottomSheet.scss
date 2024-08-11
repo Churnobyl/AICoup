@@ -1,0 +1,12 @@
+.history-list {
+  list-style-type: none;
+  width: 930px;
+
+  & li {
+    margin-top: 5px;
+
+    &.gray {
+      background-color: rgb(243, 243, 243);
+    }
+  }
+}
