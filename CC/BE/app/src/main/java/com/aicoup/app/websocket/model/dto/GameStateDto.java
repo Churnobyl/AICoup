@@ -19,6 +19,7 @@ public class GameStateDto {
     private History lastContext;
     private int action;
     private String target;
+    private int cardOpen;
     private Map<String, Integer> canAction = new HashMap<>();
     private List<History> history;
     private int[] deck = new int[6];

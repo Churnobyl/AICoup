@@ -132,6 +132,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             target = actionResult[1];
             if(!target.equals("none")) {
                 targetId = game.getMemberIds().get(Integer.parseInt(target)-1);
+            } else {
+                targetId = "none";
             }
         } while(!validateAction(game, currentPlayer.getId(), targetId, action));
         int actionValue = ActionType.findActionValue(action);
@@ -274,12 +276,19 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             challenger = challengeResult[0];
         }
         if (!"none".equals(challenger)) {
-            String challengerId = game.getMemberIds().get(Integer.parseInt(challenger)-1);
-            returnState = challenge(game, challengerId);
+            returnState = "gptChallenge";
         } else {
             returnState = "gptChallengeNone";
         }
         return returnState;
+    }
+
+    public String handleGPTPerformChallenge(MessageDto message) {
+        Game game = returnGame(message);
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+        int cardOpen = Integer.parseInt(mainMessage.get("cardOpen"));
+        String challengerId = game.getHistory().get(game.getHistory().size()-1).getPlayerTrying();
+        return challenge(game, challengerId, cardOpen);
     }
 
     public String handleGPTCounterActionChallenge(MessageDto message) {
@@ -292,12 +301,19 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             challenger = challengeResult[0];
         }while(!challenger.equals("2")&&!challenger.equals("3")&&!challenger.equals("4")&&!challenger.equals("none"));
         if (!"none".equals(challenger)) {
-            String challengerId = game.getMemberIds().get(Integer.parseInt(challenger)-1);
-            returnState = challenge(game, challengerId);
+            returnState = "gptCounterActionChallenge";
         } else {
             returnState = "gptChallengeNone";
         }
         return returnState;
+    }
+
+    public String handleGPTPerformCounterActionChallenge(MessageDto message) {
+        Game game = returnGame(message);
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
+        int cardOpen = Integer.parseInt(mainMessage.get("cardOpen"));
+        String challengerId = game.getHistory().get(game.getHistory().size()-1).getPlayerTrying();
+        return challenge(game, challengerId, cardOpen);
     }
 
     private Game returnGame(MessageDto message) {
@@ -329,18 +345,47 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return "gptCounterAction"; // gptCounterAction 리턴
     }
 
-    private void handleGPTChallengeAgainstCounter(Game game, int counterActionValue) {
-        String[] counterActionChallengeResult = gptResponseGetter.counterActionChallengeApi(game.getId());
-        String counterActionChallenger = counterActionChallengeResult[0];
-        if (!"none".equals(counterActionChallenger)) {
-            challenge(game, counterActionChallenger);
+//    private void handleGPTChallengeAgainstCounterAction(Game game, int counterActionValue) {
+//        String[] counterActionChallengeResult = gptResponseGetter.counterActionChallengeApi(game.getId());
+//        String counterActionChallenger = counterActionChallengeResult[0];
+//        if (!"none".equals(counterActionChallenger)) {
+//            challenge(game, counterActionChallenger);
+//        }
+//    }
+
+    public GameStateDto handlePlayerChallenge(MessageDto message) {
+        Game game = returnGame(message);
+        // 카드 공개 로직 추가
+        int index = game.getHistory().size()-1;
+        History history = game.getHistory().get(index);
+        while(history.getActionId()>7) {
+            index--;
+            history = game.getHistory().get(index);
         }
+        int actionValue = history.getActionId(); // 의심한 액션 추출
+        String actionerId = history.getPlayerTrying(); // 해당 행동 수행한 사람의 아이디 추출
+        GameMember actioner = findPlayerByName(game, actionerId); // 해당 행동 수행한 플레이어 추출
+        GameStateDto gameState;
+        gameState = buildGameState(game.getId());
+        if(actioner.getLeftCard()==actionValue) { // 만약 왼쪽 카드가 해당 행동과 일치하면
+            gameState.setCardOpen(0); // 왼쪽 카드 오픈
+        } else if(actioner.getRightCard()==actionValue) { // 만약 오른쪽 카드가 해당 행동과 일치하면
+            gameState.setCardOpen(1); // 오른쪽 카드 오픈
+        } else { // 만약 해당 카드가 없다면
+            Random random = new Random();
+            gameState.setCardOpen(random.nextInt(1)); // 왼쪽, 오른쪽 랜덤 오픈
+        }
+        game.setCardOpen(gameState.getCardOpen());
+        gameRepository.save(game);
+        return gameState;
     }
 
-    public String handlePlayerChallenge(MessageDto message) {
+    public String handlePlayerPerformChallenge(MessageDto message) {
         Game game = returnGame(message);
-        return challenge(game, "1");
+        int cardOpen = game.getCardOpen();
+        return challenge(game, "1", cardOpen);
     }
+
 
     public GameStateDto handlePlayerCounterAction(MessageDto message) {
         Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
@@ -438,16 +483,20 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         // 코인이 충분한지 검증
         int requiredCoins = getRequiredCoinsForAction(actionName);
         if (player.getCoin() < requiredCoins) {
+            System.out.println("11111111111111111111111111");
             return false;
         }
 
         // 코인이 10개 이상일 때 coup을 하는지 검증
         if(player.getCoin() >= 10 && !actionName.equals("coup")) {
+            System.out.println("2222222222222222222222222222");
             return false;
         }
 
         // target이 필요한 액션일 때 target이 자기자신이 아닌지 검증
         if(!targetId.equals("none") && playerId.equals(targetId)) {
+            System.out.println(targetId);
+            System.out.println("3333333333333333333333333333");
             return false;
         }
 
@@ -709,7 +758,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return game.getId();
     }
 
-    public String challenge(Game game, String challengerId) {
+    public String challenge(Game game, String challengerId, int cardOpen) {
 
         GameMember challenger = findPlayerByName(game, challengerId);
 
@@ -722,7 +771,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         recordHistory(game, 8, null, challengerId, target.getId());
 
         // 도전 성공 여부 확인
-        boolean challengeSuccess = !target.hasCard(lastActionType.getValue());
+        boolean challengeSuccess = !target.hasCard(lastActionType.getValue(), cardOpen);
 
         if (challengeSuccess) {
             // 도전 성공 내역 히스토리에 기록
@@ -746,35 +795,35 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return challengeSuccess?"challengeSuccess":"challengeFail";
     }
 
-    public String counterActionChallenge(Game game, String challengerId) {
-        GameMember challenger = findPlayerByName(game, challengerId);
-
-        // 마지막 액션 가져오기
-        History lastAction = game.getHistory().get(game.getHistory().size()-1);
-        ActionType lastActionType = ActionType.fromActionValue(lastAction.getActionId());
-        GameMember target = findPlayerByName(game, lastAction.getPlayerTrying());
-
-        // 도전 성공 여부 확인
-        boolean challengeSuccess = !target.hasCard(lastActionType.getValue());
-
-        if (challengeSuccess) {
-            // 도전 성공: 타겟 플레이어가 영향력 상실
-            loseInfluence(target);
-            recordHistory(game, 8, true, "0", "0");
-        } else {
-            // 도전 실패: 도전자가 영향력 상실
-            loseInfluence(challenger);
-            recordHistory(game, 17, false, "0", "0");
-            // 타겟 플레이어는 새 카드를 받음
-            giveNewCard(target);
-        }
-
-        // 게임 상태 업데이트
-        game.addHistory(new History(UUID.randomUUID().toString(), ActionType.CHALLENGE.getValue(), challengerId, target.getName()));
-        gameRepository.save(game);
-
-        return challengeSuccess?"challengeSuccess":"challengeFail";
-    }
+//    public String counterActionChallenge(Game game, String challengerId) {
+//        GameMember challenger = findPlayerByName(game, challengerId);
+//
+//        // 마지막 액션 가져오기
+//        History lastAction = game.getHistory().get(game.getHistory().size()-1);
+//        ActionType lastActionType = ActionType.fromActionValue(lastAction.getActionId());
+//        GameMember target = findPlayerByName(game, lastAction.getPlayerTrying());
+//
+//        // 도전 성공 여부 확인
+//        boolean challengeSuccess = !target.hasCard(lastActionType.getValue());
+//
+//        if (challengeSuccess) {
+//            // 도전 성공: 타겟 플레이어가 영향력 상실
+//            loseInfluence(target);
+//            recordHistory(game, 8, true, "0", "0");
+//        } else {
+//            // 도전 실패: 도전자가 영향력 상실
+//            loseInfluence(challenger);
+//            recordHistory(game, 17, false, "0", "0");
+//            // 타겟 플레이어는 새 카드를 받음
+//            giveNewCard(target);
+//        }
+//
+//        // 게임 상태 업데이트
+//        game.addHistory(new History(UUID.randomUUID().toString(), ActionType.CHALLENGE.getValue(), challengerId, target.getName()));
+//        gameRepository.save(game);
+//
+//        return challengeSuccess?"challengeSuccess":"challengeFail";
+//    }
 
     public GameStateDto counterAction(Game game, String counterActioner, Integer counterAction) {
         String counterActionerId = game.getMemberIds().get(Integer.parseInt(counterActioner)-1); // 대응자의 id 추출

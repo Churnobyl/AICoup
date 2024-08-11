@@ -39,6 +39,7 @@ public class Game extends MutableBaseEntity {
     private List<String> memberIds = new ArrayList<>();
     private int[] deck = new int[6];
     private List<History> history = new ArrayList<>();
+    private int cardOpen;
     private boolean awaitingChallenge;
     private boolean awaitingCounterAction;
     private Integer awaitingChallengeActionValue;

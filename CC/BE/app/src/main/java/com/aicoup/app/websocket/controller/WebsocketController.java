@@ -68,17 +68,6 @@ public class WebsocketController {
             case "anyChallenge":
                 returnState = webSocketGameService.handleGPTChallenge(message);
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
-                if(!returnState.equals("gptChallengeNone")) {
-                    if(returnState.equals("challengeSuccess")) {
-                        returnState = "gptChallengeSuccess";
-                        wrapMessage(newMessage, gameStateDto, roomId, returnState);
-                        returnState = "gameState"; // gpt 도전이 성공하면 액션 처리 없이 gameState
-                    } else {
-                        returnState = "gptChallengeFail";
-                        wrapMessage(newMessage, gameStateDto, roomId, returnState);
-                        returnState = "endGame"; // gpt 도전이 실패하면 액션 처리 위해 endGame
-                    }
-                }
                 break;
             case "performGame":
                 gameStateDto = webSocketGameService.performAction(message);
@@ -94,7 +83,7 @@ public class WebsocketController {
                 }
                 break;
             case "counterActionChallenge":
-                returnState = webSocketGameService.handlePlayerChallenge(message);
+                //returnState = webSocketGameService.handlePlayerChallenge(message); // 수정 필요!!
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 if(returnState.equals("challengeSuccess")) {
                     returnState = "counterActionChallengeSuccess";
@@ -109,20 +98,6 @@ public class WebsocketController {
             case "counterActionPermit":
                 returnState = webSocketGameService.handleGPTCounterActionChallenge(message);
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
-                if(!returnState.equals("gptChallengeNone")) {
-                    wrapMessage(newMessage, gameStateDto, roomId, "gptCounterActionChallenge"); // gpt가 대응에 대해 도전한 경우
-                    if(returnState.equals("challengeSuccess")) {
-                        returnState = "gptCounterActionChallengeSuccess";
-                        wrapMessage(newMessage, gameStateDto, roomId, returnState);
-                        returnState = "gameState"; // 성공했으면 액션 처리 없이 gameState
-                    } else {
-                        returnState = "gptCounterActionChallengeFail";
-                        wrapMessage(newMessage, gameStateDto, roomId, returnState);
-                        returnState = "endGame"; // 실패했으면 액션 처리위해 endGame
-                    }
-                } else {
-                    returnState = "gameState"; // 사람 액션 -> gpt 대응 -> 사람 허용 -> 아무일도 일어나지 않으므로 gameState
-                }
                 break;
             case "myChoice":
                 webSocketGameService.myChoice(message);
@@ -130,14 +105,41 @@ public class WebsocketController {
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 break;
             case "challenge":
-                returnState = webSocketGameService.handlePlayerChallenge(message);
-                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+                returnState = "cardOpen";
+                gameStateDto = webSocketGameService.handlePlayerChallenge(message);
+                break;
+            case "performChallenge":
+                returnState = webSocketGameService.handlePlayerPerformChallenge(message);
                 if(returnState.equals("challengeSuccess")) {
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
                     returnState = "gameState"; // 플레이어 도전이 성공하면 액션 처리 없이 gameState
                 } else {
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
                     returnState = "endGame"; // 플레이어 도전이 실패하면 액션 처리 위해 endGame
+                }
+                break;
+            case "cardOpen":
+                returnState = webSocketGameService.handleGPTPerformChallenge(message);
+                if(returnState.equals("challengeSuccess")) {
+                    returnState = "gptChallengeSuccess";
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
+                    returnState = "gameState"; // gpt 도전이 성공하면 액션 처리 없이 gameState
+                } else {
+                    returnState = "gptChallengeFail";
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
+                    returnState = "endGame"; // gpt 도전이 실패하면 액션 처리 위해 endGame
+                }
+                break;
+            case "counterActionCardOpen":
+                returnState = webSocketGameService.handleGPTPerformCounterActionChallenge(message);
+                if(returnState.equals("challengeSuccess")) {
+                    returnState = "gptCounterActionChallengeSuccess";
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
+                    returnState = "gameState"; // 성공했으면 액션 처리 없이 gameState
+                } else {
+                    returnState = "gptCounterActionChallengeFail";
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
+                    returnState = "endGame"; // 실패했으면 액션 처리위해 endGame
                 }
                 break;
             case "counterAction":
