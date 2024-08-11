@@ -483,20 +483,17 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         // 코인이 충분한지 검증
         int requiredCoins = getRequiredCoinsForAction(actionName);
         if (player.getCoin() < requiredCoins) {
-            System.out.println("11111111111111111111111111");
             return false;
         }
 
         // 코인이 10개 이상일 때 coup을 하는지 검증
         if(player.getCoin() >= 10 && !actionName.equals("coup")) {
-            System.out.println("2222222222222222222222222222");
             return false;
         }
 
         // target이 필요한 액션일 때 target이 자기자신이 아닌지 검증
         if(!targetId.equals("none") && playerId.equals(targetId)) {
             System.out.println(targetId);
-            System.out.println("3333333333333333333333333333");
             return false;
         }
 
