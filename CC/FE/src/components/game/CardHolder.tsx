@@ -24,10 +24,12 @@ const CardHolder = (props: Props) => {
       <Card
         player={store.members[playerNumber].player}
         cardNumber={store.members[playerNumber].leftCard}
+        playerCardIdForSelect={playerNumber === 0 ? 0 : -1}
       />
       <Card
         player={store.members[playerNumber].player}
         cardNumber={store.members[playerNumber].rightCard}
+        playerCardIdForSelect={playerNumber === 0 ? 1 : -1}
       />
     </div>
   );

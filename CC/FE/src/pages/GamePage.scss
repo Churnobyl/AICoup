@@ -36,8 +36,11 @@
   position: fixed;
   top: 45%;
   right: 3%;
-  transform: translate(-50%, -50%);
+  transform: translate(-20%, -20%);
   z-index: 1000;
+  text-align: center;
+  width: 100%;
+  max-width: 300px;
 }
 
 .modal {
