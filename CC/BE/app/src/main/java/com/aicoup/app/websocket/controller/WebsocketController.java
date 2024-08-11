@@ -126,16 +126,23 @@ public class WebsocketController {
                 break;
             case "myChoice":
                 webSocketGameService.myChoice(message);
-                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 returnState = "challengeProcessed";
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 break;
             case "challenge":
-                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 returnState = webSocketGameService.handlePlayerChallenge(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+                if(returnState.equals("challengeSuccess")) {
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
+                    returnState = "gameState"; // 플레이어 도전이 성공하면 액션 처리 없이 gameState
+                } else {
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
+                    returnState = "endGame"; // 플레이어 도전이 실패하면 액션 처리 위해 endGame
+                }
                 break;
             case "counterAction":
-                gameStateDto = webSocketGameService.handlePlayerCounterAction(message);
                 returnState = "counterActionProcessed";
+                gameStateDto = webSocketGameService.handlePlayerCounterAction(message);
                 break;
             case "permit":
                 break;

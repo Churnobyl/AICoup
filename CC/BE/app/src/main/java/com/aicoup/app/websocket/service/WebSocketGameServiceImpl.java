@@ -518,9 +518,9 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             default:
                 throw new IllegalArgumentException("Invalid action: " + actionType.name());
         }
+        recordHistory(game, action.getId(), true, player.getId(), targetPlayerId);
         game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
         game.setTurn(game.getTurn()+1);
-        recordHistory(game, action.getId(), true, player.getName(), targetPlayerId);
         gameMemberRepository.save(player);
         if (targetPlayerId != null && !targetPlayerId.isEmpty() && !targetPlayerId.equals("none")) {
             gameMemberRepository.save(target);
@@ -673,7 +673,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                     performGPTAction(game, currentPlayer);
                     return "gptAction";
                 } else {
-                    recordHistory(game, 18, null, "0", "0");
+                    recordHistory(game, 18, null, "none", "none");
                     return "action";
                 }
             }
@@ -705,7 +705,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         // 새로운 게임 생성
         Game game = gameGenerator.init(messageDto.getRoomId());
         // 게임 시작 히스토리 작성
-        recordHistory(game, 17, null, "0", "0");
+        recordHistory(game, 17, null, "none", "none");
         return game.getId();
     }
 
