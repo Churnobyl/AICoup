@@ -22,6 +22,7 @@ const GamePage = () => {
    * 연결 여부 확인
    */
   const [isConnected, setIsConnected] = useState(false);
+  const [isMessageSending, setIsMessageSending] = useState(false);
 
   /**
    * Spinner State
@@ -60,8 +61,6 @@ const GamePage = () => {
   const selectOptions = useCallback(
     (canAction: ActionType | -1 | -2) => {
       // 결정 초기화
-      actionStore.setSelectedOption(0);
-      actionStore.setSelectedTarget("");
 
       if (canAction === -1) {
         setOptions({ "게임 시작": 0 });
@@ -441,7 +440,7 @@ const GamePage = () => {
   // 상대편 찍어야 할 때
   useEffect(() => {
     if (!actionStore.isClickable && actionStore.selectedTarget) {
-      actionStore.setSelectedTarget(actionStore.selectedTarget);
+      // actionStore.setSelectedTarget(actionStore.selectedTarget);
       handleSelectWithTarget();
     }
   }, [
@@ -457,15 +456,10 @@ const GamePage = () => {
       actionStore.selectedPlayerCard === 0 ||
       actionStore.selectedPlayerCard === 1
     ) {
-      actionStore.setSelectedPlayerCard(actionStore.selectedPlayerCard);
+      // actionStore.setSelectedPlayerCard(actionStore.selectedPlayerCard);
       handleSelectWithMyCard();
     }
-  }, [
-    actionStore,
-    actionStore.selectedPlayerCard,
-    handleSelectWithMyCard,
-    isConnected,
-  ]);
+  }, [actionStore.selectedPlayerCard, handleSelectWithMyCard, isConnected]);
 
   return (
     <div className="gamePage" id="gamePage">
