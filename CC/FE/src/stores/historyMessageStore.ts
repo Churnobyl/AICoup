@@ -75,6 +75,7 @@ export const historyMessagingConverter = (
         convertedMessage = `${trying}님이 암살자를 갖고 있다고 주장하여 ${tried}의 ${optionKeyByNumber[messageNum]}을 시도합니다.`;
       } else if (actionState) {
         // convertedMessage = `${tried}님이 ${characterCard}을 잃습니다.`;
+        convertedMessage = `${tried}님이 카드를 잃습니다.`;
       } else if (!actionState) {
         convertedMessage = `${trying}님의 ${optionKeyByNumber[messageNum]}이 일어나지 않습니다.`;
       }
@@ -95,14 +96,14 @@ export const historyMessagingConverter = (
         convertedMessage = `${trying}님이 7원을 내고 ${tried}에게 ${optionKeyByNumber[messageNum]}을 실행합니다.`;
       } else if (actionState) {
         // convertedMessage = `${tried}님이 ${characterCard}을 잃습니다.`;
-      } else if (!actionState) {
-        // convertedMessage = `${tried}님이 ${characterCard}을 잃고 탈락합니다.`;
+        convertedMessage = `${tried}님이 카드를 잃습니다.`;
       }
 
       break;
     case 8:
       if (actionState === null) {
         // convertedMessage = `${trying}님이 ${tried}에게 ${actionCharacter}을 공개하라는 도전을 걸었습니다.`;
+        convertedMessage = `${trying}님이 ${tried}에게 카드 공개를 도전했습니다.`;
       }
 
       break;
@@ -138,15 +139,15 @@ export const historyMessagingConverter = (
     case 14:
       if (actionState) {
         // convertedMessage = `${trying}님이 ${characterCard}을 공개합니다.`;
+        convertedMessage = `${trying}님이 카드를 공개합니다.`;
       } else if (!actionState) {
         // convertedMessage = `${trying}님이 ${characterCard}을 공개하여 거짓말이 들통났습니다!`;
+        convertedMessage = `${trying}님의 거짓말이 들통났습니다.`;
       }
 
       break;
     case 15:
       convertedMessage = `${trying}님 승리!`;
-
-      break;
 
       break;
     case 17:

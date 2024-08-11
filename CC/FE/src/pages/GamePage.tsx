@@ -166,7 +166,15 @@ const GamePage = () => {
         case "action":
           setupGameState(parsedMessage);
           actionStore.setSendingState("action");
-          selectOptions(mainMessage.canAction);
+          selectOptions({
+            수입: 1,
+            해외원조: 2,
+            징세: 3,
+            강탈: 4,
+            암살: 5,
+            교환: 6,
+            쿠: 7,
+          });
           break;
         case "actionPending":
           setupGameState(parsedMessage);
@@ -205,8 +213,6 @@ const GamePage = () => {
           setupGameState(parsedMessage);
           const his = mainMessage.history;
           const gptActionId = his[his.length - 1].actionId;
-
-          updateHistory(his, store.history);
 
           switch (gptActionId) {
             case 1: // income
@@ -259,15 +265,7 @@ const GamePage = () => {
           break;
       }
     },
-    [
-      actionStore,
-      isSpinnerOpen,
-      publishMessage,
-      selectOptions,
-      setupGameState,
-      store.history,
-      updateHistory,
-    ]
+    [actionStore, isSpinnerOpen, publishMessage, selectOptions, setupGameState]
   );
 
   /**
@@ -275,7 +273,7 @@ const GamePage = () => {
    */
   const processMessageQueue = useCallback(() => {
     // 지연시간 설정
-    const DELAY_TIME = 1000;
+    const DELAY_TIME = 2000;
 
     if (isProcessing || messageQueue.current.length === 0) return;
 

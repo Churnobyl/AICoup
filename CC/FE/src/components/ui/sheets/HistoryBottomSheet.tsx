@@ -35,7 +35,7 @@ function HistoryBottomSheet() {
         defaultSnap={({ maxHeight }) => maxHeight / 4}
         expandOnContentDrag={true}
       >
-        <ul>
+        <ul className="history-list">
           {historyMessage.map((value, index) => (
             <li
               key={index}
