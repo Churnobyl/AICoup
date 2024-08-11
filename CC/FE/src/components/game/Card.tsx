@@ -1,6 +1,6 @@
-import useActionStore from "@/stores/actionStore";
-import "./Card.scss";
 import useCardInfoStore from "@/stores/cardInfoStore";
+import useCardSelectStore from "@/stores/cardSelectStore";
+import "./Card.scss";
 
 type Props = {
   cardNumber: number;
@@ -11,12 +11,12 @@ type Props = {
 const Card = (props: Props) => {
   const { cardNumber, player, playerCardIdForSelect } = props;
   const store = useCardInfoStore();
-  const actionStore = useActionStore();
+  const cardSelectStore = useCardSelectStore();
 
   const setPlayerCard = () => {
-    if (actionStore.isPlayerCardClickable) {
-      actionStore.setSelectedPlayerCard(playerCardIdForSelect);
-      actionStore.setIsPlayerCardClickable();
+    if (cardSelectStore.isPlayerCardClickable) {
+      cardSelectStore.setIsPlayerCardClickable();
+      cardSelectStore.setSelectedPlayerCard(playerCardIdForSelect);
     }
   };
 
@@ -31,7 +31,7 @@ const Card = (props: Props) => {
           ? -cardNumber
           : 0
       } ${cardNumber < 0 ? "dead" : ""} ${
-        actionStore.isPlayerCardClickable && player ? "clickable" : ""
+        cardSelectStore.isPlayerCardClickable && player ? "clickable" : ""
       }`}
       onClick={setPlayerCard}
     >

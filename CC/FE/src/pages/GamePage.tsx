@@ -14,6 +14,7 @@ import useGameStore from "@stores/gameStore";
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
+import useCardSelectStore from "@/stores/cardSelectStore";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -22,7 +23,6 @@ const GamePage = () => {
    * 연결 여부 확인
    */
   const [isConnected, setIsConnected] = useState(false);
-  const [isMessageSending, setIsMessageSending] = useState(false);
 
   /**
    * Spinner State
@@ -37,6 +37,7 @@ const GamePage = () => {
   const storeRef = useRef(store); // 리랜더링 방지 위해 Ref로 감싸서 사용
   const actionStore = useActionStore(); // Action 관련 정보 Zustand Store
   const historyStore = useHistoryStore(); // 히스토리 Zustand Store
+  const cardSelectStore = useCardSelectStore(); // 카드 선택 Zustand Store
 
   /**
    * 모달 관련
@@ -58,26 +59,23 @@ const GamePage = () => {
   );
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
-  const selectOptions = useCallback(
-    (canAction: ActionType | -1 | -2) => {
-      // 결정 초기화
+  const selectOptions = useCallback((canAction: ActionType | -1 | -2) => {
+    // 결정 초기화
 
-      if (canAction === -1) {
-        setOptions({ "게임 시작": 0 });
-        setModalContent("게임을 시작하겠습니다.");
-        setIsModalOpen(true);
-      } else if (canAction === -2) {
-        setOptions({ "다음 턴": -2 });
-        setModalContent("다음 턴으로");
-        setIsModalOpen(true);
-      } else {
-        setOptions(canAction);
-        setModalContent("행동을 선택해주세요.");
-        setIsModalOpen(true);
-      }
-    },
-    [actionStore]
-  );
+    if (canAction === -1) {
+      setOptions({ "게임 시작": 0 });
+      setModalContent("게임을 시작하겠습니다.");
+      setIsModalOpen(true);
+    } else if (canAction === -2) {
+      setOptions({ "다음 턴": -2 });
+      setModalContent("다음 턴으로");
+      setIsModalOpen(true);
+    } else {
+      setOptions(canAction);
+      setModalContent("행동을 선택해주세요.");
+      setIsModalOpen(true);
+    }
+  }, []);
 
   const updateHistory = useCallback(
     (newHistory: History[], bfHistory: History[]) => {
@@ -202,8 +200,8 @@ const GamePage = () => {
           break;
         case "gptChallenge":
           setupGameState(parsedMessage);
-          actionStore.setIsPlayerCardClickable();
-          actionStore.setSelectedPlayerCard(-1);
+          cardSelectStore.setIsPlayerCardClickable();
+          cardSelectStore.setSelectedPlayerCard(-1);
           break;
         case "gptChallengeNone":
           setupGameState(parsedMessage);
@@ -433,14 +431,14 @@ const GamePage = () => {
   const handleSelectWithMyCard = useCallback(() => {
     publishMessage(1, "userA", "cardOpen", {
       cookie: Cookies.get("gameId"),
-      cardOpen: actionStore.selectedPlayerCard.toString(),
+      cardOpen: cardSelectStore.selectedPlayerCard.toString(),
     });
-  }, [publishMessage, actionStore]);
+  }, [publishMessage, cardSelectStore]);
 
   // 상대편 찍어야 할 때
   useEffect(() => {
     if (!actionStore.isClickable && actionStore.selectedTarget) {
-      // actionStore.setSelectedTarget(actionStore.selectedTarget);
+      actionStore.setSelectedTarget(actionStore.selectedTarget);
       handleSelectWithTarget();
     }
   }, [
@@ -453,13 +451,18 @@ const GamePage = () => {
   // 내 카드 찍어야 할 때
   useEffect(() => {
     if (
-      actionStore.selectedPlayerCard === 0 ||
-      actionStore.selectedPlayerCard === 1
+      cardSelectStore.selectedPlayerCard === 0 ||
+      cardSelectStore.selectedPlayerCard === 1
     ) {
-      // actionStore.setSelectedPlayerCard(actionStore.selectedPlayerCard);
+      cardSelectStore.setSelectedPlayerCard(cardSelectStore.selectedPlayerCard);
       handleSelectWithMyCard();
     }
-  }, [actionStore.selectedPlayerCard, handleSelectWithMyCard, isConnected]);
+  }, [
+    cardSelectStore,
+    cardSelectStore.selectedPlayerCard,
+    handleSelectWithMyCard,
+    isConnected,
+  ]);
 
   return (
     <div className="gamePage" id="gamePage">
