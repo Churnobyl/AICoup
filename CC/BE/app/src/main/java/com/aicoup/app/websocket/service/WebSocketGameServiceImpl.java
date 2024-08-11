@@ -365,7 +365,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 //        }
 //    }
 
-    public GameStateDto handlePlayerChallenge(MessageDto message) {
+    public String handlePlayerChallenge(MessageDto message) {
         Game game = returnGame(message);
         // 카드 공개 로직 추가
         int index = game.getHistory().size()-1;
@@ -377,19 +377,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         int actionValue = history.getActionId(); // 의심한 액션 추출
         String actionerId = history.getPlayerTrying(); // 해당 행동 수행한 사람의 아이디 추출
         GameMember actioner = findPlayerByName(game, actionerId); // 해당 행동 수행한 플레이어 추출
-        GameStateDto gameState;
-        gameState = buildGameState(game.getId());
-        if(actioner.getLeftCard()==actionValue) { // 만약 왼쪽 카드가 해당 행동과 일치하면
-            gameState.setCardOpen(0); // 왼쪽 카드 오픈
-        } else if(actioner.getRightCard()==actionValue) { // 만약 오른쪽 카드가 해당 행동과 일치하면
-            gameState.setCardOpen(1); // 오른쪽 카드 오픈
-        } else { // 만약 해당 카드가 없다면
-            Random random = new Random();
-            gameState.setCardOpen(random.nextInt(1)); // 왼쪽, 오른쪽 랜덤 오픈
-        }
-        game.setCardOpen(gameState.getCardOpen());
-        gameRepository.save(game);
-        return gameState;
+        recordHistory(game, 8, null, "1", actionerId);
+        return "cardOpen";
     }
 
     public String handlePlayerPerformChallenge(MessageDto message) {

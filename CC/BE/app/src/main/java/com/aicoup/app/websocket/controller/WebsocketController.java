@@ -100,8 +100,8 @@ public class WebsocketController {
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 break;
             case "challenge":
-                returnState = "cardOpen";
-                gameStateDto = webSocketGameService.handlePlayerChallenge(message);
+                returnState = webSocketGameService.handlePlayerChallenge(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 break;
             case "performChallenge":
                 returnState = webSocketGameService.handlePlayerPerformChallenge(message);
