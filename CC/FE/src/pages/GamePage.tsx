@@ -19,6 +19,11 @@ const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
 const GamePage = () => {
   /**
+   * 연결 여부 확인
+   */
+  const [isConnected, setIsConnected] = useState(false);
+
+  /**
    * Spinner State
    */
   const [isSpinnerOpen, setIsSpinnerOpen] = useState(false);
@@ -198,8 +203,8 @@ const GamePage = () => {
           break;
         case "gptChallenge":
           setupGameState(parsedMessage);
-          // GPT가 뭐 챌린지함
-          // gptChallengeSuccess or gptChallengeFail
+          actionStore.setIsPlayerCardClickable();
+          actionStore.setSelectedPlayerCard(-1);
           break;
         case "gptChallengeNone":
           setupGameState(parsedMessage);
@@ -274,6 +279,9 @@ const GamePage = () => {
               break;
           }
           break;
+        case "cardOpen": // GPT의 카드 오픈
+          publishMessage(1, "userA", "performChallenge");
+          break;
 
         default:
           break;
@@ -318,6 +326,7 @@ const GamePage = () => {
     // 연결됐을 때
     clientData.onConnect = () => {
       console.log("Connected to WebSocket"); // 디버깅 메세지
+      setIsConnected(true);
       clientData.subscribe("/sub/chat/room/1", (message) => {
         messageQueue.current.push({
           message,
@@ -333,6 +342,11 @@ const GamePage = () => {
       });
     };
 
+    clientData.onDisconnect = () => {
+      console.warn("Disconnected from WebSocket");
+      setIsConnected(false);
+    };
+
     const intervalId = setInterval(() => {
       processMessageQueue(); // 0.1초마다 큐에 메시지 있는지 확인
     }, 100);
@@ -341,6 +355,7 @@ const GamePage = () => {
     // 컴포넌트 언마운트할 때 인터벌 정리
     return () => {
       clearInterval(intervalId);
+      setIsConnected(false);
     };
   }, [handleMessage, publishMessage, processMessageQueue]);
 
@@ -372,9 +387,13 @@ const GamePage = () => {
 
     switch (option) {
       case 0:
+        setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
+        setIsSpinnerOpen(true);
         publishMessage(1, "userA", "nextTurn", {});
         break;
       case -2:
+        setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
+        setIsSpinnerOpen(true);
         publishMessage(1, "userA", "nextTurn", {});
         break;
       case 8:
@@ -412,6 +431,14 @@ const GamePage = () => {
     setIsModalOpen(false);
   }, [publishMessage, actionStore]);
 
+  const handleSelectWithMyCard = useCallback(() => {
+    publishMessage(1, "userA", "cardOpen", {
+      cookie: Cookies.get("gameId"),
+      cardOpen: actionStore.selectedPlayerCard.toString(),
+    });
+  }, [publishMessage, actionStore]);
+
+  // 상대편 찍어야 할 때
   useEffect(() => {
     if (!actionStore.isClickable && actionStore.selectedTarget) {
       actionStore.setSelectedTarget(actionStore.selectedTarget);
@@ -422,6 +449,22 @@ const GamePage = () => {
     actionStore.isClickable,
     actionStore.selectedTarget,
     handleSelectWithTarget,
+  ]);
+
+  // 내 카드 찍어야 할 때
+  useEffect(() => {
+    if (
+      actionStore.selectedPlayerCard === 0 ||
+      actionStore.selectedPlayerCard === 1
+    ) {
+      actionStore.setSelectedPlayerCard(actionStore.selectedPlayerCard);
+      handleSelectWithMyCard();
+    }
+  }, [
+    actionStore,
+    actionStore.selectedPlayerCard,
+    handleSelectWithMyCard,
+    isConnected,
   ]);
 
   return (
