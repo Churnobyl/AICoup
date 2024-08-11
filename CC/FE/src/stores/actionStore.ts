@@ -7,6 +7,8 @@ type State = {
   selectedOption: number;
   selectedTarget: string;
   sendingState: string;
+  isPlayerCardClickable: boolean;
+  selectedPlayerCard: number;
 };
 
 type Action = {
@@ -14,6 +16,8 @@ type Action = {
   setSelectedOption: (select: number) => void;
   setSelectedTarget: (select: string) => void;
   setSendingState: (state: string) => void;
+  setIsPlayerCardClickable: () => void;
+  setSelectedPlayerCard: (select: number) => void;
 };
 
 const useActionStore = create<State & Action>()(
@@ -23,6 +27,8 @@ const useActionStore = create<State & Action>()(
       selectedOption: -1,
       selectedTarget: "",
       sendingState: "",
+      isPlayerCardClickable: false,
+      selectedPlayerCard: -1,
       setIsClickable: () => {
         set((state) => {
           state.isClickable = !state.isClickable;
@@ -41,6 +47,16 @@ const useActionStore = create<State & Action>()(
       setSendingState: (a) => {
         set((state) => {
           state.sendingState = a;
+        });
+      },
+      setIsPlayerCardClickable: () => {
+        set((state) => {
+          state.isPlayerCardClickable = !state.isPlayerCardClickable;
+        });
+      },
+      setSelectedPlayerCard: (select) => {
+        set((state) => {
+          state.selectedPlayerCard = select;
         });
       },
     }))
