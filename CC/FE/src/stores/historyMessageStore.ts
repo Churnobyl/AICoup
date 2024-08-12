@@ -139,10 +139,10 @@ export const historyMessagingConverter = (
     case 14:
       if (actionState) {
         // convertedMessage = `${trying}님이 ${characterCard}을 공개합니다.`;
-        convertedMessage = `${trying}님이 카드를 공개합니다.`;
+        convertedMessage = `${tried}님의 거짓말이 들통났습니다.`;
       } else if (!actionState) {
         // convertedMessage = `${trying}님이 ${characterCard}을 공개하여 거짓말이 들통났습니다!`;
-        convertedMessage = `${trying}님의 거짓말이 들통났습니다.`;
+        convertedMessage = `${tried}님이 카드를 공개합니다.`;
       }
 
       break;

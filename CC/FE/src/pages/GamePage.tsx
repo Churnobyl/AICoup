@@ -240,7 +240,7 @@ const GamePage = () => {
               setIsModalOpen(true);
               break;
             case 3: // tax
-              setOptions({ 허용: 9, 의심: 8, "공작으로 방해": 10 });
+              setOptions({ 허용: 9, 의심: 8 });
               setModalContent("행동을 선택해주세요.");
               setIsModalOpen(true);
               break;
