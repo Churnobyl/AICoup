@@ -356,7 +356,7 @@ const GamePage = () => {
       setIsSpinnerOpen(true);
       publishMessage(1, "userA", "gameCheck", {
         // 게임 상태 체크 "gameCheck"
-        cookie: Cookies.get("gameId"), // 쿠키 정보 담아서 보냄
+        cookie: Cookies.get("aiCoup"), // 쿠키 정보 담아서 보냄
       });
     };
 
@@ -407,7 +407,7 @@ const GamePage = () => {
         case 6:
         case 7:
           publishMessage(1, "userA", "action", {
-            cookie: Cookies.get("gameId"),
+            cookie: Cookies.get("aiCoup"),
             action: option.toString(),
             targetPlayerId: actionStore.selectedTarget.toString(),
           });
@@ -433,7 +433,7 @@ const GamePage = () => {
         case 12:
         case 13:
           publishMessage(1, "userA", "counterAction", {
-            cookie: Cookies.get("gameId"),
+            cookie: Cookies.get("aiCoup"),
             action: option.toString(),
             targetPlayerId: actionStore.selectedTarget.toString(),
           });
@@ -468,18 +468,20 @@ const GamePage = () => {
   );
 
   const handleSelectWithTarget = useCallback(() => {
-    publishMessage(1, "userA", actionStore.sendingState, {
-      cookie: Cookies.get("gameId"),
-      action: actionStore.selectedOption.toString(),
-      targetPlayerId: actionStore.selectedTarget.toString(),
-    });
+    if (0 < actionStore.selectedOption && actionStore.selectedOption < 8) {
+      publishMessage(1, "userA", "action", {
+        cookie: Cookies.get("aiCoup"),
+        action: actionStore.selectedOption.toString(),
+        targetPlayerId: actionStore.selectedTarget.toString(),
+      });
+    }
 
     setIsModalOpen(false);
   }, [publishMessage, actionStore]);
 
   const handleSelectWithMyCard = useCallback(() => {
     publishMessage(1, "userA", "cardOpen", {
-      cookie: Cookies.get("gameId"),
+      cookie: Cookies.get("aiCoup"),
       cardOpen: cardSelectStore.selectedPlayerCard.toString(),
     });
   }, [publishMessage, cardSelectStore]);
