@@ -66,3 +66,16 @@
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.1);
 }
+
+.top-bar {
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  top: 5%;
+  left: 45%;
+}
+
+.bp5-callout.bp5-intent-primary {
+  background-color: rgba(45, 114, 210, 0.2);
+}

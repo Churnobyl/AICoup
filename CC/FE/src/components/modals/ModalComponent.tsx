@@ -38,7 +38,7 @@ const ModalComponent = ({
             <Button
               key={value[1]}
               children={value[0]}
-              size="medium"
+              size="large"
               onClick={() => onSelect(value[1])}
             />
           ))}
