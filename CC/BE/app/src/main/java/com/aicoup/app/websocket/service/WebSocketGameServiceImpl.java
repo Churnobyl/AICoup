@@ -282,10 +282,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                     challenger = findPlayerByName(game, challengerId);
                     System.out.println("actionerId : " + actionerId);
                     System.out.println("challengerId : " + challengerId);
-                    if(challenger.getLeftCard()>0||challenger.getRightCard()>0) {
-                        break;
-                    }
-                    if(!actionerId.equals(challengerId)) {
+                    if((challenger.getLeftCard()>0||challenger.getRightCard()>0)&&!actionerId.equals(challengerId)) {
                         break;
                     }
                 }
