@@ -15,6 +15,7 @@ import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
 import useCardSelectStore from "@/stores/cardSelectStore";
+import SignBoard from "@/components/ui/signBoard/SignBoard";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -57,7 +58,17 @@ const GamePage = () => {
   const messageQueue = useRef<{ message: IMessage; receivedTime: number }[]>(
     []
   );
+
+  /**
+   * 처리 중 다른 처리 금지
+   */
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+
+  /**
+   * mouseClick topBar
+   */
+  const [isTopBarShow, setIsTopBarShow] = useState<boolean>(false);
+  const [topBarText, setTopBarText] = useState<string>("");
 
   const selectOptions = useCallback((canAction: ActionType | -1 | -2) => {
     // 결정 초기화
@@ -201,6 +212,8 @@ const GamePage = () => {
         case "gptChallenge":
           setupGameState(parsedMessage);
           cardSelectStore.setIsPlayerCardClickable();
+          setTopBarText("공개할 카드를 선택해 주세요.");
+          setIsTopBarShow(true);
           cardSelectStore.setSelectedPlayerCard(-1);
           break;
         case "gptChallengeNone":
@@ -279,7 +292,8 @@ const GamePage = () => {
         case "cardOpen": // GPT의 카드 오픈
           publishMessage(1, "userA", "performChallenge");
           break;
-
+        case "deadCardOpen":
+          break;
         default:
           break;
       }
@@ -372,6 +386,10 @@ const GamePage = () => {
     if (shouldHaveTarget.includes(option)) {
       actionStore.setIsClickable();
       actionStore.setSelectedTarget("");
+
+      setTopBarText("상대를 선택해 주세요.");
+      setIsTopBarShow(true);
+
       setIsModalOpen(false);
       return;
     }
@@ -447,6 +465,7 @@ const GamePage = () => {
     if (!actionStore.isClickable && actionStore.selectedTarget) {
       actionStore.setSelectedTarget(actionStore.selectedTarget);
       handleSelectWithTarget();
+      setIsTopBarShow(false); // topbar 안 보이게
     }
   }, [
     actionStore,
@@ -463,6 +482,7 @@ const GamePage = () => {
     ) {
       cardSelectStore.setSelectedPlayerCard(cardSelectStore.selectedPlayerCard);
       handleSelectWithMyCard();
+      setIsTopBarShow(false); // topbar 안 보이게
     }
   }, [
     cardSelectStore,
@@ -473,6 +493,14 @@ const GamePage = () => {
 
   return (
     <div className="gamePage" id="gamePage">
+      {isTopBarShow ? (
+        <div className="top-bar">
+          <SignBoard title={topBarText} />
+        </div>
+      ) : (
+        ""
+      )}
+
       <Board className="board" />
       <HistoryBottomSheet />
       <ModalComponent
