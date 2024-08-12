@@ -150,6 +150,10 @@ public class WebsocketController {
             case "permit":
                 returnState = webSocketGameService.handleGPTChallenge(message);
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
+                if(returnState.equals("gptChallenge")) {
+                    wrapMessage(newMessage, gameStateDto, roomId, returnState);
+                    returnState = "cardOpen";
+                }
                 break;
             default:
                 throw new IllegalArgumentException("웹소켓 메시지 잘못 접근함");

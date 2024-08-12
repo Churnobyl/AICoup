@@ -251,7 +251,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             return returnState;
         }
         String[] challengeResult = gptResponseGetter.challengeApi(game.getId()); // gpt의 도전 응답 추출
-        String challenger = challengeResult[0];
+        String challengerNumber = challengeResult[0];
 
         // 해당 턴의 액션 히스토리 추출
         int index = game.getHistory().size()-1;
@@ -261,37 +261,60 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             history = game.getHistory().get(index);
         }
         int actionValue = history.getActionId(); // 의심한 액션 추출
+        actionValue = switch (actionValue) {
+            case 3 -> 1;
+            case 4 -> 2;
+            case 5 -> 3;
+            case 6 -> 5;
+            default -> actionValue;
+        };
         String actionerId = history.getPlayerTrying(); // 해당 행동 수행한 사람의 아이디 추출
         GameMember actioner = findPlayerByName(game, actionerId); // 해당 행동 수행한 플레이어 추출
-        if(!isGPTPlayer(actioner)) { // 해당 턴에 액션을 행한 주체가 플레이어라면
-            while(!challenger.equals("2")&&!challenger.equals("3")&&!challenger.equals("4")&&!challenger.equals("none")) {
-                challengeResult = gptResponseGetter.challengeApi(game.getId());
-                challenger = challengeResult[0];
+        GameMember challenger;
+        while(true) {
+            challengeResult = gptResponseGetter.challengeApi(game.getId());
+            challengerNumber = challengeResult[0];
+            if(challengerNumber.equals("2")||challengerNumber.equals("3")||challengerNumber.equals("4")||challengerNumber.equals("none")) {
+                if(challengerNumber.equals("none")) {
+                    break;
+                } else {
+                    String challengerId = game.getMemberIds().get(Integer.parseInt(challengerNumber)-1);
+                    challenger = findPlayerByName(game, challengerId);
+                    System.out.println("actionerId : " + actionerId);
+                    System.out.println("challengerId : " + challengerId);
+                    if(challenger.getLeftCard()>0||challenger.getRightCard()>0) {
+                        break;
+                    }
+                    if(!actionerId.equals(challengerId)) {
+                        break;
+                    }
+                }
             }
-            if (!"none".equals(challenger)) {
-                returnState = "gptChallenge";
-                String challengerId = game.getMemberIds().get(Integer.parseInt(challenger)-1);
-                // 게임 상태 업데이트(우선 챌린지 한 내역을 히스토리에 기록)
-                recordHistory(game, 8, null, challengerId, actionerId);
-
-            } else {
-                returnState = "gptChallengeNone";
+        }
+        if (!"none".equals(challengerNumber)) {
+            returnState = "gptChallenge";
+            String challengerId = game.getMemberIds().get(Integer.parseInt(challengerNumber)-1);
+            // 게임 상태 업데이트(우선 챌린지 한 내역을 히스토리에 기록)
+            recordHistory(game, 8, null, challengerId, actionerId);
+            if(!isGPTPlayer(actioner)) { // 해당 턴에 액션을 행한 주체가 플레이어라면
+                return returnState;
+            } else { // 해당 턴에 액션을 행한 주체가 gpt 라면
+                GameStateDto gameState;
+                gameState = buildGameState(game.getId());
+                if(actioner.getLeftCard()==actionValue) { // 만약 왼쪽 카드가 해당 행동과 일치하면
+                    gameState.setCardOpen(0); // 왼쪽 카드 오픈
+                } else if(actioner.getRightCard()==actionValue) { // 만약 오른쪽 카드가 해당 행동과 일치하면
+                    gameState.setCardOpen(1); // 오른쪽 카드 오픈
+                } else { // 만약 해당 카드가 없다면
+                    Random random = new Random();
+                    gameState.setCardOpen(random.nextInt(2)); // 왼쪽, 오른쪽 랜덤 오픈
+                }
+                game.setCardOpen(gameState.getCardOpen());
+                gameRepository.save(game);
+                return returnState;
             }
-            return returnState;
-        } else { // 해당 턴에 액션을 행한 주체가 gpt 라면
-            GameStateDto gameState;
-            gameState = buildGameState(game.getId());
-            if(actioner.getLeftCard()==actionValue) { // 만약 왼쪽 카드가 해당 행동과 일치하면
-                gameState.setCardOpen(0); // 왼쪽 카드 오픈
-            } else if(actioner.getRightCard()==actionValue) { // 만약 오른쪽 카드가 해당 행동과 일치하면
-                gameState.setCardOpen(1); // 오른쪽 카드 오픈
-            } else { // 만약 해당 카드가 없다면
-                Random random = new Random();
-                gameState.setCardOpen(random.nextInt(2)); // 왼쪽, 오른쪽 랜덤 오픈
-            }
-            game.setCardOpen(gameState.getCardOpen());
-            gameRepository.save(game);
-            return "cardOpen";
+        } else {
+            return "gptChallengeNone";
         }
     }
 
@@ -383,8 +406,49 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     public String handlePlayerPerformChallenge(MessageDto message) {
         Game game = returnGame(message);
+        // 카드 공개 로직 추가
+        int index = game.getHistory().size()-1;
+        History history = game.getHistory().get(index);
+        while(history.getActionId()>7) {
+            index--;
+            history = game.getHistory().get(index);
+        }
+        // 해당 턴의 액션 히스토리 추출
+        int actionValue = history.getActionId(); // 의심한 액션 추출
+        actionValue = switch (actionValue) {
+            case 3 -> 1;
+            case 4 -> 2;
+            case 5 -> 3;
+            case 6 -> 5;
+            default -> actionValue;
+        };
+        String actionerId = history.getPlayerTrying(); // 해당 행동 수행한 사람의 아이디 추출
+        GameMember actioner = findPlayerByName(game, actionerId); // 해당 행동 수행한 플레이어 추출
+
+        GameStateDto gameState;
+        gameState = buildGameState(game.getId());
+        System.out.println(actioner);
+        System.out.println(actionValue);
+        if(actioner.getLeftCard()==actionValue) { // 만약 왼쪽 카드가 해당 행동과 일치하면
+            gameState.setCardOpen(0); // 왼쪽 카드 오픈
+        } else if(actioner.getRightCard()==actionValue) { // 만약 오른쪽 카드가 해당 행동과 일치하면
+            gameState.setCardOpen(1); // 오른쪽 카드 오픈
+        } else { // 만약 해당 카드가 없다면
+            if(actioner.getLeftCard()>0 && actioner.getRightCard()>0) {
+                Random random = new Random();
+                gameState.setCardOpen(random.nextInt(2)); // 왼쪽, 오른쪽 랜덤 오픈
+            } else if(actioner.getLeftCard()>0) {
+                gameState.setCardOpen(0); // 왼쪽 오픈
+            } else {
+                gameState.setCardOpen(1); // 오른쪽 오픈
+
+            }
+        }
+        game.setCardOpen(gameState.getCardOpen());
+        gameRepository.save(game);
+
         int cardOpen = game.getCardOpen();
-        return challenge(game, "1", cardOpen);
+        return challenge(game, history.getPlayerTrying(), cardOpen);
     }
 
 
