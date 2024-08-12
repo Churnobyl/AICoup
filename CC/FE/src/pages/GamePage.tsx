@@ -377,70 +377,93 @@ const GamePage = () => {
     };
   }, [handleMessage, publishMessage, processMessageQueue]);
 
-  // 선택 결과 보내기
-  const handleSelect = (option: number) => {
-    console.log("Selected option:", option);
-
-    actionStore.setSelectedOption(option);
-
-    if (shouldHaveTarget.includes(option)) {
-      actionStore.setIsClickable();
-      actionStore.setSelectedTarget("");
-
-      setTopBarText("상대를 선택해 주세요.");
-      setIsTopBarShow(true);
-
-      setIsModalOpen(false);
-    } else {
-      handleDirectSelect(option);
-    }
-  };
-
   /**
    * 타겟 설정 메서드
    */
-  const handleDirectSelect = (option: number) => {
-    const currentState = store.state;
-    console.log("currentState : ", store.state);
+  const handleDirectSelect = useCallback(
+    (option: number) => {
+      const currentState = store.state;
+      console.log("currentState : ", store.state);
 
-    setSpinnerText("서버의 응답을 기다리는 중..");
-    setIsSpinnerOpen(true);
+      setSpinnerText("서버의 응답을 기다리는 중..");
+      setIsSpinnerOpen(true);
 
-    switch (option) {
-      case 0:
-        setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
-        setIsSpinnerOpen(true);
-        publishMessage(1, "userA", "nextTurn", {});
-        break;
-      case -2:
-        setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
-        setIsSpinnerOpen(true);
-        publishMessage(1, "userA", "nextTurn", {});
-        break;
-      case 8:
-        if (currentState === "gptCounterAction") {
-          publishMessage(1, "userA", "counterActionChallenge", {});
-        } else if (currentState === "gptAction") {
-          publishMessage(1, "userA", "challenge", {});
-        }
-        break;
-      case 9:
-        if (currentState === "gptCounterAction") {
-          publishMessage(1, "userA", "counterActionPermit", {});
-        } else if (currentState === "gptAction") {
-          publishMessage(1, "userA", "permit", {});
-        }
-        break;
-      default:
-        publishMessage(1, "userA", actionStore.sendingState, {
-          cookie: Cookies.get("gameId"),
-          action: option.toString(),
-          targetPlayerId: actionStore.selectedTarget.toString(),
-        });
-    }
+      switch (option) {
+        case 0:
+          setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
+          setIsSpinnerOpen(true);
+          publishMessage(1, "userA", "nextTurn", {});
+          break;
+        case -2:
+          setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
+          setIsSpinnerOpen(true);
+          publishMessage(1, "userA", "nextTurn", {});
+          break;
+        case 8:
+          console.log(currentState);
+          if (currentState === "gptCounterAction") {
+            publishMessage(1, "userA", "counterActionChallenge", {});
+          } else if (currentState === "gptAction") {
+            publishMessage(1, "userA", "challenge", {});
+          }
+          break;
+        case 9:
+          console.log(currentState);
+          if (currentState === "gptCounterAction") {
+            publishMessage(1, "userA", "counterActionPermit", {});
+          } else if (currentState === "gptAction") {
+            publishMessage(1, "userA", "permit", {});
+          }
+          break;
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+          publishMessage(1, "userA", "counterAction", {
+            cookie: Cookies.get("gameId"),
+            action: option.toString(),
+            targetPlayerId: actionStore.selectedTarget.toString(),
+          });
+          break;
+        default:
+          publishMessage(1, "userA", actionStore.sendingState, {
+            cookie: Cookies.get("gameId"),
+            action: option.toString(),
+            targetPlayerId: actionStore.selectedTarget.toString(),
+          });
+      }
 
-    setIsModalOpen(false);
-  };
+      setIsModalOpen(false);
+    },
+    [
+      actionStore.selectedTarget,
+      actionStore.sendingState,
+      publishMessage,
+      store.state,
+    ]
+  );
+
+  // 선택 결과 보내기
+  const handleSelect = useCallback(
+    (option: number) => {
+      console.log("Selected option:", option);
+
+      actionStore.setSelectedOption(option);
+
+      if (shouldHaveTarget.includes(option)) {
+        actionStore.setIsClickable();
+        actionStore.setSelectedTarget("");
+
+        setTopBarText("상대를 선택해 주세요.");
+        setIsTopBarShow(true);
+
+        setIsModalOpen(false);
+      } else {
+        handleDirectSelect(option);
+      }
+    },
+    [actionStore, handleDirectSelect]
+  );
 
   const handleSelectWithTarget = useCallback(() => {
     publishMessage(1, "userA", actionStore.sendingState, {
