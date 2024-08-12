@@ -399,6 +399,19 @@ const GamePage = () => {
           setIsSpinnerOpen(true);
           publishMessage(1, "userA", "nextTurn", {});
           break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+          publishMessage(1, "userA", "action", {
+            cookie: Cookies.get("gameId"),
+            action: option.toString(),
+            targetPlayerId: actionStore.selectedTarget.toString(),
+          });
+          break;
         case 8:
           console.log(currentState);
           if (currentState === "gptCounterAction") {
@@ -425,22 +438,11 @@ const GamePage = () => {
             targetPlayerId: actionStore.selectedTarget.toString(),
           });
           break;
-        default:
-          publishMessage(1, "userA", actionStore.sendingState, {
-            cookie: Cookies.get("gameId"),
-            action: option.toString(),
-            targetPlayerId: actionStore.selectedTarget.toString(),
-          });
       }
 
       setIsModalOpen(false);
     },
-    [
-      actionStore.selectedTarget,
-      actionStore.sendingState,
-      publishMessage,
-      store.state,
-    ]
+    [actionStore.selectedTarget, publishMessage, store.state]
   );
 
   // 선택 결과 보내기
