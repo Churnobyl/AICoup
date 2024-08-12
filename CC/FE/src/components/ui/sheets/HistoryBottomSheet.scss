@@ -10,3 +10,43 @@
     }
   }
 }
+
+.character-name {
+  display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  color: white;
+  letter-spacing: -0.5px;
+  margin: 0 1px;
+  padding: 0 4px;
+  text-shadow: 0 0 3px #000;
+  text-transform: uppercase;
+}
+
+.character-1 {
+  background-color: #9c27b0;
+}
+.character-2 {
+  background-color: #795548;
+}
+.character-3 {
+  background-color: #689f38;
+}
+.character-4 {
+  background-color: #2962ff;
+}
+.character-5 {
+  background-color: #d50000;
+}
+
+.money {
+  display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  background-color: yellow;
+  letter-spacing: -0.5px;
+  margin: 0 1px;
+  padding: 0 4px;
+  text-shadow: 0 0 3px #fff;
+  text-transform: uppercase;
+}
