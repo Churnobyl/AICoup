@@ -391,10 +391,9 @@ const GamePage = () => {
       setIsTopBarShow(true);
 
       setIsModalOpen(false);
-      return;
+    } else {
+      handleDirectSelect(option);
     }
-
-    handleDirectSelect(option);
   };
 
   /**
