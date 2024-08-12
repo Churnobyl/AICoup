@@ -445,6 +445,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         gameRepository.save(game);
 
         int cardOpen = game.getCardOpen();
+        history = game.getHistory().get(game.getHistory().size()-1);
         return challenge(game, history.getPlayerTrying(), cardOpen);
     }
 
@@ -894,6 +895,18 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             // 도전 성공 내역 히스토리에 기록
             recordHistory(game, 14, true, challengerId, target.getId());
 
+            // gpt가 target인 경우 cardOpen 세팅
+            if(isGPTPlayer(target)) {
+                if(target.getLeftCard()>0 && target.getRightCard()>0) {
+                    Random random = new Random();
+                    cardOpen = random.nextInt(2);
+                } else if(target.getLeftCard()>0) {
+                    cardOpen = 0;
+                } else {
+                    cardOpen = 1;
+                }
+            }
+
             // 도전 성공: 타겟 플레이어가 영향력 상실
             loseInfluence(target, cardOpen);
 
@@ -902,10 +915,24 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             game.setTurn(game.getTurn()+1);
             gameRepository.save(game);
         } else {
-            // 도전 실패: 도전자가 영향력 상실
-            loseInfluence(challenger, cardOpen);
             // 도전 실패 내역 히스토리에 기록
             recordHistory(game, 14, false, challengerId, target.getId());
+
+            // gpt가 target인 경우 cardOpen 세팅
+            if(isGPTPlayer(challenger)) {
+                if(challenger.getLeftCard()>0 && challenger.getRightCard()>0) {
+                    Random random = new Random();
+                    cardOpen = random.nextInt(2);
+                } else if(challenger.getLeftCard()>0) {
+                    cardOpen = 0;
+                } else {
+                    cardOpen = 1;
+                }
+            }
+
+            // 도전 실패: 도전자가 영향력 상실
+            loseInfluence(challenger, cardOpen);
+
             // 타겟 플레이어는 새 카드를 받음
             giveNewCard(target);
         }
@@ -967,7 +994,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         Map<ActionType, List<ActionType>> validCounterActions = Map.of(
                 ActionType.FOREIGN_AID, List.of(ActionType.BLOCK_DUKE),
                 ActionType.ASSASSINATE, List.of(ActionType.BLOCK_CONTESSA),
-                ActionType.STEAL, List.of(ActionType.BLOCK_CAPTAIN, ActionType.BLOCK_DUKE)
+                ActionType.STEAL, List.of(ActionType.BLOCK_CAPTAIN, ActionType.BLOCK_AMBASSADOR)
         );
         return validCounterActions.getOrDefault(originalAction, List.of()).contains(counterAction);
     }
