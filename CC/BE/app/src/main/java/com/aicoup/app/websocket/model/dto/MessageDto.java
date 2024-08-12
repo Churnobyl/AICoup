@@ -10,7 +10,6 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 public class MessageDto {
-
     private String roomId;
     private String writer;
     private String state;

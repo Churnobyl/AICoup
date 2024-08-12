@@ -1,5 +1,41 @@
-button {
-  margin: 0 auto;
-  padding: 0.5rem 1rem;
-  width: 10rem;
+$dark_brown: #5a2d0f;
+$light_brown: #dab785;
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  outline: none;
+  border-radius: 4px;
+  cursor: pointer;
+
+  padding-right: 1rem;
+  padding-left: 1rem;
+  background: $dark_brown;
+  border: $dark_brown solid 1px;
+
+  &.large {
+    height: 3rem;
+    font-size: 1.25rem;
+  }
+
+  &.medium {
+    height: 2.25rem;
+    font-size: 1rem;
+  }
+
+  &.small {
+    height: 1.75rem;
+    font-size: 0.875;
+  }
+
+  &:hover {
+    background: $light_brown;
+  }
+
+  &:active {
+    background: darken($light_brown, 10%);
+  }
 }

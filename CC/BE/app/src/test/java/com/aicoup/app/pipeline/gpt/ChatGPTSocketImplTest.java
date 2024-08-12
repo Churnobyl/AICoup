@@ -1,12 +1,9 @@
 package com.aicoup.app.pipeline.gpt;
 
-import org.junit.jupiter.api.Assertions;
+import com.aicoup.app.pipeline.gpt.service.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class ChatGPTSocketImplTest {
@@ -14,14 +11,68 @@ class ChatGPTSocketImplTest {
     @Autowired
     ChatGPTSocket chatGPTSocket;
 
-    @Test
-    void testChatGPTApi() {
-        String dataFromGptApiForAction = chatGPTSocket.getDataFromGptApiForAction("{\"role\": \"system\", \"content\": \"보드 게임 coup의 현재 게임 정보를 받고 현재 플레이어의 action을 JSON으로 return하는 api입니다. 출력은 JSON 값만 출력합니다.\\ncoup의 규칙\\n- Every turn, current player choose action below\\n    - Income [coin +1]\\n    - Foreign Aid [coin +2]\\n        - Counteraction (all player available)\\n            - Challenge\\n    - Coup [coin -7, selected player’s card -1]\\n    - Tax[coin +3]\\n        - Challenge\\n    - Steal[coin +2, selected player’s coin-2]\\n        - Challenge\\n        - Counteraction (only selected player available)\\n            - Challenge\\n    - Exchange [card +2, selected card -2]\\n        - Challenge\\n    - Assainate [coin -3, selected player’s card -1]\\n        - Challenge\\n        - Counteraction (only selected player available)\\n            - Challenge\\n- Every counteraction\\n    - if success, [action canceled]\\n    - if fail, [counteraction player’s card -1]\\n- Every challenge,\\n    - if success, [current player’s card -1]\\n    - if fail, [challenge player’s card -1]\\n\\n입력 받는 데이터의 형태\\nplayerinfo의 card는 현재 플레이어가 가지고 있는 카드 종류. cards_open은 해당 카드의 공개 여부, coin은 현재 플레이어의 소지 동전수를 의미해. history는 해당 플레이어가 행동한 action의 종류가 저장되어 있어\\n{\\n  \\\"player_num\\\": 3,\\n  \\\"current_player\\\": 2,\\n  \\\"turn\\\": 5,\\n  \\\"playerinfo\\\": [\\n    {\\n      \\\"1\\\": {\\n        \\\"cards\\\": [\\\"Duke\\\", \\\"Captain\\\"],\\n        \\\"cards_open\\\": [false, false],\\n        \\\"coins\\\": 5\\n      },\\n      \\\"2\\\": {\\n        \\\"cards\\\": [\\\"Duke\\\", \\\"Ambassador\\\"],\\n        \\\"cards_open\\\": [true, false],\\n        \\\"coins\\\": 3\\n      },\\n      \\\"3\\\": {\\n        \\\"cards\\\": [\\\"Contessa\\\", \\\"Captain\\\"],\\n        \\\"cards_open\\\": [false, false],\\n        \\\"coins\\\": 4\\n      }\\n    }\\n  ],\\n  \\\"history\\\": {\\n    \\\"1\\\": [\\\"Duke\\\"],\\n    \\\"2\\\": [\\\"Duke\\\"],\\n    \\\"3\\\": [\\\"Captain\\\"]\\n  }\\n}\\n\\n해당 데이터의 출력값은\\n{\\n  \\\"action\\\": \\\"Exchange\\\",\\n  \\\"target\\\": \\\"none\\\"\\n}\\n\\n2번 샘플\\n{\\n  \\\"player_num\\\": 3,\\n  \\\"current_player\\\": 2,\\n  \\\"turn\\\": 2,\\n  \\\"playerinfo\\\": [\\n    {\\n      \\\"1\\\": {\\n        \\\"cards\\\": [\\\"Duke\\\", \\\"Captain\\\"],\\n        \\\"cards_open\\\": [false, false],\\n        \\\"coins\\\": 5\\n      },\\n      \\\"2\\\": {\\n        \\\"cards\\\": [\\\"Duke\\\", \\\"Ambassador\\\"],\\n        \\\"cards_open\\\": [false, false],\\n        \\\"coins\\\": 2\\n      },\\n      \\\"3\\\": {\\n        \\\"cards\\\": [\\\"Contessa\\\", \\\"Captain\\\"],\\n        \\\"cards_open\\\": [false, false],\\n        \\\"coins\\\": 2\\n      }\\n    }\\n  ],\\n  \\\"history\\\": {\\n    \\\"1\\\": [\\\"Duke\\\"],\\n    \\\"2\\\": [],\\n    \\\"3\\\": []\\n  }\\n}\\n2번 샘플에 대한 출력값\\n{\\n  \\\"action\\\": \\\"Tax\\\",\\n  \\\"target\\\": \\\"none\\\"\\n}\"},\n" +
-                "      {\"role\": \"user\", \"content\": \"{\\\"player_num\\\": 4, \\\"current_player\\\": 1, \\\"turn\\\": 18, \\\"playerinfo\\\": [{\\\"1\\\": {\\\"cards\\\": [\\\"ambassador\\\", \\\"captain\\\"], \\\"cards_open\\\": [false, false], \\\"coins\\\": 5}, \\\"2\\\": {\\\"cards\\\": [\\\"captain\\\", \\\"captain\\\"], \\\"cards_open\\\": [false, true], \\\"coins\\\": 6}, \\\"3\\\": {\\\"cards\\\": [\\\"duke\\\", \\\"contessa\\\"], \\\"cards_open\\\": [false, false], \\\"coins\\\": 7}, \\\"4\\\": {\\\"cards\\\": [\\\"assassin\\\", \\\"contessa\\\"], \\\"cards_open\\\": [true, true], \\\"coins\\\": 3}}], \\\"history\\\": {\\\"1\\\": [\\\"duke\\\", \\\"ambassador\\\", \\\"captain\\\"], \\\"2\\\": [\\\"captain\\\", \\\"captain\\\", \\\"captain\\\"], \\\"3\\\": [\\\"duke\\\", \\\"ambassador\\\", \\\"duke\\\", \\\"contessa\\\", \\\"duke\\\"], \\\"4\\\": [\\\"assassin\\\"]}}\"}");
+    @Autowired
+    ActionDataService actionDataService;
+    @Autowired
+    ChallengeDataService challengeDataService;
+    @Autowired
+    CounterActionDataService counterActionDataService;
+    @Autowired
+    CounterActionChallengeDataService counterActionChallengeDataService;
 
-//        Parser
-//
-//        assertThat(data)
+    @Test
+    void testActionApi() {
+        String systemPrompt = "You are an API that receives information of every turn of the Coup board game and outputs what current player has to do. Take the current turn information in JSON format and output the result in JSON format.cards_open indicates whether the card has lost its influence. if input is \\\"cards\\\": [\\\"duke\\\", \\\"ambassador\\\"], \\\"cards_open\\\": [true, false] means that the duke has lost its influence, and ambassador is influential. coins shows how much coins each player has. history shows what each player acts before.the goal of the game is to elimate the influence card of all other players and be the last survivor.when a player lose all their influence card he lose the game.Every turn, current_player perform one action they want and can afford.- income: current_player get 1 coin.- foreign_aid: current_player get 2 coins. other duke can perform counter_action.- coup: cost 7 coins. choose one player and force to give up an influence card. if current_player start turn with 10 or more, current_player must coup.- tax: current_player get 3 coins. can be challenged.- steal: choose one player and take 2 coins. can be challeged. chosen player can perform counter_action with captain or ambassador.- exchange: draw 2 influence card. place 2 influence card back. can be challeged.- assassinate: cost 3 coins. choose one player and force to give up an influence card. can be challenged. chosen player can perform counter_action with contessa.Every counter_action, current_player'action is canceled, or current_player can challenge to player performing counter_action. if challenge is success, counter_action is canceled.Every challenge, the player who lose challenge is forced to give up an influence card.";
+
+        // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
+        String userPrompt = actionDataService.getFormattedGameDataAsJson("1");
+
+        // API 호출
+        String dataFromGptApiForAction = chatGPTSocket.getDataFromGptApiForAction(systemPrompt, userPrompt);
+
+        // 결과 출력
         System.out.println("dataFromGptApiForAction = " + dataFromGptApiForAction);
+    }
+
+    @Test
+    void testChallengeApi() {
+        String systemPrompt = "You are an API that receives information of every turn of the Coup board game and current_player's action and target. you should output which player should challenge as a challenger for current_player's action. if there is no proper challenger, you should ouput \\\"none\\\". Take information in JSON format and output the result in JSON format.cards_open indicates whether the card has lost its influence. if input is \\\"cards\\\": [\\\"duke\\\", \\\"ambassador\\\"], \\\"cards_open\\\": [true, false] means that the duke has lost its influence, and ambassador is influential. coins shows how much coins each player has. history shows what each player acts before. history show what action was taken by each player. if input is \\\"history\\\": {\\\"1\\\": [\\\"tax\\\", \\\"exchange\\\", \\\"steal\\\"],\\\"2\\\": [\\\"steal\\\", \\\"steal\\\", \\\"steal\\\"],\\\"3\\\": [\\\"tax\\\", \\\"tax\\\"],\\\"4\\\": [\\\"income\\\", \\\"assassinate\\\"]} and current_player is 1, current_player's last two action is exchange and steal.any other player can challenge to a current_player regardless of whether they are the involved in action.player may be telling the truth or bluffing.the goal of the game is to elimate the influence card of all other players and be the last survivor.when a player lose all their influence card he lose the game.whoever loses the challenge immediately loses an influence card.challenger is usually a player in order of player who is target, player who has most influence card.it is suspicious if current_action is not match with the recent actions.";
+
+        // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
+        String userPrompt = challengeDataService.getFormattedGameDataAsJson("2");
+
+        // API 호출
+        String dataFromGptApiForChallenge = chatGPTSocket.getDataFromGptApiForChallengeAgainstAction(systemPrompt, userPrompt);
+
+        // 결과 출력
+        System.out.println("dataFromGptApiForChallenge = " + dataFromGptApiForChallenge);
+    }
+
+    @Test
+    void testCounterActionApi() {
+        String systemPrompt = "You are an API that receives information of every turn of the Coup board game and current_player's action and target. you return counter_actioner and counter_action. counter_actioner is a player who perform counter_action and counter_action is a charater who can block current_action. if there is no proper counter_actioner, you should ouput \\\"none\\\" for counter_actioner and counter_action. Take information in JSON format and output the result in JSON format.cards_open indicates whether the card has lost its influence. if input is \\\"cards\\\": [\\\"duke\\\", \\\"ambassador\\\"], \\\"cards_open\\\": [true, false] means that the duke has lost its influence, and ambassador is influential. coins shows how much coins each player has. history shows what each player acts before. history show what action was taken by each player. if input is \\\"history\\\": {\\\"1\\\": [\\\"tax\\\", \\\"exchange\\\", \\\"steal\\\"],\\\"2\\\": [\\\"steal\\\", \\\"steal\\\", \\\"steal\\\"],\\\"3\\\": [\\\"tax\\\", \\\"tax\\\"],\\\"4\\\": [\\\"income\\\", \\\"assassinate\\\"]} and current_player is 1, current_player's last two action is exchange and steal.for below current_action only can be blocked by other player who is target and follwing counter_action.- assassinate: contessa.- steal: ambassador, captain.  for below current_action only can be blocked by following counter_action.- foreign_aid: duke.player may be telling the truth or bluffing.if current_action is successfully is counter_actioned, current_action fails.player who perform counter_action can be challenged.the goal of the game is to elimate the influence card of all other players and be the last survivor.when a player lose all their influence card he lose the game.whoever loses the challenge immediately loses an influence card.counter_actioner is usually a player who is target.player whose recent action is tax usally perform counter_action with duke.if target player's contessa is influential and current_action is assassinate, he must perform counteraction with contessa.if target player has an only influence card and current_action is assassinate, he must perform counter_action with contessa.";
+
+        // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
+        String userPrompt = challengeDataService.getFormattedGameDataAsJson("3");
+
+        // API 호출
+        String dataFromGptApiForCounterAction = chatGPTSocket.getDataFromGptApiForCounteractionAgainstAction(systemPrompt, userPrompt);
+
+        // 결과 출력
+        System.out.println("dataFromGptApiForCounterAction = " + dataFromGptApiForCounterAction);
+    }
+
+    @Test
+    void testCounterActionChallengeApi() {
+        String systemPrompt = "You are an API that receives information of every turn of the Coup board game and counter_actioner and his _counter_action. you should output which player should challenge as a challenger for counter_actioner's counter_action. if there is no proper challenger, you should ouput \\\"none\\\". Take information in JSON format and output the result in JSON format.cards_open indicates whether the card has lost its influence. if input is \\\"cards\\\": [\\\"duke\\\", \\\"ambassador\\\"], \\\"cards_open\\\": [true, false] means that the duke has lost its influence, and ambassador is influential. coins shows how much coins each player has. history shows what each player acts before. history show what action was taken by each player. if input is \\\"history\\\": {\\\"1\\\": [\\\"tax\\\", \\\"exchange\\\", \\\"steal\\\"],\\\"2\\\": [\\\"steal\\\", \\\"steal\\\", \\\"steal\\\"],\\\"3\\\": [\\\"tax\\\", \\\"tax\\\"],\\\"4\\\": [\\\"income\\\", \\\"assassinate\\\"]} and current_player is 1, current_player's last two action is exchange and steal.any other player can challenge to a current_player regardless of whether they are the involved in action.player may be telling the truth or bluffing.the goal of the game is to elimate the influence card of all other players and be the last survivor.when a player lose all their influence card he lose the game.whoever loses the challenge immediately loses an influence card.challenger is usually a player in order of player who is current_player, player who has most influence card.it is suspicious if counter_action is not match with the recent actions.";
+
+        // 데이터베이스에서 게임 데이터를 JSON 형식으로 가져오기
+        String userPrompt = counterActionChallengeDataService.getFormattedGameDataAsJson("4");
+
+        // API 호출
+        String dataFromGptApiForCounterActionChallenge = chatGPTSocket.getDataFromGptApiForChallengeAgainstCounteraction(systemPrompt, userPrompt);
+
+        // 결과 출력
+        System.out.println("dataFromGptApiForCounterActionChallenge = " + dataFromGptApiForCounterActionChallenge);
     }
 }

@@ -1,14 +1,15 @@
 package com.aicoup.app.websocket.service;
 
+import com.aicoup.app.domain.entity.game.Game;
+import com.aicoup.app.websocket.model.dto.GameStateDto;
+import com.aicoup.app.websocket.model.dto.MessageDto;
+
+import java.util.Map;
+
 public interface WebSocketGameService {
-
-    public String gameInit(String roomId);
-
-    boolean validate();
-
-    String nextTurn();
-
-    String myChoice();
-
-    void recordHistory(String gameId, Integer actionNumber, Integer playerTrying, Integer playerTried);
+    Map<String, String> validate(MessageDto message);
+//    GameStateDto processAction(MessageDto message);
+    GameStateDto getGameState(String gameId);
+    void recordHistory(Game game, Integer actionNumber, Boolean actionState, String playerTrying, String playerTried);
+    String nextTurn(MessageDto messageDto);
 }

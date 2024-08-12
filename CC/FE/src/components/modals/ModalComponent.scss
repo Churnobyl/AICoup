@@ -1,0 +1,23 @@
+$dark_brown: #5a2d0f;
+
+.modal {
+  border: 2px solid $dark_brown;
+  font-family: "BlackAndWhitePicture";
+}
+
+.modal-content {
+  padding: 5px 10px;
+  font-size: 2rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+
+  & > * {
+    font-size: 1.2rem;
+    margin: 5px;
+  }
+}

@@ -12,6 +12,14 @@ CREATE TABLE IF NOT EXISTS action
     CONSTRAINT PRIMARY KEY (action_id)
 );
 
+CREATE TABLE IF NOT EXISTS possible_action
+(
+    possible_action_id INTEGER,
+    action_id INTEGER,
+    can_action_id INTEGER,
+    CONSTRAINT PRIMARY KEY (possible_action_id)
+);
+
 CREATE TABLE IF NOT EXISTS card_info
 (
     card_info_id INTEGER,
@@ -38,8 +46,6 @@ CREATE TABLE IF NOT EXISTS game_member
     game_member_id INTEGER AUTO_INCREMENT,
     game_id        INTEGER,
     name           VARCHAR(255),
-    position_x     INTEGER,
-    position_y     INTEGER,
     left_card      INTEGER,
     right_card     INTEGER,
     coin           INTEGER,
@@ -50,4 +56,16 @@ CREATE TABLE IF NOT EXISTS game_member
     modified_by VARCHAR(255),
     CONSTRAINT PRIMARY KEY (game_member_id),
     CONSTRAINT fk_game_id FOREIGN KEY (game_id) REFERENCES game (game_id)
+);
+
+CREATE TABLE IF NOT EXISTS game_data (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    player_num INT NOT NULL,
+    current_player INT NOT NULL,
+    playerinfo JSON NOT NULL,
+    history JSON NOT NULL,
+    current_action VARCHAR(10),
+    target VARCHAR(10),
+    counter_actioner VARCHAR(10),
+    counter_action VARCHAR(10)
 );

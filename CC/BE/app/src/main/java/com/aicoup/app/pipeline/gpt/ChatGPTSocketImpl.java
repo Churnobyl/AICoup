@@ -13,8 +13,14 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class ChatGPTSocketImpl implements ChatGPTSocket {
 
-    @Value("${gpt.openai.model}")
-    private String model;
+    @Value("${gpt.openai.model1}")
+    private String model1;
+    @Value("${gpt.openai.model2}")
+    private String model2;
+    @Value("${gpt.openai.model3}")
+    private String model3;
+    @Value("${gpt.openai.model4}")
+    private String model4;
 
     @Value("${gpt.openai.api-url}")
     private String apiUrl;
@@ -22,27 +28,27 @@ public class ChatGPTSocketImpl implements ChatGPTSocket {
     private final RestTemplate restTemplate;
 
     @Override
-    public String getDataFromGptApiForAction(String prompt) {
-        return prompt(prompt, "A");
+    public String getDataFromGptApiForAction(String systemPrompt, String userPrompt) {
+        return prompt(model1, systemPrompt, userPrompt, "A");
     }
 
     @Override
-    public String getDataFromGptApiForChallengeAgainstAction(String prompt) {
-        return prompt(prompt, "B");
+    public String getDataFromGptApiForChallengeAgainstAction(String systemPrompt, String userPrompt) {
+        return prompt(model2, systemPrompt, userPrompt, "B");
     }
 
     @Override
-    public String getDataFromGptApiForCounteractionAgainstAction(String prompt) {
-        return prompt(prompt, "C");
+    public String getDataFromGptApiForCounteractionAgainstAction(String systemPrompt, String userPrompt) {
+        return prompt(model3, systemPrompt, userPrompt, "C");
     }
 
     @Override
-    public String getDataFromGptApiForChallengeAgainstCounteraction(String prompt) {
-        return prompt(prompt, "D");
+    public String getDataFromGptApiForChallengeAgainstCounteraction(String systemPrompt, String userPrompt) {
+        return prompt(model4, systemPrompt, userPrompt, "D");
     }
 
-    private String prompt(String prompt, String state) {
-        ChatGPTRequest request = new ChatGPTRequest(model, prompt);
+    private String prompt(String model, String systemPrompt, String userPrompt, String state) {
+        ChatGPTRequest request = new ChatGPTRequest(model, systemPrompt, userPrompt);
         ChatGPTResponse chatGPTResponse = restTemplate.postForObject(apiUrl, request, ChatGPTResponse.class);
         return chatGPTResponse.getChoices().get(0).getMessage().getContent();
     }

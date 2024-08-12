@@ -30,7 +30,10 @@
       "@apis/*": ["apis/*"],
       "@pages/*": ["pages/*"],
       "@assets/*": ["assets/*"],
-      "@routes/*": ["routes/*"]
+      "@routes/*": ["routes/*"],
+      "@hooks/*": ["hooks/*"],
+      "@stores/*": ["stores/*"],
+      "@types/*": ["types/*"]
     }
   },
   "include": ["src"]

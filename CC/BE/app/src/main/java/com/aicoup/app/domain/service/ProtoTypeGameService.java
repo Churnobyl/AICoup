@@ -1,5 +1,6 @@
 package com.aicoup.app.domain.service;
 
+import com.aicoup.app.domain.entity.game.Game;
 import com.aicoup.app.domain.game.RandomGameGenerator;
 import com.aicoup.app.domain.redisRepository.GameRepository;
 import jakarta.transaction.Transactional;
@@ -13,8 +14,8 @@ public class ProtoTypeGameService implements GameService {
 
     @Transactional
     @Override
-    public String createNewGame(String roomId, Integer participants) {
-        return gameGenerator.init(roomId, participants);
+    public Game createNewGame(String roomId, Integer participants) {
+        return gameGenerator.init(roomId);
     }
 
 }

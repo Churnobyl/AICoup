@@ -10,6 +10,8 @@ import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.index.Indexed;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -22,7 +24,7 @@ import java.util.List;
  * @deck Integer[] 덱에 있는 남은 카드 수
  * @history List&lt;History&gt; 게임 히스토리
  */
-@RedisHash("game")
+@RedisHash(value = "game", timeToLive = 3600L)
 @NoArgsConstructor
 @Getter @Setter
 public class Game extends MutableBaseEntity {
@@ -32,9 +34,20 @@ public class Game extends MutableBaseEntity {
     private String id;
     private String name;
     private Integer turn;
+    private int whoseTurn;
+    private LinkedList<History> actionContext = new LinkedList<>();
     private List<String> memberIds = new ArrayList<>();
-    private Integer[] deck = new Integer[6];
+    private int[] deck = new int[6];
     private List<History> history = new ArrayList<>();
+    private int cardOpen;
+    private boolean awaitingChallenge;
+    private boolean awaitingCounterAction;
+    private Integer awaitingChallengeActionValue;
+    private Integer awaitingCounterActionValue;
+    private String currentActionState;
+    private Integer currentAction;
+    private String currentPlayerName;
+    private String currentTargetName;
 
     /**
      * id 생성자
@@ -49,9 +62,6 @@ public class Game extends MutableBaseEntity {
      */
     public void setInitCards() {
         for (int i = 1; i < 6; i++) {
-            if (deck[i] == null) {
-                deck[i] = 0;
-            }
             deck[i] += 3;
         }
     }
@@ -62,5 +72,27 @@ public class Game extends MutableBaseEntity {
      */
     public void addHistory(History oneHistory) {
         history.add(oneHistory);
+    }
+
+    @Override
+    public String toString() {
+        return "Game{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", turn=" + turn +
+                ", whoseTurn=" + whoseTurn +
+                ", actionContext=" + actionContext +
+                ", memberIds=" + memberIds +
+                ", deck=" + Arrays.toString(deck) +
+                ", history=" + history +
+                ", awaitingChallenge=" + awaitingChallenge +
+                ", awaitingCounterAction=" + awaitingCounterAction +
+                ", awaitingChallengeActionValue=" + awaitingChallengeActionValue +
+                ", awaitingCounterActionValue=" + awaitingCounterActionValue +
+                ", currentActionState='" + currentActionState + '\'' +
+                ", currentAction=" + currentAction +
+                ", currentPlayerName='" + currentPlayerName + '\'' +
+                ", currentTargetName='" + currentTargetName + '\'' +
+                '}';
     }
 }

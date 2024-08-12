@@ -5,14 +5,14 @@ import java.util.Map;
 
 public interface ChatGPTSocket {
     // Action
-    String getDataFromGptApiForAction(String prompt);
+    String getDataFromGptApiForAction(String systemPrompt, String userPrompt);
 
     // Action에 대한 Challenge
-    String getDataFromGptApiForChallengeAgainstAction(String prompt);
+    String getDataFromGptApiForChallengeAgainstAction(String systemPrompt, String userPrompt);
 
     // Action에 대한 Counteraction
-    String getDataFromGptApiForCounteractionAgainstAction(String prompt);
+    String getDataFromGptApiForCounteractionAgainstAction(String systemPrompt, String userPrompt);
 
     // Counteraction에 대한 Challenge
-    String getDataFromGptApiForChallengeAgainstCounteraction(String prompt);
+    String getDataFromGptApiForChallengeAgainstCounteraction(String systemPrompt, String userPrompt);
 }

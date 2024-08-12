@@ -1,12 +1,47 @@
-import { useState } from "react";
+import useCardInfoStore from "@/stores/cardInfoStore";
+import useCardSelectStore from "@/stores/cardSelectStore";
 import "./Card.scss";
 
-type Props = {};
+type Props = {
+  cardNumber: number;
+  player: boolean;
+  playerCardIdForSelect: number;
+};
 
 const Card = (props: Props) => {
-  const [num, setNum] = useState(0);
+  const { cardNumber, player, playerCardIdForSelect } = props;
+  const store = useCardInfoStore();
+  const cardSelectStore = useCardSelectStore();
 
-  return <div className="cardItem card">{num}</div>;
+  const setPlayerCard = () => {
+    if (cardSelectStore.isPlayerCardClickable) {
+      cardSelectStore.setIsPlayerCardClickable();
+      cardSelectStore.setSelectedPlayerCard(playerCardIdForSelect);
+    }
+  };
+
+  return (
+    <div
+      className={`cardItem card card-${
+        player
+          ? cardNumber < 0
+            ? -cardNumber
+            : cardNumber
+          : cardNumber < 0
+          ? -cardNumber
+          : 0
+      } ${cardNumber < 0 ? "dead" : ""} ${
+        cardSelectStore.isPlayerCardClickable && player ? "clickable" : ""
+      }`}
+      onClick={setPlayerCard}
+    >
+      {player
+        ? store.cardname[cardNumber > 0 ? cardNumber : -cardNumber]
+        : cardNumber < 0
+        ? store.cardname[-cardNumber]
+        : ""}
+    </div>
+  );
 };
 
 export default Card;

@@ -1,9 +1,21 @@
-import React from "react";
+import useGameStore from "@/stores/gameStore";
+import { useMemo } from "react";
+import "./Deck.scss";
 
-type Props = {};
+const Deck = () => {
+  const store = useGameStore();
+  const { deck } = store;
 
-const Deck = (props: Props) => {
-  return <div>Deck</div>;
+  const deckNumber = useMemo(() => {
+    return deck.length > 0 ? deck.reduce((a, b) => a + b, 0) : 0;
+  }, [deck]);
+
+  return (
+    <div className="deck-cover">
+      <span>덱 ({deckNumber})</span>
+      <div className="deck"></div>
+    </div>
+  );
 };
 
 export default Deck;

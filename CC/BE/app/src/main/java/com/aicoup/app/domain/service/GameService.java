@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface GameService {
 
-    String createNewGame(String gamename, Integer participants);
+    Game createNewGame(String gamename, Integer participants);
 }

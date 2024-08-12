@@ -12,14 +12,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
-@Component
 @RequiredArgsConstructor
 public class RandomGameGenerator implements GameGenerator {
 
     private final GameRepository gameRepository;
     private final GameMemberRepository gameMemberRepository;
 
-    public String init(String roomId, Integer participants) {
+    public Game init(String roomId) {
         Game newGame = new Game(roomId);
         newGame.setTurn(0);
         newGame.setInitCards();
@@ -28,15 +27,13 @@ public class RandomGameGenerator implements GameGenerator {
         List<GameMember> participantList = new ArrayList<>();
 
         GameMember player = new GameMember("1", "userA");
-        player.setIsPlayer(true);
+        player.setPlayer(true);
         participantList.add(player);
 
-        GPTPlayerCreate(participantList, participants);
+        GPTPlayerCreate(participantList, 4);
 
         for (GameMember gameMember : participantList) {
             gameMember.setCoin(2);
-            gameMember.setPositionX((int) (Math.random() * 1000));
-            gameMember.setPositionY((int) (Math.random() * 1000));
             gameMember.setLeftCard(pickCard(newGame.getDeck()));
             gameMember.setRightCard(pickCard(newGame.getDeck()));
             gameMemberRepository.save(gameMember);
@@ -44,10 +41,10 @@ public class RandomGameGenerator implements GameGenerator {
         }
 
         gameRepository.save(newGame);
-        return newGame.getId();
+        return newGame;
     }
 
-    private Integer pickCard(Integer[] deck) {
+    private int pickCard(int[] deck) {
         Random random = new Random();
         while (true) {
             int i = random.nextInt(5) + 1;
@@ -60,12 +57,12 @@ public class RandomGameGenerator implements GameGenerator {
     }
 
     private void GPTPlayerCreate(List<GameMember> participantList, int participants) {
-        for (int i = 0; i < participants - 1; i++) {
-            GameMember gameMember = new GameMember();
-            int randomNumber = (int) (Math.random() * 100) + 10;
-            gameMember.setName("GPT" + randomNumber);
-            gameMember.setId(UUID.randomUUID().toString());
-            participantList.add(gameMember);
-        }
+//        for (int i = 0; i < participants - 1; i++) {
+//            GameMember gameMember = new GameMember();
+//            int randomNumber = (int) (Math.random() * 100) + 10;
+//            gameMember.setName("GPT" + randomNumber);
+//            gameMember.setId(UUID.randomUUID().toString());
+//            participantList.add(gameMember);
+//        }
     }
 }

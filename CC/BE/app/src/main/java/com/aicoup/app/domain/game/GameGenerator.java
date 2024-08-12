@@ -1,5 +1,7 @@
 package com.aicoup.app.domain.game;
 
+import com.aicoup.app.domain.entity.game.Game;
+
 public interface GameGenerator {
-    String init(String roomId, Integer participants);
+    Game init(String roomId);
 }

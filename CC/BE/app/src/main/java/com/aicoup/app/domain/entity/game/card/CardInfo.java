@@ -25,5 +25,17 @@ public class CardInfo {
     @Column(name ="card_info_id")
     private Integer id;
     private String name;
+    @Column(name = "english_name")
+    private String englishName;
     private String imageUrl;
+
+    @Override
+    public String toString() {
+        return "CardInfo{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", englishName='" + englishName + '\'' +
+                ", imageUrl='" + imageUrl + '\'' +
+                '}';
+    }
 }

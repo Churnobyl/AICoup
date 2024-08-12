@@ -1,0 +1,25 @@
+.board {
+  display: grid;
+  place-items: center;
+  width: 600px;
+  height: 400px;
+  // margin: 0 auto;
+
+  .player {
+    height: 128px;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    transform-origin: 200px 200px;
+    position: absolute;
+  }
+}
+
+@for $i from 0 through 4 {
+  .player:nth-child(#{$i}) {
+    transform: rotate(calc(360deg / 4 * #{$i}))
+      translate(170px)
+      rotate(calc(-360deg / 4 * #{$i}));
+  }
+}
