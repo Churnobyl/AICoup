@@ -65,7 +65,11 @@ export const Player = (props: Props) => {
 
   return (
     <div className={`player ${className}`} onClick={setTarget}>
-      <span>{store.members[playerNumber].name}</span>
+      <span>
+        {store.members[playerNumber].name === "userA"
+          ? ""
+          : store.members[playerNumber].name}
+      </span>
       <span className={`coin-value ${animationClass}`}>
         <IconContext.Provider value={{ color: "yellow", size: "24px" }}>
           <PiCoinVerticalFill />
