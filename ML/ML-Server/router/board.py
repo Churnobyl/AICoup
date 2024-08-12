@@ -41,7 +41,7 @@ async def get_game_status(situation: Optional[dict]):
     for tried in range(TRIAL):
         print("inference try... ", tried)
         try:
-            results = await convert_to_dict(await inference("dir"))
+            results = await convert_to_dict(await inference("dir")) # buffers / dir
             result = tracePlayers(results, situation)
             if result is not None:
                 main.app.game.playersCard = result[0]

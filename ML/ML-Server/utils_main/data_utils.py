@@ -111,6 +111,10 @@ def add_image(frame, buffer_path, img_type):
 
 
 def load_images_from_buffers(buffer_path):
+    
+    if not buffer_path:  # 버퍼가 비어있다면
+        raise ValueError("buffer_path가 비어 있습니다. 이미지 버퍼를 제공해야 합니다.")
+    
     for i, buffer in enumerate(buffer_path):
         # 버퍼에서 이미지 불러오기
         buffer.seek(0)  # 버퍼의 시작으로 이동
