@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 import matplotlib.pyplot as plt
 from multiset import *
 
@@ -18,13 +19,11 @@ PLAYER_INIT_VECTOR = [[0, -1], [-1, 0], [0, 1], [1, 0]]
 def tracePlayers(inferResult, situation):
     # data 변환
 
-    # 임의로 리스트 하나만 남겨서 0의 인덱스로 접근 한 모습
-    ## TODO: 이 부분 구현해야함
-    
     ## 이전 코드
     # cardInfo = inferResult[0]['detections']
     # cardInfo = [obj for obj in cardInfo if obj['class_id'] < 6]
 
+    print(inferResult)
     image_idx = 0
     # 먼저 카드의 개수로 valid
     while image_idx < IMAGE_NUM:
@@ -34,7 +33,7 @@ def tracePlayers(inferResult, situation):
         if cardInfo is None:
             print("Failed pre Valid...")
             image_idx += 1
-            continue
+            raise Exception('preValidation failed')
         print(f'{image_idx=}')
 
         cardPoints = dict(enumerate([{
@@ -59,7 +58,8 @@ def tracePlayers(inferResult, situation):
         if deckIdx is None:
             print("Failed clustering Valid...")
             image_idx += 1
-            continue
+            raise Exception('clustering failed')
+            
 
         # 벡터변환 및 플레이어 할당
         for k in clusters:
@@ -97,8 +97,9 @@ def tracePlayers(inferResult, situation):
         # validation
         # TODO: validation 부분 구현
         if not postValidCard(players, situation):
-            print('Failed validation in post valid')
-            return None
+            # print('Failed validation in post valid')
+            raise Exception('postValidation failed')
+            # return None
 
         return (players, deck)
     
@@ -182,7 +183,7 @@ def make_players(clusters, cardPoints, player_cluster_id, deck_idx, action):
         extra = []
         # action에 amb_pick보고 extra 만들기
         # card 객체로 다시 뽑아야함... 생각보다 긴 코드가 될 듯
-        if index == action['player_id'] and action['name'] == 'amb_pick' and pre_cards_class is not None:    # TODO: 뒤 condition error raise로 아래로 빼주기
+        if  action['name'] == 'amb_pick' and index == action['player_id'] and pre_cards_class is not None:    # TODO: 뒤 condition error raise로 아래로 빼주기
             amb_player = action['player_id']
             print(f'{clusters=}')
             amb_cards = clusters[player_cluster_id[amb_player]]['cards']   # TODO: player_id => clusters index로 바꿔서 넣어야함
@@ -231,6 +232,7 @@ def preValidCard(infers, s_idx=0, is_amb_action=False):
     for idx in range(s_idx, IMAGE_NUM):
         cardInfo = infers[idx]['detections']
         cardInfo = [obj for obj in cardInfo if obj['class_id'] < 6]
+        # TODO: Confidence 기준 (threshold 값 들어가는 코드) 삽입
         if calcCardsNum(len(cardInfo), is_amb_action):
             print(f'{len(cardInfo)=}')
             return idx, cardInfo

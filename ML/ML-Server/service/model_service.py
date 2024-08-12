@@ -12,7 +12,7 @@ sys.path.append(target_dir)
 # from yolov9.models import common
 
 
-def inference(path):
+async def inference(path):
     detections = []
     try:
         match path:
