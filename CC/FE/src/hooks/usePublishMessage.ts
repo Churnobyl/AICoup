@@ -5,6 +5,8 @@ import { useCallback } from "react";
 const usePublishMessage = (clientData: StompJs.Client) => {
   const publishMessage = useCallback(
     (roomId: number, writer: string, state: string, mainMessage = {}) => {
+      console.log(roomId, writer, state, mainMessage);
+
       clientData.publish({
         destination: "/pub/chat/message",
         body: JSON.stringify({
