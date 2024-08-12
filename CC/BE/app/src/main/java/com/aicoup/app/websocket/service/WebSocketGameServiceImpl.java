@@ -508,9 +508,32 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             default -> 0;
         };
     }
-
+    public String deadCardOpen(MessageDto message) {
+        Game game = returnGame(message);
+        // 이 턴의 액션 추출
+        int index = game.getHistory().size()-1;
+        History history = game.getHistory().get(index);
+        while(history.getActionId()>7) {
+            index--;
+            history = game.getHistory().get(index);
+        }
+        int actionValue = history.getActionId();
+        if(actionValue==5||actionValue==7) { // 해당 턴의 액션이 coup 또는 assassinate 이고
+            String targetPlayerId = history.getPlayerTried();
+            GameMember target = findPlayerByName(game, targetPlayerId);
+            if(isGPTPlayer(target)) { // target이 gpt 라면
+                performAction(message); // 알아서 카드 공개하고 마무리
+                return "gameState";
+            }
+            return "deadCardOpen"; // target이 플레이어라면 카드 선택 필요
+        } else { // 해당 턴의 액션이 coup 또는 assassinate 이 아니면 액션 처리 후 마무리
+            performAction(message);
+            return "gameState";
+        }
+    }
     public GameStateDto performAction(MessageDto message) {
         Game game = returnGame(message);
+        Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
         int index = game.getHistory().size()-1;
         History history = game.getHistory().get(index);
         while(history.getActionId()>7) {
@@ -530,6 +553,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             target = findPlayerByName(game, targetPlayerId);
         }
 
+        int cardOpen = 0;
+
         switch (actionType) {
             case INCOME:
                 player.setCoin(player.getCoin() + 1);
@@ -538,18 +563,42 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 player.setCoin(player.getCoin() + 2);
                 break;
             case COUP:
+                if(!isGPTPlayer(target)) {
+                    cardOpen = Integer.parseInt(mainMessage.get("cardOpen"));
+                } else {
+                    if(target.getLeftCard()>0 && target.getRightCard()>0) {
+                        Random random = new Random();
+                        cardOpen = random.nextInt(1);
+                    } else if(target.getLeftCard()>0) {
+                        cardOpen = 0;
+                    } else {
+                        cardOpen = 1;
+                    }
+                }
                 player.setCoin(player.getCoin() - 7);
                 if (target != null) {
-                    loseInfluence(target);
+                    loseInfluence(target, cardOpen);
                 }
                 break;
             case TAX:
                 player.setCoin(player.getCoin() + 3);
                 break;
             case ASSASSINATE:
+                if(!isGPTPlayer(target)) {
+                    cardOpen = Integer.parseInt(mainMessage.get("cardOpen"));
+                } else {
+                    if(target.getLeftCard()>0 && target.getRightCard()>0) {
+                        Random random = new Random();
+                        cardOpen = random.nextInt(1);
+                    } else if(target.getLeftCard()>0) {
+                        cardOpen = 0;
+                    } else {
+                        cardOpen = 1;
+                    }
+                }
                 player.setCoin(player.getCoin() - 3);
                 if (target != null) {
-                    loseInfluence(target);
+                    loseInfluence(target, cardOpen);
                 }
                 break;
             case STEAL:
@@ -571,6 +620,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         GameMember nextPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn())); // 다음 플레이어가
         while(nextPlayer.getLeftCard()<0 && nextPlayer.getRightCard()<0) { // 죽었으면
             game.setWhoseTurn((game.getWhoseTurn() + 1) % 4); // 다음 플레이어로 턴 증가
+            nextPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
         }
         game.setTurn(game.getTurn()+1);
         gameMemberRepository.save(player);
@@ -581,10 +631,10 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return buildGameState(game.getId());
     }
 
-    private void loseInfluence(GameMember target) {
-        if (target.getLeftCard() != null && target.getLeftCard() > 0) {
+    private void loseInfluence(GameMember target, int cardOpen) {
+        if (cardOpen == 0 && target.getLeftCard() > 0) {
             target.setLeftCard(-target.getLeftCard());
-        } else if (target.getRightCard() != null && target.getRightCard() > 0) {
+        } else if (cardOpen == 1 && target.getRightCard() > 0) {
             target.setRightCard(-target.getRightCard());
         }
 
@@ -784,7 +834,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             recordHistory(game, 14, true, challengerId, target.getId());
 
             // 도전 성공: 타겟 플레이어가 영향력 상실
-            loseInfluence(target);
+            loseInfluence(target, cardOpen);
 
             // 도전 성공 시 다음 턴으로 이동
             game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
@@ -792,7 +842,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             gameRepository.save(game);
         } else {
             // 도전 실패: 도전자가 영향력 상실
-            loseInfluence(challenger);
+            loseInfluence(challenger, cardOpen);
             // 도전 실패 내역 히스토리에 기록
             recordHistory(game, 14, false, challengerId, target.getId());
             // 타겟 플레이어는 새 카드를 받음
