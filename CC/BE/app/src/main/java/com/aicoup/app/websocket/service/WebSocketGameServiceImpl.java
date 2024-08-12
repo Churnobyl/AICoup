@@ -287,7 +287,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 gameState.setCardOpen(1); // 오른쪽 카드 오픈
             } else { // 만약 해당 카드가 없다면
                 Random random = new Random();
-                gameState.setCardOpen(random.nextInt(1)); // 왼쪽, 오른쪽 랜덤 오픈
+                gameState.setCardOpen(random.nextInt(2)); // 왼쪽, 오른쪽 랜덤 오픈
             }
             game.setCardOpen(gameState.getCardOpen());
             gameRepository.save(game);
@@ -568,7 +568,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 } else {
                     if(target.getLeftCard()>0 && target.getRightCard()>0) {
                         Random random = new Random();
-                        cardOpen = random.nextInt(1);
+                        cardOpen = random.nextInt(2);
                     } else if(target.getLeftCard()>0) {
                         cardOpen = 0;
                     } else {
@@ -589,7 +589,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 } else {
                     if(target.getLeftCard()>0 && target.getRightCard()>0) {
                         Random random = new Random();
-                        cardOpen = random.nextInt(1);
+                        cardOpen = random.nextInt(2);
                     } else if(target.getLeftCard()>0) {
                         cardOpen = 0;
                     } else {
