@@ -126,11 +126,15 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     public void performGPTAction(Game game, GameMember currentPlayer) {
         String[] actionResult;
         String action, target, targetId = "none";
+
         do {
             actionResult = gptResponseGetter.actionApi(game.getId());
             action = actionResult[0];
             target = actionResult[1];
             if(!target.equals("none")) {
+                if(currentPlayer.getCoin()>=10) {
+                    action = "coup";
+                }
                 targetId = game.getMemberIds().get(Integer.parseInt(target)-1);
             } else {
                 targetId = "none";
@@ -584,13 +588,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             String targetPlayerId = history.getPlayerTried();
             GameMember target = findPlayerByName(game, targetPlayerId);
             if(isGPTPlayer(target)) { // target이 gpt 라면
-                performAction(message); // 알아서 카드 공개하고 마무리
-                return "gameState";
+                return  performAction(message); // 알아서 카드 공개하고 마무리
             }
             return "deadCardOpen"; // target이 플레이어라면 카드 선택 필요
         } else { // 해당 턴의 액션이 coup 또는 assassinate 이 아니면 액션 처리 후 마무리
-            performAction(message);
-            return "gameState";
+            return performAction(message);
         }
     }
     public String performAction(MessageDto message) {
