@@ -593,7 +593,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             return "gameState";
         }
     }
-    public GameStateDto performAction(MessageDto message) {
+    public String performAction(MessageDto message) {
         Game game = returnGame(message);
         Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
         int index = game.getHistory().size()-1;
@@ -690,7 +690,25 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             gameMemberRepository.save(target);
         }
         gameRepository.save(game);
-        return buildGameState(game.getId());
+
+
+        // 게임 끝나는 로직 추가
+        String winPlayerId = "";
+        int cnt = 0;
+        for(int i=0; i<4; i++) {
+            String mememberId = game.getMemberIds().get(i);
+            GameMember gameMember = findPlayerByName(game, mememberId);
+            if(gameMember.getLeftCard()<0 && gameMember.getRightCard()<0) {
+                cnt++;
+            } else {
+                winPlayerId = gameMember.getId();
+            }
+        }
+        if(cnt==3) { // 최후의 1인이 남으면 게임 종료
+            recordHistory(game, 15, null, winPlayerId, null);
+            return "gameOver";
+        }
+        return "gameState";
     }
 
     private void loseInfluence(GameMember target, int cardOpen) {
@@ -938,36 +956,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
         return challengeSuccess?"challengeSuccess":"challengeFail";
     }
-
-//    public String counterActionChallenge(Game game, String challengerId) {
-//        GameMember challenger = findPlayerByName(game, challengerId);
-//
-//        // 마지막 액션 가져오기
-//        History lastAction = game.getHistory().get(game.getHistory().size()-1);
-//        ActionType lastActionType = ActionType.fromActionValue(lastAction.getActionId());
-//        GameMember target = findPlayerByName(game, lastAction.getPlayerTrying());
-//
-//        // 도전 성공 여부 확인
-//        boolean challengeSuccess = !target.hasCard(lastActionType.getValue());
-//
-//        if (challengeSuccess) {
-//            // 도전 성공: 타겟 플레이어가 영향력 상실
-//            loseInfluence(target);
-//            recordHistory(game, 8, true, "0", "0");
-//        } else {
-//            // 도전 실패: 도전자가 영향력 상실
-//            loseInfluence(challenger);
-//            recordHistory(game, 17, false, "0", "0");
-//            // 타겟 플레이어는 새 카드를 받음
-//            giveNewCard(target);
-//        }
-//
-//        // 게임 상태 업데이트
-//        game.addHistory(new History(UUID.randomUUID().toString(), ActionType.CHALLENGE.getValue(), challengerId, target.getName()));
-//        gameRepository.save(game);
-//
-//        return challengeSuccess?"challengeSuccess":"challengeFail";
-//    }
 
     public GameStateDto counterAction(Game game, String counterActioner, Integer counterAction) {
         String counterActionerId = game.getMemberIds().get(Integer.parseInt(counterActioner)-1); // 대응자의 id 추출

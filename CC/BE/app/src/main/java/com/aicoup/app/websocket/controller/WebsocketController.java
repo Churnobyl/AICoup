@@ -74,8 +74,8 @@ public class WebsocketController {
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 break;
             case "deadCardOpen":
-                gameStateDto = webSocketGameService.performAction(message);
-                returnState = "gameState";
+                returnState = webSocketGameService.performAction(message);
+                gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 break;
             case "anyCounterAction":
                 returnState = webSocketGameService.handleGPTCounterAction(message);
