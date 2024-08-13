@@ -6,6 +6,8 @@ import com.aicoup.app.domain.redisRepository.GameMemberRepository;
 import com.aicoup.app.domain.redisRepository.GameRepository;
 import com.aicoup.app.pipeline.aiot.AIoTSocket;
 import com.aicoup.app.pipeline.aiot.dto.MMResponse;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -34,7 +36,7 @@ public class AIoTGameGenerator implements GameGenerator {
         player.setPlayer(true);
         participantList.add(player);
 
-        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer();
+        List<MMResponse> dataFromAIoTServer = convertJsonToMMResponseList(); // 이 함수 파라미터에 문자열 통으로 넣으면 됨
         int participants = dataFromAIoTServer.size();
 
         Random random = new Random();
@@ -63,6 +65,34 @@ public class AIoTGameGenerator implements GameGenerator {
 
         gameRepository.save(newGame);
         return newGame;
+    }
+
+    public static List<MMResponse> convertJsonToMMResponseList(String jsonString) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootNode = objectMapper.readTree(jsonString);
+        JsonNode userCardNode = rootNode.get("user_card");
+
+        List<MMResponse> mmResponseList = new ArrayList<>();
+
+        for (JsonNode cardGroup : userCardNode) {
+            MMResponse mmResponse = new MMResponse();
+
+            mmResponse.setLeft_card(cardGroup.get("left_card").asInt());
+            mmResponse.setRight_card(cardGroup.get("right_card").asInt());
+
+            JsonNode extraCardNode = cardGroup.get("extra_card");
+            List<Integer> extraCards = new ArrayList<>();
+            if (extraCardNode.isArray()) {
+                for (JsonNode extraCard : extraCardNode) {
+                    extraCards.add(extraCard.asInt());
+                }
+            }
+            mmResponse.setExtra_card(extraCards);
+
+            mmResponseList.add(mmResponse);
+        }
+
+        return mmResponseList;
     }
 
     private void GPTPlayerCreate(List<GameMember> participantList, int participants) {
