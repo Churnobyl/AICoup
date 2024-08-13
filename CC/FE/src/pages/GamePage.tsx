@@ -188,7 +188,6 @@ const GamePage = () => {
           break;
         case "action":
           setupGameState(parsedMessage);
-          actionStore.setSendingState("action");
           selectOptions({
             수입: 1,
             해외원조: 2,
@@ -218,6 +217,16 @@ const GamePage = () => {
           setIsTopBarShow(true);
           cardSelectStore.setSelectedPlayerCard(-1);
           break;
+        case "challengeSuccess":
+          setupGameState(parsedMessage);
+          setSpinnerText("의심이 성공했습니다. 결과 반영중..");
+          setIsSpinnerOpen(true);
+          break;
+        case "challengeFail":
+          setupGameState(parsedMessage);
+          setSpinnerText("의심이 실패했습니다. 결과 반영중..");
+          setIsSpinnerOpen(true);
+          break;
         case "gptChallengeNone":
           setupGameState(parsedMessage);
           setSpinnerText("GPT의 대응 여부를 기다리는 중..");
@@ -236,9 +245,13 @@ const GamePage = () => {
           break;
         case "counterActionChallengeSuccess":
           setupGameState(parsedMessage);
+          setSpinnerText("의심이 성공했습니다. 결과 반영중..");
+          setIsSpinnerOpen(true);
           break;
         case "counterActionChallengeFail":
           setupGameState(parsedMessage);
+          setSpinnerText("의심이 실패했습니다. 결과 반영중..");
+          setIsSpinnerOpen(true);
           break;
         case "gptAction":
           setupGameState(parsedMessage);
@@ -296,7 +309,16 @@ const GamePage = () => {
           break;
         case "deadCardOpen":
           break;
-        case "":
+        case "gameOver":
+          const hi = mainMessage.history;
+          setModalContent(
+            `${store.getMemberNameById(
+              hi[hi.length - 1].playerTrying
+            )}님이 승리했습니다.`
+          );
+          selectOptions(-2);
+          setIsModalOpen(true);
+          Cookies.remove("aiCoup");
           break;
         default:
           break;
@@ -307,13 +329,13 @@ const GamePage = () => {
       }
     },
     [
-      actionStore,
       cardSelectStore,
       isSpinnerOpen,
       messagePendingStore,
       publishMessage,
       selectOptions,
       setupGameState,
+      store,
     ]
   );
 

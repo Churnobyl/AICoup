@@ -30,7 +30,6 @@ const HistoryBottomSheet = memo(() => {
 
   useEffect(() => {
     if (lastItemRef.current) {
-      console.log(lastItemRef.current);
       lastItemRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [historyMessage]);

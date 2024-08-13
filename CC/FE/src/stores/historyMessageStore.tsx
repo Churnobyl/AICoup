@@ -268,7 +268,7 @@ export const historyMessagingConverter = (
       } else if (!actionState) {
         convertedMessage = (
           <div>
-            <strong>{tried}</strong>님이 카드를 공개합니다.
+            <strong>{tried}</strong>님이 해당 카드를 공개합니다.
           </div>
         );
       }
