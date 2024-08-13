@@ -1,11 +1,13 @@
 package com.aicoup.app.websocket.controller;
 
 import com.aicoup.app.domain.entity.game.member.GameMember;
+import com.aicoup.app.pipeline.aiot.AIoTSocket;
 import com.aicoup.app.websocket.model.dto.GameStateDto;
 import com.aicoup.app.websocket.model.dto.MessageDto;
 import com.aicoup.app.websocket.service.WebSocketGameServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
@@ -18,6 +20,7 @@ public class WebsocketController {
     private final WebSocketGameServiceImpl webSocketGameService;
     private final ObjectMapper objectMapper;
     private final SimpMessagingTemplate messagingTemplate;
+    private final AIoTSocket aIoTSocket;
 
     @MessageMapping("/chat/message")
     public void handleMessage(MessageDto message) {
@@ -47,6 +50,7 @@ public class WebsocketController {
                 returnState = result ? "exist" : "noExist";
                 break;
             case "gameInit":
+                aIoTSocket.gameStart();
                 String gameId = webSocketGameService.gameInit(message);
                 gameInitCookieSend(gameId);
                 returnState = "gameMade";
