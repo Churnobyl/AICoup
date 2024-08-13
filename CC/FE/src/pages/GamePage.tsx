@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
 import useCardSelectStore from "@/stores/cardSelectStore";
 import SignBoard from "@/components/ui/signBoard/SignBoard";
+import useMessagePendingStore from "@/stores/messagePendingStore";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -39,6 +40,7 @@ const GamePage = () => {
   const actionStore = useActionStore(); // Action 관련 정보 Zustand Store
   const historyStore = useHistoryStore(); // 히스토리 Zustand Store
   const cardSelectStore = useCardSelectStore(); // 카드 선택 Zustand Store
+  const messagePendingStore = useMessagePendingStore(); // 메시지 팬딩 Zustand Store
 
   /**
    * 모달 관련
@@ -294,14 +296,21 @@ const GamePage = () => {
           break;
         case "deadCardOpen":
           break;
+        case "":
+          break;
         default:
           break;
+      }
+
+      if (messagePendingStore.isPending) {
+        messagePendingStore.setIsPending(false);
       }
     },
     [
       actionStore,
       cardSelectStore,
       isSpinnerOpen,
+      messagePendingStore,
       publishMessage,
       selectOptions,
       setupGameState,
@@ -316,6 +325,8 @@ const GamePage = () => {
     const DELAY_TIME = 3000;
 
     if (isProcessing || messageQueue.current.length === 0) return;
+
+    if (messagePendingStore.isPending) return; // 처리중이면 메시지큐 처리 중단
 
     const { message, receivedTime } = messageQueue.current[0]; // 큐에서 첫 번째 메시지와 시간 가져오기
     const currentTime = Date.now();
@@ -336,7 +347,7 @@ const GamePage = () => {
         setIsProcessing(false); // 처리 후 상태 해제
       }, DELAY_TIME - timeDiff);
     }
-  }, [handleMessage, isProcessing]);
+  }, [handleMessage, isProcessing, messagePendingStore.isPending]);
 
   useEffect(() => {
     connect(); // 웹소켓 연결

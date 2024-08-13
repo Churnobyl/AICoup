@@ -21,7 +21,11 @@ export const Player = (props: Props) => {
   const [animationClass, setAnimationClass] = useState("");
 
   const setTarget = () => {
-    if (actionStore.isClickable) {
+    if (
+      actionStore.isClickable &&
+      (store.members[playerNumber].leftCard === 0 ||
+        store.members[playerNumber].rightCard === 0)
+    ) {
       actionStore.setSelectedTarget(playerId);
       actionStore.setIsClickable();
       console.log("setTarget :", playerId);

@@ -18,7 +18,12 @@ const CardHolder = (props: Props) => {
     <div
       className={classNames(
         className,
-        actionStore.isClickable && playerNumber !== 0 ? "clickable" : ""
+        actionStore.isClickable &&
+          playerNumber !== 0 &&
+          (store.members[playerNumber].leftCard === 0 ||
+            store.members[playerNumber].rightCard === 0)
+          ? "clickable"
+          : ""
       )}
     >
       <Card
