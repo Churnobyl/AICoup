@@ -1,16 +1,13 @@
-import useGameStore from "@/stores/gameStore";
+import useHistoryStore from "@/stores/historyMessageStore";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { BottomSheet, BottomSheetRef } from "react-spring-bottom-sheet";
 import "react-spring-bottom-sheet/dist/style.css";
 import "./HistoryBottomSheet.scss";
-import useHistoryStore from "@/stores/historyMessageStore";
 
 const HistoryBottomSheet = memo(() => {
   const sheetRef = useRef<BottomSheetRef>(null);
   const lastItemRef = useRef<HTMLLIElement>(null);
   const [open, setOpen] = useState(true);
-  const store = useGameStore();
-  const { history } = store;
   const { historyMessage } = useHistoryStore((state) => ({
     historyMessage: state.historyMessage,
   }));
@@ -33,9 +30,10 @@ const HistoryBottomSheet = memo(() => {
 
   useEffect(() => {
     if (lastItemRef.current) {
+      console.log(lastItemRef.current);
       lastItemRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [history]);
+  }, [historyMessage]);
 
   return (
     <>

@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "./GamePage.scss";
 import useCardSelectStore from "@/stores/cardSelectStore";
 import SignBoard from "@/components/ui/signBoard/SignBoard";
+import useMessagePendingStore from "@/stores/messagePendingStore";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -39,6 +40,7 @@ const GamePage = () => {
   const actionStore = useActionStore(); // Action 관련 정보 Zustand Store
   const historyStore = useHistoryStore(); // 히스토리 Zustand Store
   const cardSelectStore = useCardSelectStore(); // 카드 선택 Zustand Store
+  const messagePendingStore = useMessagePendingStore(); // 메시지 팬딩 Zustand Store
 
   /**
    * 모달 관련
@@ -186,7 +188,6 @@ const GamePage = () => {
           break;
         case "action":
           setupGameState(parsedMessage);
-          actionStore.setSendingState("action");
           selectOptions({
             수입: 1,
             해외원조: 2,
@@ -216,6 +217,16 @@ const GamePage = () => {
           setIsTopBarShow(true);
           cardSelectStore.setSelectedPlayerCard(-1);
           break;
+        case "challengeSuccess":
+          setupGameState(parsedMessage);
+          setSpinnerText("의심이 성공했습니다. 결과 반영중..");
+          setIsSpinnerOpen(true);
+          break;
+        case "challengeFail":
+          setupGameState(parsedMessage);
+          setSpinnerText("의심이 실패했습니다. 결과 반영중..");
+          setIsSpinnerOpen(true);
+          break;
         case "gptChallengeNone":
           setupGameState(parsedMessage);
           setSpinnerText("GPT의 대응 여부를 기다리는 중..");
@@ -234,9 +245,13 @@ const GamePage = () => {
           break;
         case "counterActionChallengeSuccess":
           setupGameState(parsedMessage);
+          setSpinnerText("의심이 성공했습니다. 결과 반영중..");
+          setIsSpinnerOpen(true);
           break;
         case "counterActionChallengeFail":
           setupGameState(parsedMessage);
+          setSpinnerText("의심이 실패했습니다. 결과 반영중..");
+          setIsSpinnerOpen(true);
           break;
         case "gptAction":
           setupGameState(parsedMessage);
@@ -294,17 +309,33 @@ const GamePage = () => {
           break;
         case "deadCardOpen":
           break;
+        case "gameOver":
+          const hi = mainMessage.history;
+          setModalContent(
+            `${store.getMemberNameById(
+              hi[hi.length - 1].playerTrying
+            )}님이 승리했습니다.`
+          );
+          selectOptions(-2);
+          setIsModalOpen(true);
+          Cookies.remove("aiCoup");
+          break;
         default:
           break;
       }
+
+      if (messagePendingStore.isPending) {
+        messagePendingStore.setIsPending(false);
+      }
     },
     [
-      actionStore,
       cardSelectStore,
       isSpinnerOpen,
+      messagePendingStore,
       publishMessage,
       selectOptions,
       setupGameState,
+      store,
     ]
   );
 
@@ -316,6 +347,8 @@ const GamePage = () => {
     const DELAY_TIME = 3000;
 
     if (isProcessing || messageQueue.current.length === 0) return;
+
+    if (messagePendingStore.isPending) return; // 처리중이면 메시지큐 처리 중단
 
     const { message, receivedTime } = messageQueue.current[0]; // 큐에서 첫 번째 메시지와 시간 가져오기
     const currentTime = Date.now();
@@ -336,7 +369,7 @@ const GamePage = () => {
         setIsProcessing(false); // 처리 후 상태 해제
       }, DELAY_TIME - timeDiff);
     }
-  }, [handleMessage, isProcessing]);
+  }, [handleMessage, isProcessing, messagePendingStore.isPending]);
 
   useEffect(() => {
     connect(); // 웹소켓 연결
