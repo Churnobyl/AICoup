@@ -19,7 +19,7 @@
 @for $i from 0 through 4 {
   .player:nth-child(#{$i}) {
     transform: rotate(calc(360deg / 4 * #{$i}))
-      translate(170px)
+      translate(220px)
       rotate(calc(-360deg / 4 * #{$i}));
   }
 }

@@ -12,28 +12,8 @@ type Props = {
   className?: string;
 };
 
-// 새로 추가
-// playerNumber에 따라 위치를 결정하는 함수
-const getBubblePosition = (
-  playerNumber: number
-): "top" | "right" | "left" | "bottom" => {
-  switch (playerNumber) {
-    case 0:
-      return "top";
-    case 1:
-      return "right";
-    case 2:
-      return "bottom";
-    case 3:
-      return "left";
-    default:
-      return "top"; // 임의 기본값
-  }
-};
-
 export const Player = (props: Props) => {
   const store = useGameStore();
-<<<<<<< HEAD
   const actionStore = useActionStore();
   const { playerNumber, className, playerId } = props;
 
@@ -86,9 +66,6 @@ export const Player = (props: Props) => {
       return () => clearTimeout(timeout);
     }
   }, [animationClass]);
-=======
-  const { playerNumber, className } = props;
->>>>>>> a6aa25a (FE/ fix)
 
   return (
     <div className={`player ${className}`} onClick={setTarget}>
@@ -109,11 +86,9 @@ export const Player = (props: Props) => {
         className={`cardHolder`}
       />
 
-      {/* 추가 */}
-      {/* 메시지가 있을 경우에만 메시지 창을 표시 */}
-      {playerMessage && (
+      {/* {playerMessage && (
         <MessageBubble message={playerMessage} position={bubblePositionClass} />
-      )}
+      )} */}
     </div>
   );
 };

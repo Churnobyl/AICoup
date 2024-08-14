@@ -6,6 +6,7 @@ const SignBoard = ({ title }: { title: string }) => {
     <Callout
       {...{ compact: true, icon: "selection", intent: "primary" }}
       title={title}
+      className={"signboard"}
     />
   );
 };
