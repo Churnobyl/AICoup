@@ -75,7 +75,7 @@ const GamePage = () => {
 
   const navigate = useNavigate();
 
-  const selectOptions = useCallback((canAction: ActionType | -1 | -2) => {
+  const selectOptions = useCallback((canAction: ActionType | -1 | -2 | -3) => {
     // 결정 초기화
 
     if (canAction === -1) {
@@ -85,6 +85,9 @@ const GamePage = () => {
     } else if (canAction === -2) {
       setOptions({ "다음 턴": -2 });
       setModalContent("다음 턴으로");
+      setIsModalOpen(true);
+    } else if (canAction === -3) {
+      setOptions({ 종료: -3 });
       setIsModalOpen(true);
     } else {
       setOptions(canAction);
@@ -317,6 +320,11 @@ const GamePage = () => {
           break;
         case "deadCardOpen":
           break;
+        case "playerDown":
+          setModalContent(`플레이어가 패배했습니다.`);
+          selectOptions(-3);
+          setIsModalOpen(true);
+          break;
         case "gameOver":
           const hi = mainMessage.history;
           setModalContent(
@@ -324,7 +332,7 @@ const GamePage = () => {
               hi[hi.length - 1].playerTrying
             )}님이 승리했습니다.`
           );
-          selectOptions(-2);
+          selectOptions(-3);
           setIsModalOpen(true);
           break;
         default:
@@ -435,13 +443,14 @@ const GamePage = () => {
           publishMessage(1, "userA", "nextTurn", {});
           break;
         case -2:
-          if (store.state === "gameOver") {
+          if (store.state !== "gameOver") {
             setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
             setIsSpinnerOpen(true);
             publishMessage(1, "userA", "nextTurn", {});
           } else {
             Cookies.remove("aiCoup");
-            navigate("/");
+            setTimeout(() => {}, 2000);
+            navigate("/", { replace: true });
           }
           break;
         case 1:
