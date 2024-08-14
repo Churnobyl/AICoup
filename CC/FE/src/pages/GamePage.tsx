@@ -17,6 +17,7 @@ import "./GamePage.scss";
 import useCardSelectStore from "@/stores/cardSelectStore";
 import SignBoard from "@/components/ui/signBoard/SignBoard";
 import useMessagePendingStore from "@/stores/messagePendingStore";
+import { useNavigate } from "react-router-dom";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -72,7 +73,9 @@ const GamePage = () => {
   const [isTopBarShow, setIsTopBarShow] = useState<boolean>(false);
   const [topBarText, setTopBarText] = useState<string>("");
 
-  const selectOptions = useCallback((canAction: ActionType | -1 | -2) => {
+  const navigate = useNavigate();
+
+  const selectOptions = useCallback((canAction: ActionType | -1 | -2 | -3) => {
     // 결정 초기화
 
     if (canAction === -1) {
@@ -82,6 +85,9 @@ const GamePage = () => {
     } else if (canAction === -2) {
       setOptions({ "다음 턴": -2 });
       setModalContent("다음 턴으로");
+      setIsModalOpen(true);
+    } else if (canAction === -3) {
+      setOptions({ 종료: -3 });
       setIsModalOpen(true);
     } else {
       setOptions(canAction);
@@ -212,11 +218,11 @@ const GamePage = () => {
           break;
         case "gptChallenge":
           setupGameState(parsedMessage);
-          cardSelectStore.setIsPlayerCardClickable();
           if (
             mainMessage.history[mainMessage.history.length - 1].playerTried ===
             "1"
           ) {
+            cardSelectStore.setIsPlayerCardClickable();
             setTopBarText("공개할 카드를 선택해 주세요.");
             setIsTopBarShow(true);
           }
@@ -314,6 +320,11 @@ const GamePage = () => {
           break;
         case "deadCardOpen":
           break;
+        case "playerDown":
+          setModalContent(`플레이어가 패배했습니다.`);
+          selectOptions(-3);
+          setIsModalOpen(true);
+          break;
         case "gameOver":
           const hi = mainMessage.history;
           setModalContent(
@@ -321,9 +332,8 @@ const GamePage = () => {
               hi[hi.length - 1].playerTrying
             )}님이 승리했습니다.`
           );
-          selectOptions(-2);
+          selectOptions(-3);
           setIsModalOpen(true);
-          Cookies.remove("aiCoup");
           break;
         default:
           break;
@@ -349,7 +359,7 @@ const GamePage = () => {
    */
   const processMessageQueue = useCallback(() => {
     // 지연시간 설정
-    const DELAY_TIME = 3000;
+    const DELAY_TIME = 1000;
 
     if (isProcessing || messageQueue.current.length === 0) return;
 
@@ -433,9 +443,20 @@ const GamePage = () => {
           publishMessage(1, "userA", "nextTurn", {});
           break;
         case -2:
-          setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
-          setIsSpinnerOpen(true);
-          publishMessage(1, "userA", "nextTurn", {});
+          if (store.state !== "gameOver") {
+            setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
+            setIsSpinnerOpen(true);
+            publishMessage(1, "userA", "nextTurn", {});
+          } else {
+            Cookies.remove("aiCoup");
+            setTimeout(() => {}, 2000);
+            navigate("/", { replace: true });
+          }
+          break;
+        case -3:
+          Cookies.remove("aiCoup");
+          setTimeout(() => {}, 2000);
+          navigate("/", { replace: true });
           break;
         case 1:
         case 2:
@@ -480,7 +501,7 @@ const GamePage = () => {
 
       setIsModalOpen(false);
     },
-    [actionStore.selectedTarget, publishMessage, store.state]
+    [actionStore.selectedTarget, navigate, publishMessage, store.state]
   );
 
   // 선택 결과 보내기
@@ -507,6 +528,8 @@ const GamePage = () => {
 
   const handleSelectWithTarget = useCallback(() => {
     if (0 < actionStore.selectedOption && actionStore.selectedOption < 8) {
+      setSpinnerText("서버의 응답을 기다리는 중..");
+      setIsSpinnerOpen(true);
       publishMessage(1, "userA", "action", {
         cookie: Cookies.get("aiCoup"),
         action: actionStore.selectedOption.toString(),
@@ -518,6 +541,8 @@ const GamePage = () => {
   }, [publishMessage, actionStore]);
 
   const handleSelectWithMyCard = useCallback(() => {
+    setSpinnerText("서버의 응답을 기다리는 중..");
+    setIsSpinnerOpen(true);
     publishMessage(1, "userA", "cardOpen", {
       cookie: Cookies.get("aiCoup"),
       cardOpen: cardSelectStore.selectedPlayerCard.toString(),
