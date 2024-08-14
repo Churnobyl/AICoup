@@ -678,6 +678,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             GameMember gameMember = findPlayerByName(game, mememberId);
             if(gameMember.getLeftCard()<0 && gameMember.getRightCard()<0) {
                 cnt++;
+                if(i==0) return "playerDown";
             } else {
                 winPlayerId = gameMember.getId();
             }
