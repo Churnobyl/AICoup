@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.context.annotation.PropertySource;
@@ -234,11 +235,15 @@ public class AIoTSocketImpl implements AIoTSocket {
         WebClient webClient = WebClient.builder().build();
         int retryCount = 0;
 
+        String jsonBody = "{ \"name\": \"\" }";
+
         while (true) {
             try {
                 Mono<String> resp = webClient
-                        .get()
+                        .post()
                         .uri(url + gameStatusApi)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(jsonBody)
                         .retrieve()
                         .bodyToMono(String.class);
 
