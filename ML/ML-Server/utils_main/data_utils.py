@@ -14,6 +14,10 @@ from core import *
 
 
 async def convert_to_dict(all_files_data):
+
+    if asyncio.iscoroutine(all_files_data):
+        all_files_data = await all_files_data
+
     results = []
 
     # 이미지 3장의 객체 탐지 결과 순차적으로 탐색
@@ -111,10 +115,10 @@ def add_image(frame, buffer_path, img_type):
 
 
 def load_images_from_buffers(buffer_path):
-    
+
     if not buffer_path:  # 버퍼가 비어있다면
-        raise ValueError("buffer_path가 비어 있습니다. 이미지 버퍼를 제공해야 합니다.")
-    
+        raise ValueError("utils 함수 오류. buffers가 비어 있습니다.")
+
     for i, buffer in enumerate(buffer_path):
         # 버퍼에서 이미지 불러오기
         buffer.seek(0)  # 버퍼의 시작으로 이동
@@ -183,12 +187,13 @@ async def zip_images_from_buffers(buffer_path) -> io.BytesIO:
 # -----------------------------------------------------------
 # 이미지 파일 불러오기
 
+
 async def load_image(image_path):
     try:
         with open(image_path, "rb") as image_file:
             print(image_path, "이미지 파일 읽기")
             return image_file.read()
-        
+
     except FileNotFoundError:
         print(f"파일을 찾을 수 없습니다: {image_path}")
         return None
@@ -196,29 +201,31 @@ async def load_image(image_path):
 # -----------------------------------------------------------
 # 텍스트 파일 불러오기 및 변환
 
+
 async def convert_txt_file():
     print("텍스트 파일 변환 시작")
-    
+
     results = []
 
-    for txt in TXT_FILES:
-        txt_path = DET_FOLDER/'exp/labels' / txt
+    for txt in SAMPLE_TXT_FILES:
+        txt_path = SAMPLE_DET_FOLDER/'exp/labels' / txt
         txt_list = []
 
         try:
             if txt_path.is_file():
-                with open(txt_path, 'r') as f: # read-only
+                with open(txt_path, 'r') as f:  # read-only
                     print(txt_path, "텍스트 파일 읽어오기")
                     for line in f:
                         txt_list.append(line.strip().split())
                 results.append(txt_list)
             else:
                 print(f"File {txt_path} does not exist.")
-                results.append(txt_list)  # Append empty list if file does not exist
+                # Append empty list if file does not exist
+                results.append(txt_list)
 
         except Exception as e:
             print(f"Error reading file {txt_path}: {e}")
             results.append(txt_list)  # Append empty list if there is an error
 
     print("텍스트 파일 변환 종료")
-    return results    
+    return results

@@ -1,3 +1,6 @@
+# 웹캠 관리 클래스 (싱글턴)
+# 웹캠 해상도 설정, 이미지 촬영 메서드
+
 import cv2
 
 
@@ -21,7 +24,7 @@ class CaptureManager:
             print(f'Frame size: {width}x{height}')
 
             if not self.cap.isOpened():
-                raise Exception("Could not open webcam.")
+                raise Exception("웹캠 연결 실패")
 
         cls._instance = self
         print("웹캠 초기화 완료")
