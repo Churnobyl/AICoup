@@ -242,8 +242,8 @@ public class AIoTSocketImpl implements AIoTSocket {
                         .retrieve()
                         .bodyToMono(String.class);
 
-//                String resultString = resp.block();
-                String resultString = aiotMockingData;
+                String resultString = resp.block();
+//                String resultString = aiotMockingData;
                 return convertJsonToMMResponseList(resultString);
             } catch (Exception e) {
                 retryCount++;
