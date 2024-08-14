@@ -4,4 +4,4 @@ __pycache__/
 yolov9/runs/
 
 # ML-Server
-ML-Server/media
+ML-Server/media/detect

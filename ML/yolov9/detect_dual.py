@@ -3,10 +3,8 @@ import os
 import platform
 import sys
 from pathlib import Path
-
 import torch
 
-import time
 # --------------------------------------------------------------------------------------
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))), 'ML-Server'))
 
@@ -59,6 +57,10 @@ def run(
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
+        
+        # --------------------------------------------------------------------------------------
+        buffer_path=None # TEST_IMG_BUFFERS | CONF_IMG_BUFFERS
+        # --------------------------------------------------------------------------------------
 ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -95,14 +97,14 @@ def run(
         dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
         
 # --------------------------------------------------------------------------------------
-    elif source == str(IMG_FOLDER):
+    elif buffer_path is not None:
+        # CAP_IMG_BUFFERS | TEST_IMG_BUFFERS 이미지 불러오기
+        dataset = list(load_images_from_buffers(buffer_path))
+        print("버퍼 이미지 사용")
+    else:
         ### media 디렉토리에 접근, 이미지 불러오기
         dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
-        print("media 디렉토리 이미지 사용")
-    else:
-        ### 전역 변수 메모리 버퍼에 접근, 이미지 불러오기
-        dataset = list(load_images_from_buffers(CAP_IMG_BUFFERS))
-        print("메모리 버퍼 이미지 사용")
+        print("디렉토리 샘플 이미지 사용")
 # --------------------------------------------------------------------------------------   
     vid_path, vid_writer = [None] * bs, [None] * bs
 
@@ -116,7 +118,10 @@ def run(
     print("run() 실행")
 # --------------------------------------------------------------------------------------
 
-    for path, im, im0s, vid_cap, s in dataset:       
+    count = 0 # 이미지 수 카운트
+    for path, im, im0s, vid_cap, s in dataset:
+        count += 1
+
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -138,7 +143,6 @@ def run(
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
         # Process predictions
-        
         for i, det in enumerate(pred):  # per image
             seen += 1
             if webcam:  # batch_size >= 1
@@ -150,7 +154,7 @@ def run(
             p = Path(p)  # to Path
 # --------------------------------------------------------------------------------------       
             ### media 저장하지 않을 시 주석 처리
-            if project == DET_FOLDER:
+            if project == SAMPLE_DET_FOLDER:
                 print("경로 설정")
                 save_path = str(save_dir / p.name)  # im.jpg
                 txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
@@ -165,7 +169,7 @@ def run(
             print("---")
             img_det = []
 
-            print(f"{p}.jpg 이미지 탐색 시작")
+            print(f"{count}번째 이미지 탐색 시작")
             
             # media 저장하지 않을 시 주석 처리
             if save_txt:
@@ -200,7 +204,6 @@ def run(
                         obj_det.append(i) 
                     # 정확도
                     obj_det.append(conf.item())
-                    # print("객체 탐지 결과", obj_det)
                     img_det.append(obj_det)
 # --------------------------------------------------------------------------------------
 
@@ -235,7 +238,7 @@ def run(
 
             if save_img:
                 # media 디렉토리에 저장
-                if project == DET_FOLDER:
+                if project == SAMPLE_DET_FOLDER:
                     if dataset.mode == 'image':
                         cv2.imwrite(save_path, im0)
                         print("탐지 이미지 파일 저장")
@@ -257,11 +260,14 @@ def run(
 
                 ### 메모리 버퍼에 임시 저장
                 else:
-                    data_utils.add_image(im0, CONF_IMG_BUFFERS, img_type="conf")
+                    if buffer_path == TEST_CAP_IMG_BUFFERS:
+                        data_utils.add_image(im0, TEST_CONF_IMG_BUFFERS, img_type="conf")
+                    else:
+                        data_utils.add_image(im0, CONF_IMG_BUFFERS, img_type="conf")
                     print("탐지 이미지 버퍼 저장")
                     
         ### 이미지 별로 묶은 객체 탐지 결과 리스트를 results에 담기
-        print(f"{p} 이미지 탐지 결과 results에 담기")
+        print(f"{count}번째 이미지 탐지 결과 results에 담기")
         results.append(img_det)
 # --------------------------------------------------------------------------------------
 
