@@ -343,8 +343,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             counterActionResult = gptResponseGetter.counterActionApi(game.getId());
             if ("none".equals(counterActionResult[1])) { // 대응이 없으면 gptCounterActionNone 리턴
                 return "gptCounterActionNone";
+            } else if(counterActionResult[1].equals("duke")||counterActionResult[1].equals("captain")||counterActionResult[1].equals("ambassador")||counterActionResult[1].equals("contessa")) {
+                counterActionType = ActionType.fromActionValue(convertCounterActionToValue(counterActionResult[1]));
+            } else {
+                return "gptCounterActionNone";
             }
-            counterActionType = ActionType.fromActionValue(convertCounterActionToValue(counterActionResult[1]));
         } while (!isCounterActionValid(originalActionType, counterActionType)); // 대응이 있으면 유효성 검증 후 유효하지 않다면 gpt api 재호출
         String counterActionerNum = counterActionResult[0];
         String counterAction = counterActionResult[1];
@@ -382,6 +385,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     public String handlePlayerPerformChallenge(MessageDto message) {
         Game game = returnGame(message);
+        // 카드 deadCardOpen
         // 카드 공개 로직 추가
         int index = game.getHistory().size()-1;
         History history = game.getHistory().get(index);
@@ -420,6 +424,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
             }
         }
+
         game.setCardOpen(gameState.getCardOpen());
         gameRepository.save(game);
 
@@ -668,7 +673,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             gameMemberRepository.save(target);
         }
         gameRepository.save(game);
-
 
         // 게임 끝나는 로직 추가
         String winPlayerId = "";
