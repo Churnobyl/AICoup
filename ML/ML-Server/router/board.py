@@ -22,7 +22,7 @@ TRIAL = 2
 # 게임 시작
 
 
-@router.post('/game-start')
+@router.post('game-start')
 async def game_start(player_num: int):  # 플레이어 인원 쿼리 입력
     """_main.app.game 시작_
 
