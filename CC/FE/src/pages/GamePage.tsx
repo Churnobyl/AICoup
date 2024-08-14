@@ -218,11 +218,11 @@ const GamePage = () => {
           break;
         case "gptChallenge":
           setupGameState(parsedMessage);
-          cardSelectStore.setIsPlayerCardClickable();
           if (
             mainMessage.history[mainMessage.history.length - 1].playerTried ===
             "1"
           ) {
+            cardSelectStore.setIsPlayerCardClickable();
             setTopBarText("공개할 카드를 선택해 주세요.");
             setIsTopBarShow(true);
           }
@@ -359,7 +359,7 @@ const GamePage = () => {
    */
   const processMessageQueue = useCallback(() => {
     // 지연시간 설정
-    const DELAY_TIME = 3000;
+    const DELAY_TIME = 1000;
 
     if (isProcessing || messageQueue.current.length === 0) return;
 
@@ -453,6 +453,11 @@ const GamePage = () => {
             navigate("/", { replace: true });
           }
           break;
+        case -3:
+          Cookies.remove("aiCoup");
+          setTimeout(() => {}, 2000);
+          navigate("/", { replace: true });
+          break;
         case 1:
         case 2:
         case 3:
@@ -496,7 +501,7 @@ const GamePage = () => {
 
       setIsModalOpen(false);
     },
-    [actionStore.selectedTarget, publishMessage, store.state]
+    [actionStore.selectedTarget, navigate, publishMessage, store.state]
   );
 
   // 선택 결과 보내기
@@ -523,6 +528,8 @@ const GamePage = () => {
 
   const handleSelectWithTarget = useCallback(() => {
     if (0 < actionStore.selectedOption && actionStore.selectedOption < 8) {
+      setSpinnerText("서버의 응답을 기다리는 중..");
+      setIsSpinnerOpen(true);
       publishMessage(1, "userA", "action", {
         cookie: Cookies.get("aiCoup"),
         action: actionStore.selectedOption.toString(),
@@ -534,6 +541,8 @@ const GamePage = () => {
   }, [publishMessage, actionStore]);
 
   const handleSelectWithMyCard = useCallback(() => {
+    setSpinnerText("서버의 응답을 기다리는 중..");
+    setIsSpinnerOpen(true);
     publishMessage(1, "userA", "cardOpen", {
       cookie: Cookies.get("aiCoup"),
       cardOpen: cardSelectStore.selectedPlayerCard.toString(),
