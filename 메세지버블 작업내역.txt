@@ -1,0 +1,64 @@
+플레이어 별 메세지 버블 창 추가 작업
+---
+
+------
+
+<변경된 파일>
+--
+src\types\HistoryInf.ts
+src\types\MemberInf.ts
+src\stores\gameStore.ts
+src\components\game\Player.tsx
+
+<추가된 파일>
+--
+src\components\ui\bubble\MessageBubble.tsx
+src\components\ui\bubble\MessageBubble.scss
+
+------
+
+1. types의
+--
+1)	Histoty 인터페이스에 gptLine(GPT 대사) 속성 임의 추가
+2)	Member 인터페이스에 message 속성 임의 추가
+
+2. stores\game의 gameStore에서
+--
+1)	history의 최신 히스토리 내역에서 메세지 분리
+2)	playerTrying과 playerTried를 members의 인덱스 번호라고 가정, members[인덱스 번호].name을 가져옴
+```
+const tryingPlayerName = state.members[playerTrying].name
+```
+3)	메세지 형식:
+``` 
+`${tryingPlayerName}가 ${triedPlayerName}을(를) ${actionId}합니다.` 
+```
+// TODO: actionId에 대응되는 실제 텍스트 추가하기
+ 
+4)	메세지는 playerTrying에 해당하는 member의 message 속성에 기록
+```
+if (state.members[playerTrying]) {
+	state.members[playerTrying].message = messageContent;
+}
+```
+
+3. components\game의 players에서
+--
+1)	새로 작성한 @/components/ui/bubble/MessageBubble 임포트,
+2)	playerNumber에 따라 위치를 결정하는 함수 getBubblePosition((playerNumber) 추가,
+3)	export const Player에 메세지버블 추가
+```
+{/* 메시지가 있을 경우에만 메시지 창을 표시 */}
+{playerMessage && (
+	<MessageBubble message={playerMessage} position={bubblePositionClass} />
+)}
+```
+
+4. components\ui\bubble에 MessageBubble과 관련 scss 추가
+--
+1)	간단하게 화면 삽입
+```
+<div className={`message-bubble ${position}`}>
+	<p>{message}</p>
+</div>
+```
