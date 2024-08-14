@@ -931,8 +931,15 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             // 도전 실패: 도전자가 영향력 상실
             loseInfluence(challenger, cardOpen);
 
+            int targetIndex = 0;
+            for(int i=0; i<4; i++) {
+                if(target.getId()==game.getMemberIds().get(i)) {
+                    targetIndex = i;
+                    break;
+                }
+            }
             // 타겟 플레이어는 새 카드를 받음
-            giveNewCard(target);
+            giveNewCard(target, cardOpen, targetIndex);
         }
         return challengeSuccess?"challengeSuccess":"challengeFail";
     }
@@ -967,7 +974,12 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return validCounterActions.getOrDefault(originalAction, List.of()).contains(counterAction);
     }
 
-    private void giveNewCard(GameMember player) {
-
+    private void giveNewCard(GameMember player, int cardOpen, int playerIndex) {
+        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer(); // 이 함수 파라미터에 문자열 통으로 넣으면 됨
+        if(cardOpen==0) {
+            player.setLeftCard(dataFromAIoTServer.get(playerIndex).getLeft_card());
+        } else {
+            player.setRightCard(dataFromAIoTServer.get(playerIndex).getLeft_card());
+        }
     }
 }
