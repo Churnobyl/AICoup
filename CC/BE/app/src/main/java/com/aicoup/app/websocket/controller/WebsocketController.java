@@ -90,7 +90,7 @@ public class WebsocketController {
                 }
                 break;
             case "counterActionChallenge":
-                //returnState = webSocketGameService.handlePlayerChallenge(message); // 수정 필요!!
+                returnState = webSocketGameService.handlePlayerChallenge(message); // 수정 필요!!
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 if(returnState.equals("challengeSuccess")) {
                     returnState = "counterActionChallengeSuccess";

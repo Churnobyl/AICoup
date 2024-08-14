@@ -188,34 +188,9 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 (member.getRightCard() < 0 && aiotData.getRight_card() == 0);
     }
 
-    private GameStateDto completePlayerAction(MessageDto message, Game game, String playerName, int actionValue, String targetPlayerName) {
-        GameMember currentPlayer = findPlayerByName(game, playerName);
-
-        // 액션 수행
-        performAction(message);
-
-        // 턴 종료 및 다음 플레이어로 이동
-        game.setWhoseTurn((game.getWhoseTurn() + 1) % game.getMemberIds().size());
-        game.setTurn(game.getTurn() + 1);
-
-        // 히스토리에 기록
-        recordHistory(game, actionValue, null, "0", "0", null);
-        gameRepository.save(game);
-
-        return buildGameState(game.getId());
-    }
-
     private boolean offerPlayerChallenge(Game game, int actionValue) {
         game.setAwaitingChallenge(true);
         game.setAwaitingChallengeActionValue(actionValue);
-        gameRepository.save(game);
-        checkAndNotifyChallenge(game, "1");
-        return false;
-    }
-
-    private boolean offerPlayerCounterAction(Game game, int actionValue) {
-        game.setAwaitingCounterAction(true);
-        game.setAwaitingCounterActionValue(actionValue);
         gameRepository.save(game);
         checkAndNotifyChallenge(game, "1");
         return false;
@@ -231,18 +206,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             ));
             recordHistory(game, 1, null, "0", "0", null);
             messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, challengeNotification);
-        }
-    }
-
-    public void checkAndNotifyCounterAction(Game game, String roomId) {
-        if (game.isAwaitingCounterAction()) {
-            MessageDto counterActionNotification = new MessageDto(roomId, "server");
-            counterActionNotification.setState("awaitingCounterAction");
-            counterActionNotification.setMainMessage(Map.of(
-                    "actionValue", game.getAwaitingCounterActionValue(),
-                    "message", "Counter action opportunity available"
-            ));
-            messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, counterActionNotification);
         }
     }
 
@@ -374,11 +337,15 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             }
             counterActionType = ActionType.fromActionValue(convertCounterActionToValue(counterActionResult[1]));
         } while (!isCounterActionValid(originalActionType, counterActionType)); // 대응이 있으면 유효성 검증 후 유효하지 않다면 gpt api 재호출
-        String counterActioner = counterActionResult[0];
+        String counterActionerNum = counterActionResult[0];
         String counterAction = counterActionResult[1];
         int counterActionValue = convertCounterActionToValue(counterAction); // 대응에 해당하는 넘버 추출
-        String counterActionerId = game.getMemberIds().get(Integer.parseInt(counterActioner)-1); // 대응자의 id 추출
-        recordHistory(game, counterActionValue, null, counterActionerId, lastAction.getPlayerTrying(), null); // 히스토리에 기록
+        String counterActionerId = game.getMemberIds().get(Integer.parseInt(counterActionerNum)-1); // 대응자의 id 추출
+        // GPT 대사 호출
+        GameMember counterActioner = findPlayerByName(game, counterActionerId);
+        GameMember actioner = findPlayerByName(game, lastAction.getPlayerTrying());
+        String counterActionDialog = gptResponseGetter.counterActionDialogApi(counterActioner.getName(), counterAction, actioner.getName(), originalActionType.getName(), counterActioner.getPersonality());
+        recordHistory(game, counterActionValue, null, counterActionerId, lastAction.getPlayerTrying(), counterActionDialog); // 히스토리에 기록
         gameRepository.save(game); // DB에 저장
         return "gptCounterAction"; // gptCounterAction 리턴
     }
@@ -393,17 +360,14 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     public String handlePlayerChallenge(MessageDto message) {
         Game game = returnGame(message);
-        // 카드 공개 로직 추가
         int index = game.getHistory().size()-1;
         History history = game.getHistory().get(index);
-        while(history.getActionId()>7) {
+        while(history.getActionId()>=10 && history.getActionId()<=13) {
             index--;
             history = game.getHistory().get(index);
         }
-        int actionValue = history.getActionId(); // 의심한 액션 추출
-        String actionerId = history.getPlayerTrying(); // 해당 행동 수행한 사람의 아이디 추출
-        GameMember actioner = findPlayerByName(game, actionerId); // 해당 행동 수행한 플레이어 추출
-        recordHistory(game, 8, null, "1", actionerId, null);
+        String counterActionerId = history.getPlayerTrying(); // 해당 대응 수행한 사람의 아이디 추출
+        recordHistory(game, 8, null, "1", counterActionerId, null);
         return "cardOpen";
     }
 
@@ -454,7 +418,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         history = game.getHistory().get(game.getHistory().size()-1);
         return challenge(game, history.getPlayerTrying(), cardOpen);
     }
-
 
     public GameStateDto handlePlayerCounterAction(MessageDto message) {
         Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
@@ -576,6 +539,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             default -> 0;
         };
     }
+
     public String deadCardOpen(MessageDto message) {
         Game game = returnGame(message);
         // 이 턴의 액션 추출
@@ -597,6 +561,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             return performAction(message);
         }
     }
+
     public String performAction(MessageDto message) {
         Game game = returnGame(message);
         Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();

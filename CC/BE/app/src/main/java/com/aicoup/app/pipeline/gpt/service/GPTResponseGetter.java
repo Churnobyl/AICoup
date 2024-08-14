@@ -271,4 +271,23 @@ public class GPTResponseGetter {
         }
         return chatGPTSocket.getDataFromGptApiForDialog(systemPrompt, userPrompt);
     }
+
+    public String counterActionDialogApi(String counterActioner, String counterAction, String currentPlayer, String currentAction, String personality) {
+        Map<String, Object> jsonData = new HashMap<>();
+        jsonData.put("counter_actioner", counterActioner);
+        jsonData.put("counter_action", counterAction);
+        jsonData.put("current_player", currentPlayer);
+        jsonData.put("current_action", currentAction);
+        jsonData.put("personality", personality);
+
+        String systemPrompt = "You are an API that returns Korean dialog for board game Coup player. You receive counter_actioner, counter_action, current_player challenger, current_player, current_action and personality as input. counter_actioner is you. current_player is perform current_action to you and you block currnet_action with counter_action influence card. personality is the personality of counter_actioner. The dialog must include content that which counter_action block current_player's current_action. The dialog must shows your personality, current_player and his or her action from challenger's point of view in colloquial word. You must return the result in Korean except for the name of the card.";
+        String userPrompt = "";
+        try {
+            userPrompt = objectMapper.writeValueAsString(jsonData);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null; // 또는 적절한 에러 처리
+        }
+        return chatGPTSocket.getDataFromGptApiForDialog(systemPrompt, userPrompt);
+    }
 }
