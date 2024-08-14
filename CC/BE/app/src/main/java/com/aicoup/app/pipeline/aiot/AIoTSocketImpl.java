@@ -3,6 +3,7 @@ package com.aicoup.app.pipeline.aiot;
 import com.aicoup.app.pipeline.aiot.dto.MMResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.context.annotation.PropertySource;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -230,23 +232,53 @@ public class AIoTSocketImpl implements AIoTSocket {
     @Override
     public List<MMResponse> getDataFromAIoTServer() {
         WebClient webClient = WebClient.builder().build();
-        Mono<String> resp = webClient
-                .get()
-                .uri(url + gameStatusApi)
-                .retrieve()
-                .bodyToMono(String.class);
+        int retryCount = 0;
 
-        String resultString = resp.block();
-//        String resultString = aiotMockingData;
+        while (true) {
+            try {
+                Mono<String> resp = webClient
+                        .get()
+                        .uri(url + gameStatusApi)
+                        .retrieve()
+                        .bodyToMono(String.class);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            return objectMapper.readValue(resultString,
-                    new TypeReference<>() {
-                    }
-            );
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+//                String resultString = resp.block();
+                String resultString = aiotMockingData;
+                return convertJsonToMMResponseList(resultString);
+            } catch (Exception e) {
+                retryCount++;
+                System.out.println("에러 발생. 재시도 중... (시도 횟수: " + retryCount + ")");
+                System.err.println("에러 내용: " + e.getMessage());
+            }
         }
+    }
+
+    @Override
+    public List<MMResponse> convertJsonToMMResponseList(String jsonString) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootNode = objectMapper.readTree(jsonString);
+        JsonNode userCardNode = rootNode.get("user_card");
+
+        List<MMResponse> mmResponseList = new ArrayList<>();
+
+        for (JsonNode cardGroup : userCardNode) {
+            MMResponse mmResponse = new MMResponse();
+
+            mmResponse.setLeft_card(cardGroup.get("left_card").asInt());
+            mmResponse.setRight_card(cardGroup.get("right_card").asInt());
+
+            JsonNode extraCardNode = cardGroup.get("extra_card");
+            List<Integer> extraCards = new ArrayList<>();
+            if (extraCardNode.isArray()) {
+                for (JsonNode extraCard : extraCardNode) {
+                    extraCards.add(extraCard.asInt());
+                }
+            }
+            mmResponse.setExtra_card(extraCards);
+
+            mmResponseList.add(mmResponse);
+        }
+
+        return mmResponseList;
     }
 }

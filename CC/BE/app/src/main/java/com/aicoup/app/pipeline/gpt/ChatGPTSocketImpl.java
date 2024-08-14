@@ -21,6 +21,8 @@ public class ChatGPTSocketImpl implements ChatGPTSocket {
     private String model3;
     @Value("${gpt.openai.model4}")
     private String model4;
+    @Value("${gpt.openai.model5}")
+    private String model5;
 
     @Value("${gpt.openai.api-url}")
     private String apiUrl;
@@ -45,6 +47,11 @@ public class ChatGPTSocketImpl implements ChatGPTSocket {
     @Override
     public String getDataFromGptApiForChallengeAgainstCounteraction(String systemPrompt, String userPrompt) {
         return prompt(model4, systemPrompt, userPrompt, "D");
+    }
+
+    @Override
+    public String getDataFromGptApiForDialog(String systemPrompt, String userPrompt) {
+        return prompt(model5, systemPrompt, userPrompt, "E");
     }
 
     private String prompt(String model, String systemPrompt, String userPrompt, String state) {

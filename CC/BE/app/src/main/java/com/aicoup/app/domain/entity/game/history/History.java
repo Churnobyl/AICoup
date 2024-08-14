@@ -28,6 +28,7 @@ public class History {
     private Boolean actionState;
     private String playerTrying;
     private String playerTried;
+    private String dialog;
 
     public History(String id, Integer actionId, String playerTrying, String playerTried) {
         this.id = id;

@@ -17,13 +17,9 @@ import com.aicoup.app.websocket.model.dto.GameStateDto;
 import com.aicoup.app.websocket.model.dto.MessageDto;
 import com.aicoup.app.domain.game.GameGenerator;
 
-import jakarta.validation.constraints.Null;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.socket.server.WebSocketService;
 
 import java.util.*;
 import java.util.function.Function;
@@ -116,7 +112,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         String playerId = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn())).getId();
         String actionName = ActionType.findActionName(actionValue);
         if (validateAction(game, playerId, targetId, actionName)) {
-            recordHistory(game, actionValue, null, playerId, targetId);
+            recordHistory(game, actionValue, null, playerId, targetId, null);
             return "actionPending";
         } else {
             return "action";
@@ -140,8 +136,12 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 targetId = "none";
             }
         } while(!validateAction(game, currentPlayer.getId(), targetId, action));
+
+        // GPT API 호출
+        String actionDialog = gptResponseGetter.actionDialogApi(action, target, currentPlayer.getName(), currentPlayer.getPersonality());
+
         int actionValue = ActionType.findActionValue(action);
-        recordHistory(game, actionValue, null, currentPlayer.getId(), targetId);
+        recordHistory(game, actionValue, null, currentPlayer.getId(), targetId, actionDialog);
     }
 
     @Override
@@ -199,7 +199,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         game.setTurn(game.getTurn() + 1);
 
         // 히스토리에 기록
-        recordHistory(game, actionValue, null, "0", "0");
+        recordHistory(game, actionValue, null, "0", "0", null);
         gameRepository.save(game);
 
         return buildGameState(game.getId());
@@ -229,7 +229,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                     "actionValue", game.getAwaitingChallengeActionValue(),
                     "message", "Challenge opportunity available"
             ));
-            recordHistory(game, 1, null, "0", "0");
+            recordHistory(game, 1, null, "0", "0", null);
             messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, challengeNotification);
         }
     }
@@ -274,7 +274,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         };
         String actionerId = history.getPlayerTrying(); // 해당 행동 수행한 사람의 아이디 추출
         GameMember actioner = findPlayerByName(game, actionerId); // 해당 행동 수행한 플레이어 추출
-        GameMember challenger;
+        GameMember challenger = new GameMember();
         while(true) {
             challengeResult = gptResponseGetter.challengeApi(game.getId());
             challengerNumber = challengeResult[0];
@@ -295,8 +295,10 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         if (!"none".equals(challengerNumber)) {
             returnState = "gptChallenge";
             String challengerId = game.getMemberIds().get(Integer.parseInt(challengerNumber)-1);
+            // 도전 대사 추출
+            String challengeDialog = gptResponseGetter.challengeDialogApi(challenger.getName(), actioner.getName(), ActionType.findActionName(actionValue), challenger.getPersonality());
             // 게임 상태 업데이트(우선 챌린지 한 내역을 히스토리에 기록)
-            recordHistory(game, 8, null, challengerId, actionerId);
+            recordHistory(game, 8, null, challengerId, actionerId, challengeDialog);
             if(!isGPTPlayer(actioner)) { // 해당 턴에 액션을 행한 주체가 플레이어라면
                 return returnState;
             } else { // 해당 턴에 액션을 행한 주체가 gpt 라면
@@ -376,7 +378,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         String counterAction = counterActionResult[1];
         int counterActionValue = convertCounterActionToValue(counterAction); // 대응에 해당하는 넘버 추출
         String counterActionerId = game.getMemberIds().get(Integer.parseInt(counterActioner)-1); // 대응자의 id 추출
-        recordHistory(game, counterActionValue, null, counterActionerId, lastAction.getPlayerTrying()); // 히스토리에 기록
+        recordHistory(game, counterActionValue, null, counterActionerId, lastAction.getPlayerTrying(), null); // 히스토리에 기록
         gameRepository.save(game); // DB에 저장
         return "gptCounterAction"; // gptCounterAction 리턴
     }
@@ -401,7 +403,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         int actionValue = history.getActionId(); // 의심한 액션 추출
         String actionerId = history.getPlayerTrying(); // 해당 행동 수행한 사람의 아이디 추출
         GameMember actioner = findPlayerByName(game, actionerId); // 해당 행동 수행한 플레이어 추출
-        recordHistory(game, 8, null, "1", actionerId);
+        recordHistory(game, 8, null, "1", actionerId, null);
         return "cardOpen";
     }
 
@@ -678,7 +680,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             default:
                 throw new IllegalArgumentException("Invalid action: " + actionType.name());
         }
-        recordHistory(game, action.getId(), true, player.getId(), targetPlayerId);
+        recordHistory(game, action.getId(), true, player.getId(), targetPlayerId, null);
         game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
         // 죽은 플레이어 턴 스킵 로직 추가
         GameMember nextPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn())); // 다음 플레이어가
@@ -707,7 +709,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             }
         }
         if(cnt==3) { // 최후의 1인이 남으면 게임 종료
-            recordHistory(game, 15, null, winPlayerId, null);
+            recordHistory(game, 15, null, winPlayerId, null, null);
             return "gameOver";
         }
         return "gameState";
@@ -822,10 +824,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         return gameStateDto;
     }
 
-    public void recordHistory(Game game, Integer actionNumber, Boolean actionState, String playerTrying, String playerTried) {
+    public void recordHistory(Game game, Integer actionNumber, Boolean actionState, String playerTrying, String playerTried, String dialog) {
         History history = new History(UUID.randomUUID().toString(), actionNumber, playerTrying, playerTried);
         history.setActionState(actionState);
         history.setTurn(game.getTurn());
+        history.setDialog(dialog);
         game.addHistory(history);
         gameRepository.save(game);
     }
@@ -857,7 +860,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                     performGPTAction(game, currentPlayer);
                     return "gptAction";
                 } else {
-                    recordHistory(game, 18, null, "none", "none");
+                    recordHistory(game, 18, null, "none", "none", null);
                     return "action";
                 }
             }
@@ -889,7 +892,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         // 새로운 게임 생성
         Game game = gameGenerator.init(messageDto.getRoomId());
         // 게임 시작 히스토리 작성
-        recordHistory(game, 17, null, "none", "none");
+        recordHistory(game, 17, null, "none", "none", null);
         return game.getId();
     }
 
@@ -913,7 +916,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
         if (challengeSuccess) {
             // 도전 성공 내역 히스토리에 기록
-            recordHistory(game, 14, true, challengerId, target.getId());
+            recordHistory(game, 14, true, challengerId, target.getId(), null);
 
             // gpt가 target인 경우 cardOpen 세팅
             if(isGPTPlayer(target)) {
@@ -936,7 +939,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             gameRepository.save(game);
         } else {
             // 도전 실패 내역 히스토리에 기록
-            recordHistory(game, 14, false, challengerId, target.getId());
+            recordHistory(game, 14, false, challengerId, target.getId(), null);
 
             // gpt가 target인 경우 cardOpen 세팅
             if(isGPTPlayer(challenger)) {

@@ -15,4 +15,6 @@ public interface ChatGPTSocket {
 
     // Counteraction에 대한 Challenge
     String getDataFromGptApiForChallengeAgainstCounteraction(String systemPrompt, String userPrompt);
+
+    String getDataFromGptApiForDialog(String systemPrompt, String userPrompt);
 }

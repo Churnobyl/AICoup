@@ -10,6 +10,6 @@ public interface WebSocketGameService {
     Map<String, String> validate(MessageDto message);
 //    GameStateDto processAction(MessageDto message);
     GameStateDto getGameState(String gameId);
-    void recordHistory(Game game, Integer actionNumber, Boolean actionState, String playerTrying, String playerTried);
+    void recordHistory(Game game, Integer actionNumber, Boolean actionState, String playerTrying, String playerTried, String dialog);
     String nextTurn(MessageDto messageDto);
 }
