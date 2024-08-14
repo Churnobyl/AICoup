@@ -18,7 +18,7 @@ async def inference(path, buffers=None):
             case "buffers":
                 # 버퍼 이미지 불러오기 및 저장
                 if buffers is None:
-                    buffers = CONF_IMG_BUFFERS  # 디폴트 버퍼
+                    buffers = CAP_IMG_BUFFERS  # 디폴트 버퍼
 
                 detections = run(
                     weights=WEIGHTS,
