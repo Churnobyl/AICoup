@@ -405,12 +405,12 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         String actionerId = history.getPlayerTrying(); // 해당 행동 수행한 사람의 아이디 추출
         GameMember actioner = findPlayerByName(game, actionerId); // 해당 행동 수행한 플레이어 추출
 
+        GameStateDto gameState = new GameStateDto();
+        gameState = buildGameState(game.getId());
+        System.out.println(actioner);
+        System.out.println(actionValue);
 
         if(isGPTPlayer(actioner)) {
-            GameStateDto gameState = new GameStateDto();
-            gameState = buildGameState(game.getId());
-            System.out.println(actioner);
-            System.out.println(actionValue);
             if(actioner.getLeftCard()==actionValue) { // 만약 왼쪽 카드가 해당 행동과 일치하면
                 gameState.setCardOpen(0); // 왼쪽 카드 오픈
             } else if(actioner.getRightCard()==actionValue) { // 만약 오른쪽 카드가 해당 행동과 일치하면
@@ -425,15 +425,13 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                     gameState.setCardOpen(1); // 오른쪽 오픈
                 }
             }
-            game.setCardOpen(gameState.getCardOpen());
-            gameRepository.save(game);
-
-            int cardOpen = game.getCardOpen();
-            history = game.getHistory().get(game.getHistory().size()-1);
-            return challenge(game, history.getPlayerTrying(), cardOpen);
-        } else {
-            return "challengeDeadCardOpen";
         }
+        game.setCardOpen(gameState.getCardOpen());
+        gameRepository.save(game);
+
+        int cardOpen = game.getCardOpen();
+        history = game.getHistory().get(game.getHistory().size()-1);
+        return challenge(game, history.getPlayerTrying(), cardOpen);
     }
 
     public GameStateDto handlePlayerCounterAction(MessageDto message) {
@@ -968,7 +966,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
         // 타겟 플레이어는 새 카드를 받음
         giveNewCard(target, cardOpen, targetIndex);
-        return "gameState";
+        return "endGame";
     }
 
     public GameStateDto counterAction(Game game, String counterActioner, Integer counterAction) {
