@@ -17,6 +17,7 @@ import "./GamePage.scss";
 import useCardSelectStore from "@/stores/cardSelectStore";
 import SignBoard from "@/components/ui/signBoard/SignBoard";
 import useMessagePendingStore from "@/stores/messagePendingStore";
+import { useNavigate } from "react-router-dom";
 
 const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
@@ -71,6 +72,8 @@ const GamePage = () => {
    */
   const [isTopBarShow, setIsTopBarShow] = useState<boolean>(false);
   const [topBarText, setTopBarText] = useState<string>("");
+
+  const navigate = useNavigate();
 
   const selectOptions = useCallback((canAction: ActionType | -1 | -2) => {
     // 결정 초기화
@@ -323,7 +326,6 @@ const GamePage = () => {
           );
           selectOptions(-2);
           setIsModalOpen(true);
-          Cookies.remove("aiCoup");
           break;
         default:
           break;
@@ -433,9 +435,14 @@ const GamePage = () => {
           publishMessage(1, "userA", "nextTurn", {});
           break;
         case -2:
-          setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
-          setIsSpinnerOpen(true);
-          publishMessage(1, "userA", "nextTurn", {});
+          if (store.state === "gameOver") {
+            setSpinnerText("보드의 일치 여부를 AIoT에게 묻는중..");
+            setIsSpinnerOpen(true);
+            publishMessage(1, "userA", "nextTurn", {});
+          } else {
+            Cookies.remove("aiCoup");
+            navigate("/");
+          }
           break;
         case 1:
         case 2:
