@@ -123,21 +123,30 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         String[] actionResult;
         String action, target, targetId = "none";
 
-        do {
-            actionResult = gptResponseGetter.actionApi(game.getId());
-            action = actionResult[0];
-            target = actionResult[1];
-            if(!target.equals("none")) {
-                if(currentPlayer.getCoin()>=10) {
-                    action = "coup";
+        if(currentPlayer.getCoin()>=10) {
+            action = "coup";
+            GameMember gameMember;
+            do {
+                Random random = new Random();
+                int targetNum = random.nextInt(4);
+                target = "" + targetNum;
+                targetId = game.getMemberIds().get(targetNum);
+                gameMember = findPlayerByName(game, targetId);
+            } while(gameMember.getLeftCard()<0 && gameMember.getRightCard()<0 && currentPlayer.getId()!=gameMember.getId());
+        } else {
+            do {
+                actionResult = gptResponseGetter.actionApi(game.getId());
+                action = actionResult[0];
+                target = actionResult[1];
+                if(!target.equals("none")) {
+                    targetId = game.getMemberIds().get(Integer.parseInt(target)-1);
+                } else {
+                    targetId = "none";
                 }
-                targetId = game.getMemberIds().get(Integer.parseInt(target)-1);
-            } else {
-                targetId = "none";
-            }
-        } while(!validateAction(game, currentPlayer.getId(), targetId, action));
+            } while(!validateAction(game, currentPlayer.getId(), targetId, action));
+        }
 
-        // GPT API 호출
+        // 대사 api 호출
         String actionDialog = gptResponseGetter.actionDialogApi(action, target, currentPlayer.getName(), currentPlayer.getPersonality());
 
         int actionValue = ActionType.findActionValue(action);
