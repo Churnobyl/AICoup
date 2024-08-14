@@ -105,7 +105,7 @@ export const historyMessagingConverter = (
           <div>
             <strong>{trying}</strong>님이{" "}
             <div className={"character-name character-4"}>사령관</div>을 갖고
-            있다고 주장하여 <strong>{tried}</strong>님으로부터{" "}
+            있다고 주장하여 <strong>{tried}</strong>님에게{" "}
             {optionKeyByNumber[messageNum]}을 시도합니다.
           </div>
         );
@@ -131,7 +131,7 @@ export const historyMessagingConverter = (
           <div>
             <strong>{trying}</strong>님이{" "}
             <div className={"character-name character-2"}>자객</div>를 갖고
-            있다고 주장하여 <strong>{tried}</strong>의{" "}
+            있다고 주장하여 <strong>{tried}</strong>님에게{" "}
             {optionKeyByNumber[messageNum]}을 시도합니다.
           </div>
         );
@@ -214,9 +214,9 @@ export const historyMessagingConverter = (
       if (actionState === null) {
         convertedMessage = (
           <div>
-            <strong>{trying}</strong>님이{" "}
+            <strong>{tried}</strong>님이{" "}
             <div className={"character-name character-1"}>공작</div>을 갖고
-            있다고 주장하여 <strong>{tried}</strong>이{" "}
+            있다고 주장하여 <strong>{trying}</strong>이{" "}
             {optionKeyByNumber[messageNum]}을 시도합니다.
           </div>
         );
@@ -226,9 +226,9 @@ export const historyMessagingConverter = (
       if (actionState === null) {
         convertedMessage = (
           <div>
-            <strong>{trying}</strong>님이{" "}
+            <strong>{tried}</strong>님이{" "}
             <div className={"character-name character-4"}>사령관</div>을 갖고
-            있다고 주장하여 <strong>{tried}</strong>이{" "}
+            있다고 주장하여 <strong>{trying}</strong>이{" "}
             {optionKeyByNumber[messageNum]}을 시도합니다.
           </div>
         );
@@ -238,9 +238,9 @@ export const historyMessagingConverter = (
       if (actionState === null) {
         convertedMessage = (
           <div>
-            <strong>{trying}</strong>님이{" "}
+            <strong>{tried}</strong>님이{" "}
             <div className={"character-name character-3"}>외교관</div>을 갖고
-            있다고 주장하여 <strong>{tried}</strong>이{" "}
+            있다고 주장하여 <strong>{trying}</strong>이{" "}
             {optionKeyByNumber[messageNum]}을 시도합니다.
           </div>
         );
@@ -250,9 +250,9 @@ export const historyMessagingConverter = (
       if (actionState === null) {
         convertedMessage = (
           <div>
-            <strong>{trying}</strong>님이{" "}
+            <strong>{tried}</strong>님이{" "}
             <div className={"character-name character-5"}>귀부인</div>을 갖고
-            있다고 주장하여 <strong>{tried}</strong>이{" "}
+            있다고 주장하여 <strong>{trying}</strong>이{" "}
             {optionKeyByNumber[messageNum]}을 시도합니다.
           </div>
         );

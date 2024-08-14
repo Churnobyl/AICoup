@@ -5,4 +5,7 @@ export default interface History {
   playerTried: string;
   turn: number;
   actionState: boolean;
+
+  // 새로 추가
+  gptLine: string;
 }

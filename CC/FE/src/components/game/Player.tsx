@@ -85,6 +85,10 @@ export const Player = (props: Props) => {
         playerNumber={playerNumber}
         className={`cardHolder`}
       />
+
+      {/* {playerMessage && (
+        <MessageBubble message={playerMessage} position={bubblePositionClass} />
+      )} */}
     </div>
   );
 };

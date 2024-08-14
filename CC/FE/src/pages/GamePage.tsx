@@ -213,8 +213,13 @@ const GamePage = () => {
         case "gptChallenge":
           setupGameState(parsedMessage);
           cardSelectStore.setIsPlayerCardClickable();
-          setTopBarText("공개할 카드를 선택해 주세요.");
-          setIsTopBarShow(true);
+          if (
+            mainMessage.history[mainMessage.history.length - 1].playerTried ===
+            "1"
+          ) {
+            setTopBarText("공개할 카드를 선택해 주세요.");
+            setIsTopBarShow(true);
+          }
           cardSelectStore.setSelectedPlayerCard(-1);
           break;
         case "challengeSuccess":
@@ -560,16 +565,19 @@ const GamePage = () => {
         ""
       )}
 
-      <Board className="board" />
+      <div>
+        <Board className="board" />
+        <ModalComponent
+          isOpen={isModalOpen}
+          onRequestClose={() => setIsModalOpen(true)}
+          content={modalContent}
+          options={options}
+          onSelect={handleSelect}
+        />
+        <Spinner isLoading={isSpinnerOpen} text={spinnerText} />
+      </div>
+
       <HistoryBottomSheet />
-      <ModalComponent
-        isOpen={isModalOpen}
-        onRequestClose={() => setIsModalOpen(true)}
-        content={modalContent}
-        options={options}
-        onSelect={handleSelect}
-      />
-      <Spinner isLoading={isSpinnerOpen} text={spinnerText} />
     </div>
   );
 };

@@ -65,8 +65,7 @@
     cursor: pointer;
 
     &:hover {
-      border: 1px solid black;
-      margin-bottom: 1px;
+      filter: brightness(1.2);
     }
   }
 }
