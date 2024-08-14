@@ -160,21 +160,21 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
 
         // AIoT 검증 로직
-        Game game = gameRepository.findById(mainMessage.get("cookie")).get();
-        List<GameMember> members = game.getMemberIds().stream()
-                .map(gameMemberRepository::findById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .toList();
-
-        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer();
-        for (int i = 0; i < members.size(); i++) {
-            if (!validateMemberCards(members.get(i), dataFromAIoTServer.get(i))) {
-                returnMessage.put("result", "fail");
-                returnMessage.put("message", members.get(i).getName() + "님의 카드 상태가 서버와 다릅니다.");
-                return returnMessage;
-            }
-        }
+//        Game game = gameRepository.findById(mainMessage.get("cookie")).get();
+//        List<GameMember> members = game.getMemberIds().stream()
+//                .map(gameMemberRepository::findById)
+//                .filter(Optional::isPresent)
+//                .map(Optional::get)
+//                .toList();
+//
+//        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer();
+//        for (int i = 0; i < members.size(); i++) {
+//            if (!validateMemberCards(members.get(i), dataFromAIoTServer.get(i))) {
+//                returnMessage.put("result", "fail");
+//                returnMessage.put("message", members.get(i).getName() + "님의 카드 상태가 서버와 다릅니다.");
+//                return returnMessage;
+//            }
+//        }
 
         returnMessage.put("result", "ok");
         returnMessage.put("message", "");
