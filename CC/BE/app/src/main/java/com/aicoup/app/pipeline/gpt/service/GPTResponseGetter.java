@@ -261,7 +261,7 @@ public class GPTResponseGetter {
         jsonData.put("current_action", currentAction);
         jsonData.put("personality", personality);
 
-        String systemPrompt = "You are an API that returns Korean dialog for board game Coup player. You receive challenger, current_player, current_action and personality as input. challenger is you. current_player is who you challenge as you think current_player is bluffing. current_action is the action taken by current_player. personality is the personality of challenger. The dialog must start with your introduction which shows the number of challenger and end with your conclusion. The dialog must shows your personality, current_player and his or her action from challenger's point of view in colloquial word. You must return the result in Korean.";
+        String systemPrompt = "You are an API that returns Korean dialog for board game Coup player. You receive challenger, current_player, current_action and personality as input. challenger is you. current_player is who you challenge as you think current_player is bluffing. current_action is the action taken by current_player. personality is the personality of challenger. The dialog must shows your personality, current_player and his or her action from challenger's point of view in colloquial word. You must return the result in Korean language and not exceed 3 lines.";
         String userPrompt = "";
         try {
             userPrompt = objectMapper.writeValueAsString(jsonData);
