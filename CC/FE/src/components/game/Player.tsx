@@ -14,7 +14,9 @@ type Props = {
 
 // 새로 추가
 // playerNumber에 따라 위치를 결정하는 함수
-const getBubblePosition = (playerNumber: number): "top" | "right" | "left" | "bottom" => {
+const getBubblePosition = (
+  playerNumber: number
+): "top" | "right" | "left" | "bottom" => {
   switch (playerNumber) {
     case 0:
       return "top";
@@ -31,6 +33,7 @@ const getBubblePosition = (playerNumber: number): "top" | "right" | "left" | "bo
 
 export const Player = (props: Props) => {
   const store = useGameStore();
+<<<<<<< HEAD
   const actionStore = useActionStore();
   const { playerNumber, className, playerId } = props;
 
@@ -83,6 +86,9 @@ export const Player = (props: Props) => {
       return () => clearTimeout(timeout);
     }
   }, [animationClass]);
+=======
+  const { playerNumber, className } = props;
+>>>>>>> a6aa25a (FE/ fix)
 
   return (
     <div className={`player ${className}`} onClick={setTarget}>
@@ -108,7 +114,6 @@ export const Player = (props: Props) => {
       {playerMessage && (
         <MessageBubble message={playerMessage} position={bubblePositionClass} />
       )}
-      
     </div>
   );
 };
