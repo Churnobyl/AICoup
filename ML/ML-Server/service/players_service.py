@@ -7,12 +7,15 @@ from utils_main.vector_util import *
 from utils_main.plot_util import plotInformations
 import main
 
-
+# TMP: variables, constances
 IMAGE_NUM = 3
-
+## deprecated
+# IS_AMB_ACTION = False
+# AMB_PLAYER_IDX = 0
 CARD_REALLOC_SITUATION = ['amb_pick', 'amb_done', 'ch_win']
 PLAYER_INIT_VECTOR = [[0, -1], [-1, 0], [0, 1], [1, 0]]
 
+# TODO: ambassador action param
 def tracePlayers(inferResult, situation):
     # data 변환
 
@@ -24,7 +27,7 @@ def tracePlayers(inferResult, situation):
     image_idx = 0
     # 먼저 카드의 개수로 valid
     while image_idx < IMAGE_NUM:
-        
+        # TODO: api name을 무조건 박을지 결정 일단 코드는 남겨둠...
         # action = situation['name'] if situation.get('name') else None
         image_idx, cardInfo = preValidCard(inferResult, s_idx=image_idx, is_amb_action=situation['name']=='amb_pick')
         if cardInfo is None:
@@ -40,7 +43,7 @@ def tracePlayers(inferResult, situation):
                                 "cluster": -1
                                 }
                                 for i in cardInfo]))
-        
+        # TODO: it can be depracted
         for card in cardPoints:
             # angle = getAngleByVector(cardPoints[card]['vector'])
             angle = math.acos(cardPoints[card]['vector'][0] / getVectorSize(cardPoints[card]['vector']))
@@ -72,7 +75,8 @@ def tracePlayers(inferResult, situation):
         degrees = anglesToDegrees(angles)
         degrees = list(enumerate(degrees))
         degrees.sort(key=lambda x : x[1])
-        
+
+        # TODO: cluster 분배 정책이 되는 함수 구현
         player_cluster_id = allocate_players_cluster_id(clusters, deckIdx)
         # player_cluster_id = [cluster_id for (cluster_id, _) in degrees[::-1] if cluster_id != deckIdx]
         print(f'{player_cluster_id=}')
@@ -84,12 +88,14 @@ def tracePlayers(inferResult, situation):
         #         "left_card": cardPoints[min([card for card in clusters[id]['cards']], key=lambda x : cardPoints[card]['angle'])]['class_id']
         #     } for id in player_cluster_id]
         # print(test_player)
-        
+
+
+        # TODO: 이전 정보 가져와서 extra 분류해야함
         # 함수로 아래 빼기. - extra 분류, min/max가 에러 해결, cos 유사 판별
         players, deck = make_players(clusters, cardPoints, player_cluster_id, deckIdx, situation)
 
         # validation
-        
+        # TODO: validation 부분 구현
         if not postValidCard(players, situation):
             # print('Failed validation in post valid')
             raise Exception('postValidation failed')
@@ -162,6 +168,7 @@ def allocate_players_cluster_id(clusters, deck_idx):
     return ret
 
 
+# TODO: 해야함.
 def make_players(clusters, cardPoints, player_cluster_id, deck_idx, action):
     pre_cards_class = main.app.game.playersCard
     if main.app.game.playersCard is not None:
@@ -170,22 +177,22 @@ def make_players(clusters, cardPoints, player_cluster_id, deck_idx, action):
     players = []
     for index, id in enumerate(player_cluster_id):
         print('player_id: ', id)
-        cards = sortByLeftToRight([card for card in clusters[id]['cards']], cardPoints, clusters[id]['vector'])
-        left_card = cards[0]['class_id']
+        cards = sortByLeftToRight([card for card in clusters[id]['cards']], cardPoints, clusters[id]['vector']) # TODO: 'center' 고치자
+        left_card = cards[0]['class_id'] # TODO: 위 함수 enumerate 필요한가? indic 바꾸기
         right_card = cards[1]['class_id']
         extra = []
         # action에 amb_pick보고 extra 만들기
         # card 객체로 다시 뽑아야함... 생각보다 긴 코드가 될 듯
-        if  action['name'] == 'amb_pick' and index == action['player_id'] and pre_cards_class is not None:
+        if  action['name'] == 'amb_pick' and index == action['player_id'] and pre_cards_class is not None:    # TODO: 뒤 condition error raise로 아래로 빼주기
             amb_player = action['player_id']
             print(f'{clusters=}')
-            amb_cards = clusters[player_cluster_id[amb_player]]['cards']  
+            amb_cards = clusters[player_cluster_id[amb_player]]['cards']   # TODO: player_id => clusters index로 바꿔서 넣어야함
             amb_hand_cards = []
             print(f'{cards=}')
             print(f'{amb_cards=}')
             print(f'{[cardPoints[ix]["class_id"] for ix in amb_cards]=}')
             # amb pre point
-            for card in cards:      
+            for card in cards:      # 꼴보기 싫음. 코드 바꿔야함 fuxxin TODO ㅗㅗ
                 print('pick: --', card)
                 if card['class_id'] in [cardPoints[ix]['class_id'] for ix in amb_cards]:
                     amb_hand_cards.append(card)
@@ -205,6 +212,14 @@ def make_players(clusters, cardPoints, player_cluster_id, deck_idx, action):
             "center_vector": getVectorValueByCenter(clusters[id]['center'])
         })
 
+    # players = [{
+    #             "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[id]['cards']],
+    #             # TODO: 함수로 빼기 + 각도 0 근처에서 값 반전 고려
+    #             "left_card": pickLeftCardClass([card for card in clusters[id]['cards']], cardPoints),
+    #             "right_card": pickRightCardClass([card for card in clusters[id]['cards']], cardPoints),
+    #             "extra_card": [],
+    #             "center_point": clusters[id]['center']
+    #         } for id in player_cluster_id]
     deck = {
             "cards": [{"id": card, "class": cardPoints[card]['class_id']} for card in clusters[deck_idx]['cards']],
             "center_point": clusters[deck_idx]['center']
@@ -217,7 +232,7 @@ def preValidCard(infers, s_idx=0, is_amb_action=False):
     for idx in range(s_idx, IMAGE_NUM):
         cardInfo = infers[idx]['detections']
         cardInfo = [obj for obj in cardInfo if obj['class_id'] < 6]
-        
+        # TODO: Confidence 기준 (threshold 값 들어가는 코드) 삽입
         if calcCardsNum(len(cardInfo), is_amb_action):
             print(f'{len(cardInfo)=}')
             return idx, cardInfo
