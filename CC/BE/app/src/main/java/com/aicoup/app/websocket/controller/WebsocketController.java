@@ -120,6 +120,8 @@ public class WebsocketController {
                 if(returnState.equals("challengeSuccess")) {
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
                     returnState = "gameState"; // 플레이어 도전이 성공하면 액션 처리 없이 gameState
+                } else if(returnState.equals("playerCardOpen")) {
+                    break;
                 } else {
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
                     returnState = "endGame"; // 플레이어 도전이 실패하면 액션 처리 위해 endGame
