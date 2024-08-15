@@ -105,7 +105,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     public String performPlayerAction(MessageDto message) {
         Map<String, String> mainMessage = (Map<String, String>) message.getMainMessage();
-        String gameId = mainMessage.get("cookie");
         int actionValue = Integer.parseInt(mainMessage.get("action"));
         String targetId = mainMessage.get("targetPlayerId");
         Game game = returnGame(message);
@@ -113,6 +112,11 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         String actionName = ActionType.findActionName(actionValue);
         if (validateAction(game, playerId, targetId, actionName)) {
             recordHistory(game, actionValue, null, playerId, targetId, null);
+            if(actionValue==5) {
+                GameMember player = findPlayerByName(game, playerId);
+                player.setCoin(player.getCoin()-3);
+                gameMemberRepository.save(player);
+            }
             return "actionPending";
         } else {
             return "action";
@@ -145,12 +149,15 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 }
             } while(!validateAction(game, currentPlayer.getId(), targetId, action));
         }
-
         // 대사 api 호출
         String actionDialog = gptResponseGetter.actionDialogApi(action, target, currentPlayer.getName(), currentPlayer.getPersonality());
 
         int actionValue = ActionType.findActionValue(action);
+        if(actionValue==5) {
+            currentPlayer.setCoin(currentPlayer.getCoin()-3);
+        }
         recordHistory(game, actionValue, null, currentPlayer.getId(), targetId, actionDialog);
+        gameMemberRepository.save(currentPlayer);
     }
 
     @Override
@@ -642,7 +649,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                         cardOpen = 1;
                     }
                 }
-                player.setCoin(player.getCoin() - 3);
                 if (target != null) {
                     loseInfluence(target, cardOpen);
                 }
