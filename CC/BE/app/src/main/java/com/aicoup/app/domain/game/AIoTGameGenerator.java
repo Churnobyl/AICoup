@@ -30,7 +30,7 @@ public class AIoTGameGenerator implements GameGenerator {
 
         List<GameMember> participantList = new ArrayList<>();
 
-        GameMember player = new GameMember("1", "userA");
+        GameMember player = new GameMember("1", "플레이어");
         player.setPlayer(true);
         participantList.add(player);
 
