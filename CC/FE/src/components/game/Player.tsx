@@ -4,7 +4,7 @@ import useGameStore from "@/stores/gameStore";
 import { IconContext } from "react-icons";
 import { PiCoinVerticalFill } from "react-icons/pi";
 import "./Player.scss";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import MessageBubble from "@/components/ui/bubble/MessageBubble";
 
 type Props = {
@@ -27,17 +27,17 @@ export const Player = (props: Props) => {
   const lastHistoryRef = useRef<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const setTarget = () => {
+  const setTarget = useCallback(() => {
     if (
-      actionStore.isClickable &&
+      useActionStore.getState().isClickable &&
       (store.members[playerNumber].leftCard === 0 ||
         store.members[playerNumber].rightCard === 0)
     ) {
       actionStore.setSelectedTarget(playerId);
-      actionStore.setIsClickable();
-      console.log("setTarget :", playerId);
+      actionStore.setIsClickable(false);
+      // 최신 상태를 바로 확인
     }
-  };
+  }, [actionStore.isClickable, playerId, playerNumber, store.members]);
 
   useEffect(() => {
     const targetCoin = store.members[playerNumber].coin;
@@ -100,18 +100,13 @@ export const Player = (props: Props) => {
         setZIndex(0);
       }, 5000);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.history]);
+  }, [playerId, store.history]);
 
   return (
-    <div
-      className={`player ${className}`}
-      onClick={setTarget}
-      style={{ zIndex }}
-    >
+    <div className={`${className}`} onClick={setTarget} style={{ zIndex }}>
       <MessageBubble message={message} triggerShow={show} />
       <span>
-        {store.members[playerNumber].name === "userA"
+        {store.members[playerNumber].name === "Player"
           ? ""
           : store.members[playerNumber].name}
       </span>
