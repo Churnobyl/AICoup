@@ -15,8 +15,6 @@ type Actions = {
   setDeck: (deck: number[]) => void;
   setLastContext: (historyItem: History[]) => void;
   getMemberNameById: (id: string) => string | undefined;
-  setMemberCard: (memberId: string, cardIndex: number, cardValue: number) => void;
-  updateMemberCard: (memberId: string, cardKey: 'leftCard' | 'rightCard', value: number, isRevealed: boolean) => void;
 };
 
 const useGameStore = create<ReturnType & Actions>()(
@@ -79,27 +77,6 @@ const useGameStore = create<ReturnType & Actions>()(
         const members = get().members;
         const member = members.find((m) => m.id === id);
         return member ? member.name : undefined;
-      },
-      setMemberCard: (memberId: string, cardIndex: number, cardValue: number) => {
-        set((state) => {
-          const memberIndex = state.members.findIndex(m => m.id === memberId);
-          if (memberIndex !== -1) {
-            if (cardIndex === 0) {
-              state.members[memberIndex].leftCard = cardValue;
-            } else if (cardIndex === 1) {
-              state.members[memberIndex].rightCard = cardValue;
-            }
-          }
-        });
-      },
-      updateMemberCard: (memberId: string, cardKey: 'leftCard' | 'rightCard', value: number, isRevealed: boolean) => {
-        set((state) => {
-          const memberIndex = state.members.findIndex(m => m.id === memberId);
-          if (memberIndex !== -1) {
-            state.members[memberIndex][cardKey] = value;
-            state.members[memberIndex][`${cardKey}Revealed` as 'leftCardRevealed' | 'rightCardRevealed'] = isRevealed;
-          }
-        });
       },
     }))
   )

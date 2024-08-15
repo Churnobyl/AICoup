@@ -23,11 +23,6 @@ const shouldHaveTarget = [4, 5, 7]; // 타겟이 필요한 액션
 
 const GamePage = () => {
   /**
-   * 연결 여부 확인
-   */
-  const [isConnected, setIsConnected] = useState(false);
-
-  /**
    * Spinner State
    */
   const [isSpinnerOpen, setIsSpinnerOpen] = useState(false);
@@ -119,12 +114,13 @@ const GamePage = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (parsedMessage: any) => {
       const mainMessage = parsedMessage.mainMessage;
-      const { members, turn, history, deck } = mainMessage;
+      const { members, turn, history, deck, whoseTurn } = mainMessage;
 
       storeRef.current.setRoomId(parsedMessage.roomId);
       storeRef.current.setState(parsedMessage.state);
       storeRef.current.setMembers(members);
       storeRef.current.incrementTurn(turn);
+      storeRef.current.setWhoseTurn(whoseTurn);
 
       const bfHistory = [...store.history];
       storeRef.current.setHistory(history);
@@ -228,6 +224,10 @@ const GamePage = () => {
             cardSelectStore.setSelectedPlayerCard(-1);
           }
           break;
+        case "gptChallengeSuccess":
+          break;
+        case "gptChallengeFail":
+          break;
         case "challengeSuccess":
           setupGameState(parsedMessage);
           setSpinnerText("의심이 성공했습니다. 결과 반영중..");
@@ -257,9 +257,6 @@ const GamePage = () => {
             도전: 8,
             허용: 9,
           });
-          // 허용 -> counterActionPermit
-          // 반박 -> counterActionChallenge
-
           break;
         case "counterActionChallengeSuccess":
           setupGameState(parsedMessage);
@@ -436,7 +433,6 @@ const GamePage = () => {
     // 연결됐을 때
     clientData.onConnect = () => {
       console.log("Connected to WebSocket"); // 디버깅 메세지
-      setIsConnected(true);
       clientData.subscribe("/sub/chat/room/1", (message) => {
         messageQueue.current.push({
           message,
@@ -454,7 +450,6 @@ const GamePage = () => {
 
     clientData.onDisconnect = () => {
       console.warn("Disconnected from WebSocket");
-      setIsConnected(false);
     };
 
     const intervalId = setInterval(() => {
@@ -465,7 +460,6 @@ const GamePage = () => {
     // 컴포넌트 언마운트할 때 인터벌 정리
     return () => {
       clearInterval(intervalId);
-      setIsConnected(false);
     };
   }, [handleMessage, publishMessage, processMessageQueue]);
 
@@ -514,6 +508,8 @@ const GamePage = () => {
             action: option.toString(),
             targetPlayerId: actionStore.selectedTarget.toString(),
           });
+
+          actionStore.setSelectedTarget("");
           break;
         case 8:
           console.log(currentState);
@@ -543,9 +539,10 @@ const GamePage = () => {
           break;
       }
 
+      actionStore.setSelectedOption(-1);
       setIsModalOpen(false);
     },
-    [actionStore.selectedTarget, navigate, publishMessage, store.state]
+    [actionStore, navigate, publishMessage, store.state]
   );
 
   // 선택 결과 보내기
@@ -556,7 +553,7 @@ const GamePage = () => {
       actionStore.setSelectedOption(option);
 
       if (shouldHaveTarget.includes(option)) {
-        actionStore.setIsClickable();
+        actionStore.setIsClickable(true);
         actionStore.setSelectedTarget("");
 
         setTopBarText("상대를 선택해 주세요.");
@@ -567,6 +564,7 @@ const GamePage = () => {
         handleDirectSelect(option);
       }
     },
+
     [actionStore, handleDirectSelect]
   );
 
@@ -579,10 +577,13 @@ const GamePage = () => {
         action: actionStore.selectedOption.toString(),
         targetPlayerId: actionStore.selectedTarget.toString(),
       });
+
+      actionStore.setSelectedOption(-1);
+      actionStore.setSelectedTarget("");
     }
 
     setIsModalOpen(false);
-  }, [publishMessage, actionStore]);
+  }, [actionStore, publishMessage]);
 
   const handleSelectWithMyCard = useCallback(() => {
     setSpinnerText("서버의 응답을 기다리는 중..");
@@ -604,12 +605,13 @@ const GamePage = () => {
         cardOpen: cardSelectStore.selectedPlayerCard.toString(),
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [publishMessage, cardSelectStore.selectedPlayerCard]);
+
+    cardSelectStore.setSelectedPlayerCard(-1); // 초기화
+  }, [cardSelectStore, publishMessage, store.state]);
 
   // 상대편 찍어야 할 때
   useEffect(() => {
-    if (!actionStore.isClickable && actionStore.selectedTarget) {
+    if (!useActionStore.getState().isClickable) {
       actionStore.setSelectedTarget(actionStore.selectedTarget);
       handleSelectWithTarget();
       setIsTopBarShow(false); // topbar 안 보이게
@@ -635,7 +637,6 @@ const GamePage = () => {
     cardSelectStore,
     cardSelectStore.selectedPlayerCard,
     handleSelectWithMyCard,
-    isConnected,
   ]);
 
   return (

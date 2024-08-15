@@ -1,6 +1,7 @@
 import useCardInfoStore from "@/stores/cardInfoStore";
 import useCardSelectStore from "@/stores/cardSelectStore";
 import "./Card.scss";
+import { useCallback } from "react";
 
 type Props = {
   cardNumber: number;
@@ -14,12 +15,12 @@ const Card = (props: Props) => {
   const store = useCardInfoStore();
   const cardSelectStore = useCardSelectStore();
 
-  const setPlayerCard = () => {
-    if (cardSelectStore.isPlayerCardClickable && cardNumber > 0) {
+  const setPlayerCard = useCallback(() => {
+    if (useCardSelectStore.getState().isPlayerCardClickable && cardNumber > 0) {
       cardSelectStore.setIsPlayerCardClickable();
       cardSelectStore.setSelectedPlayerCard(playerCardIdForSelect);
     }
-  };
+  }, [cardSelectStore, cardNumber, playerCardIdForSelect]);
 
   return (
     <div
@@ -32,7 +33,9 @@ const Card = (props: Props) => {
           ? -cardNumber
           : 0
       } ${cardNumber < 0 ? "dead" : ""} ${
-        cardSelectStore.isPlayerCardClickable && player && cardNumber > 0
+        useCardSelectStore.getState().isPlayerCardClickable &&
+        player &&
+        cardNumber > 0
           ? "clickable"
           : ""
       }`}
