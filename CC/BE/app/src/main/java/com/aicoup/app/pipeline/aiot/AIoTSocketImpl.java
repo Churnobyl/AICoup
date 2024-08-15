@@ -31,8 +31,8 @@ public class AIoTSocketImpl implements AIoTSocket {
 
     String mockupData = "[\n" +
             "    {\n" +
-            "        \"left_card\": 2,\n" +
-            "        \"right_card\": 3,\n" +
+            "        \"left_card\": 1,\n" +
+            "        \"right_card\": 2,\n" +
             "        \"extra_card\": []\n" +
             "    },\n" +
             "    {\n" +
@@ -83,8 +83,8 @@ public class AIoTSocketImpl implements AIoTSocket {
             "          \"angle\": 5.012712705274567\n" +
             "        }\n" +
             "      ],\n" +
-            "      \"left_card\": 4,\n" +
-            "      \"right_card\": 5,\n" +
+            "      \"left_card\": 1,\n" +
+            "      \"right_card\": 3,\n" +
             "      \"extra_card\": [],\n" +
             "      \"center_vector\": [\n" +
             "        0.057942718267440796,\n" +

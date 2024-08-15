@@ -7,10 +7,11 @@ type Props = {
   cardNumber: number;
   player: boolean;
   playerCardIdForSelect: number;
+  isRevealed: boolean;
 };
 
 const Card = (props: Props) => {
-  const { cardNumber, player, playerCardIdForSelect } = props;
+  const { cardNumber, player, playerCardIdForSelect, isRevealed } = props;
   const store = useCardInfoStore();
   const cardSelectStore = useCardSelectStore();
 
@@ -24,7 +25,7 @@ const Card = (props: Props) => {
   return (
     <div
       className={`cardItem card card-${
-        player
+        player || isRevealed
           ? cardNumber < 0
             ? -cardNumber
             : cardNumber
@@ -40,7 +41,7 @@ const Card = (props: Props) => {
       }`}
       onClick={setPlayerCard}
     >
-      {player
+      {(player || isRevealed)
         ? store.cardname[cardNumber > 0 ? cardNumber : -cardNumber]
         : cardNumber < 0
         ? store.cardname[-cardNumber]

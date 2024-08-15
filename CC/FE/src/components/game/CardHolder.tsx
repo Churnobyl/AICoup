@@ -30,17 +30,21 @@ const CardHolder = (props: Props) => {
     return () => unsubscribe(); // 컴포넌트 언마운트 시 구독 해제
   }, [playerNumber, store.members, actionStore, actionStore.isClickable]);
 
+  const member = store.members[playerNumber];
+
   return (
     <div className={classNames(className, isClickable ? "clickable" : "")}>
       <Card
         player={store.members[playerNumber].player}
         cardNumber={store.members[playerNumber].leftCard}
         playerCardIdForSelect={playerNumber === 0 ? 0 : -1}
+        isRevealed={member.leftCardRevealed}
       />
       <Card
         player={store.members[playerNumber].player}
         cardNumber={store.members[playerNumber].rightCard}
         playerCardIdForSelect={playerNumber === 0 ? 1 : -1}
+        isRevealed={member.rightCardRevealed}
       />
     </div>
   );

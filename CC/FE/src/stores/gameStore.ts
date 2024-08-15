@@ -16,7 +16,14 @@ type Actions = {
   setLastContext: (historyItem: History[]) => void;
   setWhoseTurn: (whoseTurn: number) => void;
   getMemberNameById: (id: string) => string | undefined;
+  getMemberCards: (memberId: string) => MemberCards;
+  updateMemberCard: (memberId: string, cardKey: 'leftCard' | 'rightCard', value: number, isRevealed: boolean) => void;
 };
+
+type MemberCards = {
+  leftCard: number;
+  rightCard: number;
+} | null;
 
 const useGameStore = create<ReturnType & Actions>()(
   devtools(
@@ -30,6 +37,7 @@ const useGameStore = create<ReturnType & Actions>()(
       deck: [],
       lastContext: [],
       whoseTurn: -1,
+
 
       // 수정
       setHistory: (historyItem: History[]) => {
@@ -73,6 +81,11 @@ const useGameStore = create<ReturnType & Actions>()(
           state.lastContext = historyItem;
         });
       },
+      setWhoseTurn: (whoseTurn: number) => {
+        set((state) => {
+          state.whoseTurn = whoseTurn;
+        });
+      },
       getMemberNameById: (id: string | undefined) => {
         if (id === undefined) return "";
 
@@ -80,9 +93,17 @@ const useGameStore = create<ReturnType & Actions>()(
         const member = members.find((m) => m.id === id);
         return member ? member.name : undefined;
       },
-      setWhoseTurn: (whoseTurn: number) => {
+      getMemberCards: (memberId: string): MemberCards => {
+        const member = get().members.find(m => m.id === memberId);
+        return member ? { leftCard: member.leftCard, rightCard: member.rightCard } : null;
+      },
+      updateMemberCard: (memberId: string, cardKey: 'leftCard' | 'rightCard', value: number, isRevealed: boolean) => {
         set((state) => {
-          state.whoseTurn = whoseTurn;
+          const memberIndex = state.members.findIndex(m => m.id === memberId);
+          if (memberIndex !== -1) {
+            state.members[memberIndex][cardKey] = value;
+            state.members[memberIndex][`${cardKey}Revealed` as 'leftCardRevealed' | 'rightCardRevealed'] = isRevealed;
+          }
         });
       },
     }))

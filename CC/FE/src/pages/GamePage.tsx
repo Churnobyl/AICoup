@@ -325,6 +325,23 @@ const GamePage = () => {
           break;
         case "playerCardOpen":
           setupGameState(parsedMessage);
+          
+          const { history, members, cardOpen } = parsedMessage.mainMessage;
+          const lastHistory = history[history.length - 1];
+          const playerTried = lastHistory.playerTried;
+          
+          if (playerTried !== '1') {
+            const memberIndex = store.members.findIndex(m => m.id === playerTried);
+            
+            if (memberIndex !== -1) {
+              const cardKey = cardOpen === 0 ? 'leftCard' : 'rightCard';
+              const newCardValue = members[memberIndex][cardKey];
+              
+              // 카드 값 변경 및 isRevealed 설정
+              store.updateMemberCard(playerTried, cardKey, newCardValue, true);
+            }
+          }
+          
           cardSelectStore.setIsPlayerCardClickable();
           setTopBarText("도전이 실패했습니다. 공개할 카드를 선택해 주세요.");
           setIsTopBarShow(true);
