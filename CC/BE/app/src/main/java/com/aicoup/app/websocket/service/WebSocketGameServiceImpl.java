@@ -675,24 +675,28 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         }
         gameRepository.save(game);
 
-        // 게임 끝나는 로직 추가
+        return isGameOver(message);
+    }
+
+    public String isGameOver(MessageDto message) {
+        Game game = returnGame(message);
         String winPlayerId = "";
-        int cnt = 0;
+        int deadPlayerCnt = 0;
         for(int i=0; i<4; i++) {
-            String mememberId = game.getMemberIds().get(i);
-            GameMember gameMember = findPlayerByName(game, mememberId);
+            String memberId = game.getMemberIds().get(i);
+            GameMember gameMember = findPlayerByName(game, memberId);
             if(gameMember.getLeftCard()<0 && gameMember.getRightCard()<0) {
-                cnt++;
-                if(i==0) return "playerDown";
+                deadPlayerCnt++;
+                if(i==0) return "playerDown"; // 플레이어가 죽으면 게임 종료
             } else {
                 winPlayerId = gameMember.getId();
             }
         }
-        if(cnt==3) { // 최후의 1인이 남으면 게임 종료
+        if(deadPlayerCnt==3) { // 최후의 1인이 남으면 게임 종료
             recordHistory(game, 15, null, winPlayerId, null, null);
             return "gameOver";
         }
-        return "gameState";
+        return "gameState"; // 게임이 종료되지 않았다면 다음 턴으로 진행 위해 gameState 리턴
     }
 
     private void loseInfluence(GameMember target, int cardOpen) {

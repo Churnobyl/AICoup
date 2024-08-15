@@ -94,12 +94,12 @@ public class WebsocketController {
                 }
                 break;
             case "counterActionChallenge":
-                returnState = webSocketGameService.handlePlayerChallenge(message); // 수정 필요!!
+                returnState = webSocketGameService.handlePlayerChallenge(message);
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 if(returnState.equals("challengeSuccess")) {
                     returnState = "counterActionChallengeSuccess";
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
-                    returnState = "gameState";
+                    returnState = webSocketGameService.isGameOver(message); // 플레이어 도전이 성공하면 액션 처리 없이 게임 종료 여부 검사
                 } else {
                     returnState = "counterActionChallengeFail";
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
@@ -119,7 +119,7 @@ public class WebsocketController {
                 gameStateDto = webSocketGameService.buildGameState(((Map<String, String>)message.getMainMessage()).get("cookie"));
                 if(returnState.equals("challengeSuccess")) {
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
-                    returnState = "gameState"; // 플레이어 도전이 성공하면 액션 처리 없이 gameState
+                    returnState = webSocketGameService.isGameOver(message); // 플레이어 도전이 성공하면 액션 처리 없이 게임 종료 여부 검사
                 } else if(returnState.equals("playerCardOpen")) {
                     break;
                 } else {
@@ -133,7 +133,7 @@ public class WebsocketController {
                 if(returnState.equals("challengeSuccess")) {
                     returnState = "gptChallengeSuccess";
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
-                    returnState = "gameState"; // gpt 도전이 성공하면 액션 처리 없이 gameState
+                    returnState = webSocketGameService.isGameOver(message); // gpt 도전이 성공하면 액션 처리 없이 게임 종료 여부 검사
                 } else {
                     returnState = "gptChallengeFail";
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
@@ -146,7 +146,7 @@ public class WebsocketController {
                 if(returnState.equals("challengeSuccess")) {
                     returnState = "gptCounterActionChallengeSuccess";
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
-                    returnState = "gameState"; // 성공했으면 액션 처리 없이 gameState
+                    returnState = webSocketGameService.isGameOver(message); // 성공하면 액션 처리 없이 게임 종료 여부 검사
                 } else {
                     returnState = "gptCounterActionChallengeFail";
                     wrapMessage(newMessage, gameStateDto, roomId, returnState);
