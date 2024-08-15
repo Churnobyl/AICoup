@@ -12,7 +12,7 @@ type State = {
 };
 
 type Action = {
-  setIsClickable: () => void;
+  setIsClickable: (select: boolean) => void;
   setSelectedOption: (select: number) => void;
   setSelectedTarget: (select: string) => void;
   setSendingState: (state: string) => void;
@@ -29,9 +29,9 @@ const useActionStore = create<State & Action>()(
       sendingState: "",
       isPlayerCardClickable: false,
       selectedPlayerCard: -1,
-      setIsClickable: () => {
+      setIsClickable: (select) => {
         set((state) => {
-          state.isClickable = !state.isClickable;
+          state.isClickable = select;
         });
       },
       setSelectedOption: (select) => {
