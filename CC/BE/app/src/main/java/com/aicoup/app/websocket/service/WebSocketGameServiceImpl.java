@@ -420,16 +420,20 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
         if(isGPTPlayer(actioner)) {
             if(actioner.getLeftCard()==actionValue) { // 만약 왼쪽 카드가 해당 행동과 일치하면
                 gameState.setCardOpen(0); // 왼쪽 카드 오픈
+                System.out.println("왼쪽 카드를 오픈합니다");
             } else if(actioner.getRightCard()==actionValue) { // 만약 오른쪽 카드가 해당 행동과 일치하면
                 gameState.setCardOpen(1); // 오른쪽 카드 오픈
+                System.out.println("오른쪽 카드를 오픈합니다");
             } else { // 만약 해당 카드가 없다면
                 if(actioner.getLeftCard()>0 && actioner.getRightCard()>0) {
                     Random random = new Random();
                     gameState.setCardOpen(random.nextInt(2)); // 왼쪽, 오른쪽 랜덤 오픈
                 } else if(actioner.getLeftCard()>0) {
                     gameState.setCardOpen(0); // 왼쪽 오픈
+                    System.out.println("랜덤 왼쪽 카드를 오픈합니다");
                 } else {
                     gameState.setCardOpen(1); // 오른쪽 오픈
+                    System.out.println("랜덤 오른쪽 카드를 오픈합니다");
                 }
             }
         }
@@ -831,6 +835,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
         GameStateDto gameStateDto = getGameState(gameId);
         gameStateDto.setMessage(gameId);
+        gameStateDto.setCardOpen(game.getCardOpen());
         gameStateDto.setAwaitingChallenge(game.isAwaitingChallenge());
         gameStateDto.setAwaitingCounterAction(game.isAwaitingCounterAction());
         gameStateDto.setAwaitingChallengeActionValue(game.getAwaitingChallengeActionValue());
