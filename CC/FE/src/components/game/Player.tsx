@@ -13,6 +13,15 @@ type Props = {
   className?: string;
 };
 
+const TurnIndicator = () => {
+  return (
+    <div className="turn-indicator-wrapper">
+      <span className="turn-label">Turn</span>
+      <div className="turn-indicator"></div>
+    </div>
+  );
+};
+
 export const Player = (props: Props) => {
   const store = useGameStore();
   const actionStore = useActionStore();
@@ -35,9 +44,8 @@ export const Player = (props: Props) => {
     ) {
       actionStore.setSelectedTarget(playerId);
       actionStore.setIsClickable(false);
-      // 최신 상태를 바로 확인
     }
-  }, [actionStore.isClickable, playerId, playerNumber, store.members]);
+  }, [actionStore, playerId, playerNumber, store.members]);
 
   useEffect(() => {
     const targetCoin = store.members[playerNumber].coin;
@@ -104,6 +112,7 @@ export const Player = (props: Props) => {
 
   return (
     <div className={`${className}`} onClick={setTarget} style={{ zIndex }}>
+      {store.whoseTurn === playerNumber && <TurnIndicator />}
       <MessageBubble message={message} triggerShow={show} />
       <span>
         {store.members[playerNumber].name === "Player"

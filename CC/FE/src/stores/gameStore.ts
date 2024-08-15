@@ -14,6 +14,7 @@ type Actions = {
   setState: (states: string) => void;
   setDeck: (deck: number[]) => void;
   setLastContext: (historyItem: History[]) => void;
+  setWhoseTurn: (whoseTurn: number) => void;
   getMemberNameById: (id: string) => string | undefined;
 };
 
@@ -28,6 +29,7 @@ const useGameStore = create<ReturnType & Actions>()(
       state: "",
       deck: [],
       lastContext: [],
+      whoseTurn: -1,
 
       // 수정
       setHistory: (historyItem: History[]) => {
@@ -77,6 +79,11 @@ const useGameStore = create<ReturnType & Actions>()(
         const members = get().members;
         const member = members.find((m) => m.id === id);
         return member ? member.name : undefined;
+      },
+      setWhoseTurn: (whoseTurn: number) => {
+        set((state) => {
+          state.whoseTurn = whoseTurn;
+        });
       },
     }))
   )

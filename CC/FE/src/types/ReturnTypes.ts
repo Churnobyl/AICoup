@@ -6,6 +6,7 @@ export default interface ReturnType {
   members: Member[];
   message: string;
   turn: number;
+  whoseTurn: number;
   roomId: string;
   state: string;
   deck: number[];

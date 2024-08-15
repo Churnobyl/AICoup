@@ -114,12 +114,13 @@ const GamePage = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (parsedMessage: any) => {
       const mainMessage = parsedMessage.mainMessage;
-      const { members, turn, history, deck } = mainMessage;
+      const { members, turn, history, deck, whoseTurn } = mainMessage;
 
       storeRef.current.setRoomId(parsedMessage.roomId);
       storeRef.current.setState(parsedMessage.state);
       storeRef.current.setMembers(members);
       storeRef.current.incrementTurn(turn);
+      storeRef.current.setWhoseTurn(whoseTurn);
 
       const bfHistory = [...store.history];
       storeRef.current.setHistory(history);
