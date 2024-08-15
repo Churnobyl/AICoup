@@ -24,7 +24,6 @@ const Board = (_props: Props) => {
       <div style={{ position: "absolute" }}>
         <Deck />
       </div>
-      {/* <MessageBubble message="asdasd" position="left" /> */}
     </div>
   );
 };

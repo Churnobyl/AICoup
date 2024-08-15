@@ -14,34 +14,34 @@ const Card = (props: Props) => {
   const cardSelectStore = useCardSelectStore();
 
   const setPlayerCard = () => {
-    if (cardSelectStore.isPlayerCardClickable) {
+    if (cardSelectStore.isPlayerCardClickable && cardNumber > 0) {
       cardSelectStore.setIsPlayerCardClickable();
       cardSelectStore.setSelectedPlayerCard(playerCardIdForSelect);
     }
   };
 
   return (
-    <div>
-      <div
-        className={`cardItem card card-${
-          player
-            ? cardNumber < 0
-              ? -cardNumber
-              : cardNumber
-            : cardNumber < 0
+    <div
+      className={`cardItem card card-${
+        player
+          ? cardNumber < 0
             ? -cardNumber
-            : 0
-        } ${cardNumber < 0 ? "dead" : ""} ${
-          cardSelectStore.isPlayerCardClickable && player ? "clickable" : ""
-        }`}
-        onClick={setPlayerCard}
-      >
-        {player
-          ? store.cardname[cardNumber > 0 ? cardNumber : -cardNumber]
+            : cardNumber
           : cardNumber < 0
-          ? store.cardname[-cardNumber]
-          : ""}
-      </div>
+          ? -cardNumber
+          : 0
+      } ${cardNumber < 0 ? "dead" : ""} ${
+        cardSelectStore.isPlayerCardClickable && player && cardNumber > 0
+          ? "clickable"
+          : ""
+      }`}
+      onClick={setPlayerCard}
+    >
+      {player
+        ? store.cardname[cardNumber > 0 ? cardNumber : -cardNumber]
+        : cardNumber < 0
+        ? store.cardname[-cardNumber]
+        : ""}
     </div>
   );
 };
