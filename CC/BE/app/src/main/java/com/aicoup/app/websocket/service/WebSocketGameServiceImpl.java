@@ -667,14 +667,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                 throw new IllegalArgumentException("Invalid action: " + actionType.name());
         }
         recordHistory(game, action.getId(), true, player.getId(), targetPlayerId, null);
-        game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
-        // 죽은 플레이어 턴 스킵 로직 추가
-        GameMember nextPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn())); // 다음 플레이어가
-        while(nextPlayer.getLeftCard()<0 && nextPlayer.getRightCard()<0) { // 죽었으면
-            game.setWhoseTurn((game.getWhoseTurn() + 1) % 4); // 다음 플레이어로 턴 증가
-            nextPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
-        }
-        game.setTurn(game.getTurn()+1);
         gameMemberRepository.save(player);
         if (targetPlayerId != null && !targetPlayerId.isEmpty() && !targetPlayerId.equals("none")) {
             gameMemberRepository.save(target);
@@ -686,6 +678,16 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     public String isGameOver(MessageDto message) {
         Game game = returnGame(message);
+        game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
+        // 죽은 플레이어 턴 스킵 로직 추가
+        GameMember nextPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn())); // 다음 플레이어가
+        while(nextPlayer.getLeftCard()<0 && nextPlayer.getRightCard()<0) { // 죽었으면
+            game.setWhoseTurn((game.getWhoseTurn() + 1) % 4); // 다음 플레이어로 턴 증가
+            nextPlayer = findPlayerByName(game, game.getMemberIds().get(game.getWhoseTurn()));
+        }
+        game.setTurn(game.getTurn()+1);
+        gameRepository.save(game);
+
         String winPlayerId = "";
         int deadPlayerCnt = 0;
         for(int i=0; i<4; i++) {
