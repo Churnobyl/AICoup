@@ -38,7 +38,6 @@ const useGameStore = create<ReturnType & Actions>()(
       lastContext: [],
       whoseTurn: -1,
 
-
       // 수정
       setHistory: (historyItem: History[]) => {
         set((state) => {
