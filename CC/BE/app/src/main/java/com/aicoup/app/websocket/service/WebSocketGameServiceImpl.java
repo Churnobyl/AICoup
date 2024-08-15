@@ -100,7 +100,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
 
     // 플레이어가 GPT인지 확인하는 메서드
     private boolean isGPTPlayer(GameMember player) {
-        return player.getName().startsWith("GPT");
+        return player.getName().contains("GPT");
     }
 
     public String performPlayerAction(MessageDto message) {
