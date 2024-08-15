@@ -4,7 +4,8 @@ import useGameStore from "@/stores/gameStore";
 import { IconContext } from "react-icons";
 import { PiCoinVerticalFill } from "react-icons/pi";
 import "./Player.scss";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import MessageBubble from "@/components/ui/bubble/MessageBubble";
 
 type Props = {
   playerNumber: number;
@@ -19,6 +20,12 @@ export const Player = (props: Props) => {
 
   const [localCoin, setLocalCoin] = useState(store.members[playerNumber].coin);
   const [animationClass, setAnimationClass] = useState("");
+  const [message, setMessage] = useState("");
+  const [show, setShow] = useState<boolean>(false);
+  const [zIndex, setZIndex] = useState<number>(0);
+
+  const lastHistoryRef = useRef<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setTarget = () => {
     if (
@@ -67,8 +74,42 @@ export const Player = (props: Props) => {
     }
   }, [animationClass]);
 
+  useEffect(() => {
+    const history = store.history;
+    const lastHistoryItem = history[history.length - 1];
+
+    if (
+      lastHistoryItem &&
+      lastHistoryItem.dialog &&
+      lastHistoryItem.playerTrying === playerId &&
+      lastHistoryItem.dialog !== lastHistoryRef.current
+    ) {
+      lastHistoryRef.current = lastHistoryItem.dialog;
+
+      setZIndex(10);
+
+      setMessage(lastHistoryItem.dialog);
+      setShow(true);
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        setShow(false);
+        setZIndex(0);
+      }, 5000);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.history]);
+
   return (
-    <div className={`player ${className}`} onClick={setTarget}>
+    <div
+      className={`player ${className}`}
+      onClick={setTarget}
+      style={{ zIndex }}
+    >
+      <MessageBubble message={message} triggerShow={show} />
       <span>
         {store.members[playerNumber].name === "userA"
           ? ""
@@ -85,10 +126,6 @@ export const Player = (props: Props) => {
         playerNumber={playerNumber}
         className={`cardHolder`}
       />
-
-      {/* {playerMessage && (
-        <MessageBubble message={playerMessage} position={bubblePositionClass} />
-      )} */}
     </div>
   );
 };

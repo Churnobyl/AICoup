@@ -1,21 +1,45 @@
-// src/components/ui/bubble/MessageBubble.tsx
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./MessageBubble.scss";
 
 interface MessageBubbleProps {
-    message: string;
-    position: "top" | "right" | "left" | "bottom";
+  message: string;
+  triggerShow: boolean;
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
-    message,
-    position,
+  message,
+  triggerShow,
 }) => {
-    return (
-        <div className={`message-bubble ${position}`}>
-            <p>{message}</p>
-        </div>
-    );
+  const [show, setShow] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (triggerShow) {
+      setShow(true);
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        setShow(false);
+      }, 5000);
+    }
+  }, [triggerShow]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div className={`message-bubble ${show ? "show" : "hide"}`}>
+      <p>{message}</p>
+    </div>
+  );
 };
 
 export default MessageBubble;

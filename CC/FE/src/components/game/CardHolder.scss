@@ -7,6 +7,8 @@
   background-color: #f9f9f9;
   transition: background-color 0.3s ease;
   margin: 10px;
+  position: relative;
+  z-index: 0;
 
   &.clickable {
     cursor: pointer;
