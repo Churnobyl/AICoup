@@ -11,6 +11,8 @@ export default interface Member {
   player: boolean;
   rightCard: number;
   rightCardInfo: CardInfo;
+  leftCardRevealed: boolean;
+  rightCardRevealed: boolean;
 
   // 새로 추가
   message: string

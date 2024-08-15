@@ -14,6 +14,8 @@ const CardHolder = (props: Props) => {
   const actionStore = useActionStore();
   const { playerNumber, className } = props;
 
+  const member = store.members[playerNumber];
+
   return (
     <div
       className={classNames(
@@ -30,11 +32,13 @@ const CardHolder = (props: Props) => {
         player={store.members[playerNumber].player}
         cardNumber={store.members[playerNumber].leftCard}
         playerCardIdForSelect={playerNumber === 0 ? 0 : -1}
+        isRevealed={member.leftCardRevealed}
       />
       <Card
         player={store.members[playerNumber].player}
         cardNumber={store.members[playerNumber].rightCard}
         playerCardIdForSelect={playerNumber === 0 ? 1 : -1}
+        isRevealed={member.rightCardRevealed}
       />
     </div>
   );
