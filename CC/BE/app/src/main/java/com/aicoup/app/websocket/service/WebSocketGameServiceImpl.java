@@ -930,9 +930,6 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             // 도전 성공: 타겟 플레이어가 영향력 상실
             loseInfluence(target, cardOpen);
 
-            // 도전 성공 시 다음 턴으로 이동
-            game.setWhoseTurn((game.getWhoseTurn() + 1) % 4);
-            game.setTurn(game.getTurn()+1);
             gameRepository.save(game);
         } else {
             // 도전 실패 내역 히스토리에 기록
