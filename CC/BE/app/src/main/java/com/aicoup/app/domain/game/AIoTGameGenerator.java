@@ -59,6 +59,10 @@ public class AIoTGameGenerator implements GameGenerator {
             // 성격 할당
             if (i < personalities.size()) {
                 gameMember.setPersonality(personalities.get(i));
+
+                if (i > 0) {
+                    gameMember.setName(personalities.get(i) + " " + gameMember.getName());
+                }
             } else {
                 // 만약 참가자 수가 성격 유형보다 많다면, 랜덤하게 성격을 재사용
                 gameMember.setPersonality(personalities.get(new Random().nextInt(personalities.size())));
