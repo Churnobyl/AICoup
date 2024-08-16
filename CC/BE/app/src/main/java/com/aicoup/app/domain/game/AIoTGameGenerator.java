@@ -34,7 +34,9 @@ public class AIoTGameGenerator implements GameGenerator {
         player.setPlayer(true);
         participantList.add(player);
 
-        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer(); // 이 함수 파라미터에 문자열 통으로 넣으면 됨
+        String jsonBody = "{ \"name\": \"\" }";
+
+        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer(jsonBody); // 이 함수 파라미터에 문자열 통으로 넣으면 됨
         int participants = dataFromAIoTServer.size();
 
         Random random = new Random();

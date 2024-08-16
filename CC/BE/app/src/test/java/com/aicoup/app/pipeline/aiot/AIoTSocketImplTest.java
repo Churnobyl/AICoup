@@ -16,7 +16,7 @@ class AIoTSocketImplTest {
 
     @Test
     public void checkResponse() {
-        System.out.println(socket.getDataFromAIoTServer());
+        System.out.println(socket.getDataFromAIoTServer("{ \"name\": \"\" }"));
     }
 
     @Test
@@ -26,7 +26,7 @@ class AIoTSocketImplTest {
 
     @Test
     void getDataFromAIoTServer() {
-        List<MMResponse> dataFromAIoTServer = socket.getDataFromAIoTServer();
+        List<MMResponse> dataFromAIoTServer = socket.getDataFromAIoTServer("{ \"name\": \"\" }");
         System.out.println("dataFromAIoTServer = " + dataFromAIoTServer);
     }
 }

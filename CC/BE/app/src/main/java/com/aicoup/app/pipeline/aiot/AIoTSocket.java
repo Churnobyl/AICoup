@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface AIoTSocket {
     void gameStart();
-    List<MMResponse> getDataFromAIoTServer();
+    List<MMResponse> getDataFromAIoTServer(String body);
     List<MMResponse> convertJsonToMMResponseList(String jsonString) throws Exception;
 }
