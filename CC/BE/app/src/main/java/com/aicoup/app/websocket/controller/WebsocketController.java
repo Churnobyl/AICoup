@@ -50,7 +50,7 @@ public class WebsocketController {
                 returnState = result ? "exist" : "noExist";
                 break;
             case "gameInit":
-//                aIoTSocket.gameStart();
+                aIoTSocket.gameStart();
                 String gameId = webSocketGameService.gameInit(message);
                 gameInitCookieSend(gameId);
                 returnState = "gameMade";

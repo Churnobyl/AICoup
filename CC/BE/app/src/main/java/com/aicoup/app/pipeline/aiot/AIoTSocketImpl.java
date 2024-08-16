@@ -231,11 +231,9 @@ public class AIoTSocketImpl implements AIoTSocket {
     }
 
     @Override
-    public List<MMResponse> getDataFromAIoTServer() {
+    public List<MMResponse> getDataFromAIoTServer(String body) {
         WebClient webClient = WebClient.builder().build();
         int retryCount = 0;
-
-        String jsonBody = "{ \"name\": \"\" }";
 
         while (true) {
             try {
@@ -243,12 +241,12 @@ public class AIoTSocketImpl implements AIoTSocket {
                         .post()
                         .uri(url + gameStatusApi)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(jsonBody)
+                        .bodyValue(body)
                         .retrieve()
                         .bodyToMono(String.class);
 
-//                String resultString = resp.block();
-                String resultString = aiotMockingData;
+                String resultString = resp.block();
+                //String resultString = aiotMockingData;
                 return convertJsonToMMResponseList(resultString);
             } catch (Exception e) {
                 retryCount++;

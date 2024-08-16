@@ -1014,7 +1014,8 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
     }
 
     private void giveNewCard(GameMember player, int cardOpen, int playerIndex) {
-        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer(); // 이 함수 파라미터에 문자열 통으로 넣으면 됨
+        String body = "{ \"name\": \"ch_win\", \"player_id\": " + playerIndex + " }";
+        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer(body);
         if(cardOpen==0) {
             player.setLeftCard(dataFromAIoTServer.get(playerIndex).getLeft_card());
         } else {
