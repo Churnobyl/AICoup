@@ -1,10 +1,14 @@
 package com.aicoup.app.pipeline.gpt.service;
 
 import com.aicoup.app.pipeline.gpt.ChatGPTSocket;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -15,6 +19,7 @@ public class GPTResponseGetter {
     private final ChallengeDataService challengeDataService;
     private final CounterActionDataService counterActionDataService;
     private final CounterActionChallengeDataService counterActionChallengeDataService;
+    private final ObjectMapper objectMapper;
 
     public String[] actionApi(String gameId) {
         String systemPrompt = "You are an API that receives information of every turn of the Coup board game and outputs what current player has to do. Take the current turn information in JSON format and output the result in JSON format.cards_open indicates whether the card has lost its influence. if input is \"cards\": [\"duke\", \"ambassador\"], \"cards_open\": [true, false] means that the duke has lost its influence, and ambassador is influential. coins shows how much coins each player has. history shows what each player acts before.the goal of the game is to elimate the influence card of all other players and be the last survivor.when a player lose all their influence card he lose the game.Every turn, current_player perform one action they want and can afford.- income: current_player get 1 coin.- foreign_aid: current_player get 2 coins. other duke can perform counter_action.- coup: cost 7 coins. choose one player and force to give up an influence card. if current_player start turn with 10 or more, current_player must coup.- tax: current_player get 3 coins. can be challenged.- steal: choose one player and take 2 coins. can be challeged. chosen player can perform counter_action with captain or ambassador.- exchange: draw 2 influence card. place 2 influence card back. can be challeged.- assassinate: cost 3 coins. choose one player and force to give up an influence card. can be challenged. chosen player can perform counter_action with contessa.Every counter_action, current_player'action is canceled, or current_player can challenge to player performing counter_action. if challenge is success, counter_action is canceled.Every challenge, the player who lose challenge is forced to give up an influence card.";
@@ -229,5 +234,60 @@ public class GPTResponseGetter {
         challengerArr[0] = challenger;
         System.out.println(dataFromGptApiForChallenge);
         return challengerArr;
+    }
+
+    public String actionDialogApi(String action, String target, String currentPlayer, String personality) {
+        Map<String, Object> jsonData = new HashMap<>();
+        jsonData.put("action", action);
+        jsonData.put("target", target);
+        jsonData.put("current_player", currentPlayer);
+        jsonData.put("personality", personality);
+
+        String systemPrompt = "You are an API that returns Korean dialog for board game Coup player. The dialog must shows your personality, action and target of action from current_player's point of view in colloquial word. dialog would be better as if current_player is really doing his action. You receive action, target, current_player who is you and personality which of yours.  You must return the result in Korean.";
+        String userPrompt = "";
+        try {
+            userPrompt = objectMapper.writeValueAsString(jsonData);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null; // 또는 적절한 에러 처리
+        }
+        return chatGPTSocket.getDataFromGptApiForDialog(systemPrompt, userPrompt);
+    }
+
+    public String challengeDialogApi(String challenger, String currentPlayer, String currentAction, String personality) {
+        Map<String, Object> jsonData = new HashMap<>();
+        jsonData.put("challenger", challenger);
+        jsonData.put("current_player", currentPlayer);
+        jsonData.put("current_action", currentAction);
+        jsonData.put("personality", personality);
+
+        String systemPrompt = "You are an API that returns Korean dialog for board game Coup player. You receive challenger, current_player, current_action and personality as input. challenger is you. current_player is who you challenge as you think current_player is bluffing. current_action is the action taken by current_player. personality is the personality of challenger. The dialog must shows your personality, current_player and his or her action from challenger's point of view in colloquial word. You must return the result in Korean language and not exceed 3 lines.";
+        String userPrompt = "";
+        try {
+            userPrompt = objectMapper.writeValueAsString(jsonData);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null; // 또는 적절한 에러 처리
+        }
+        return chatGPTSocket.getDataFromGptApiForDialog(systemPrompt, userPrompt);
+    }
+
+    public String counterActionDialogApi(String counterActioner, String counterAction, String currentPlayer, String currentAction, String personality) {
+        Map<String, Object> jsonData = new HashMap<>();
+        jsonData.put("counter_actioner", counterActioner);
+        jsonData.put("counter_action", counterAction);
+        jsonData.put("current_player", currentPlayer);
+        jsonData.put("current_action", currentAction);
+        jsonData.put("personality", personality);
+
+        String systemPrompt = "You are an API that returns Korean dialog for board game Coup player. You receive counter_actioner, counter_action, current_player challenger, current_player, current_action and personality as input. counter_actioner is you. current_player is perform current_action to you and you block currnet_action with counter_action influence card. personality is the personality of counter_actioner. The dialog must include content that which counter_action block current_player's current_action. The dialog must shows your personality, current_player and his or her action from challenger's point of view in colloquial word. You must return the result in Korean except for the name of the card.";
+        String userPrompt = "";
+        try {
+            userPrompt = objectMapper.writeValueAsString(jsonData);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null; // 또는 적절한 에러 처리
+        }
+        return chatGPTSocket.getDataFromGptApiForDialog(systemPrompt, userPrompt);
     }
 }

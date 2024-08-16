@@ -1,29 +1,31 @@
 import useCardInfoStore from "@/stores/cardInfoStore";
 import useCardSelectStore from "@/stores/cardSelectStore";
 import "./Card.scss";
+import { useCallback } from "react";
 
 type Props = {
   cardNumber: number;
   player: boolean;
   playerCardIdForSelect: number;
+  isRevealed: boolean;
 };
 
 const Card = (props: Props) => {
-  const { cardNumber, player, playerCardIdForSelect } = props;
+  const { cardNumber, player, playerCardIdForSelect, isRevealed } = props;
   const store = useCardInfoStore();
   const cardSelectStore = useCardSelectStore();
 
-  const setPlayerCard = () => {
-    if (cardSelectStore.isPlayerCardClickable) {
+  const setPlayerCard = useCallback(() => {
+    if (useCardSelectStore.getState().isPlayerCardClickable && cardNumber > 0) {
       cardSelectStore.setIsPlayerCardClickable();
       cardSelectStore.setSelectedPlayerCard(playerCardIdForSelect);
     }
-  };
+  }, [cardSelectStore, cardNumber, playerCardIdForSelect]);
 
   return (
     <div
       className={`cardItem card card-${
-        player
+        player || isRevealed
           ? cardNumber < 0
             ? -cardNumber
             : cardNumber
@@ -31,11 +33,15 @@ const Card = (props: Props) => {
           ? -cardNumber
           : 0
       } ${cardNumber < 0 ? "dead" : ""} ${
-        cardSelectStore.isPlayerCardClickable && player ? "clickable" : ""
+        useCardSelectStore.getState().isPlayerCardClickable &&
+        player &&
+        cardNumber > 0
+          ? "clickable"
+          : ""
       }`}
       onClick={setPlayerCard}
     >
-      {player
+      {(player || isRevealed)
         ? store.cardname[cardNumber > 0 ? cardNumber : -cardNumber]
         : cardNumber < 0
         ? store.cardname[-cardNumber]

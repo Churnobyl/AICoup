@@ -5,4 +5,5 @@ export default interface History {
   playerTried: string;
   turn: number;
   actionState: boolean;
+  dialog: string;
 }

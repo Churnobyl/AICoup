@@ -5,15 +5,15 @@ import com.aicoup.app.domain.entity.game.member.GameMember;
 import com.aicoup.app.domain.redisRepository.GameMemberRepository;
 import com.aicoup.app.domain.redisRepository.GameRepository;
 import com.aicoup.app.pipeline.aiot.AIoTSocket;
+import com.aicoup.app.pipeline.aiot.AIoTSocketImpl;
 import com.aicoup.app.pipeline.aiot.dto.MMResponse;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -30,11 +30,13 @@ public class AIoTGameGenerator implements GameGenerator {
 
         List<GameMember> participantList = new ArrayList<>();
 
-        GameMember player = new GameMember("1", "userA");
+        GameMember player = new GameMember("1", "Player");
         player.setPlayer(true);
         participantList.add(player);
 
-        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer();
+        String jsonBody = "{ \"name\": \"\" }";
+
+        List<MMResponse> dataFromAIoTServer = aIoTSocket.getDataFromAIoTServer(jsonBody); // 이 함수 파라미터에 문자열 통으로 넣으면 됨
         int participants = dataFromAIoTServer.size();
 
         Random random = new Random();
@@ -45,6 +47,9 @@ public class AIoTGameGenerator implements GameGenerator {
 
         GPTPlayerCreate(participantList, participants);
 
+        List<String> personalities = new ArrayList<>(Arrays.asList("anger", "joy", "sadness", "fear", "disgust"));
+        Collections.shuffle(personalities);
+
         for (int i = 0; i < participants; i++) {
             GameMember gameMember = participantList.get(i);
             MMResponse data = dataFromAIoTServer.get(i);
@@ -52,6 +57,18 @@ public class AIoTGameGenerator implements GameGenerator {
             gameMember.setCoin(2);
             gameMember.setLeftCard(data.getLeft_card());
             gameMember.setRightCard(data.getRight_card());
+
+            // 성격 할당
+            if (i < personalities.size()) {
+                gameMember.setPersonality(personalities.get(i));
+
+                if (i > 0) {
+                    gameMember.setName(personalities.get(i) + " " + gameMember.getName());
+                }
+            } else {
+                // 만약 참가자 수가 성격 유형보다 많다면, 랜덤하게 성격을 재사용
+                gameMember.setPersonality(personalities.get(new Random().nextInt(personalities.size())));
+            }
 
             int[] deck = newGame.getDeck();
             deck[data.getLeft_card()]--;

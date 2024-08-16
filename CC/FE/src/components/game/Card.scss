@@ -14,6 +14,7 @@
   justify-content: center;
   align-items: flex-end;
   position: relative;
+  z-index: 0;
 
   &.card-0 {
     background-position: 0% 0%;
@@ -65,8 +66,7 @@
     cursor: pointer;
 
     &:hover {
-      border: 1px solid black;
-      margin-bottom: 1px;
+      filter: brightness(1.2);
     }
   }
 }

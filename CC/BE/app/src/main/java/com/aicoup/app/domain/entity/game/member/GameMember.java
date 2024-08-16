@@ -26,6 +26,7 @@ public class GameMember extends MutableBaseEntity {
     private Integer coin;
     private Integer leftCard;
     private Integer rightCard;
+    private String personality;
     private CardInfo leftCardInfo;
     private CardInfo rightCardInfo;
     private List<Integer> actionHistory = new ArrayList<>();
