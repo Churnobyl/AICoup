@@ -956,7 +956,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
                     }
                 }
                 // 타겟 플레이어는 새 카드를 받음
-                giveNewCard(target, cardOpen, targetIndex);
+                //giveNewCard(target, cardOpen, targetIndex);
             } else {
                 return "playerCardOpen";
             }
@@ -979,7 +979,7 @@ public class WebSocketGameServiceImpl implements WebSocketGameService {
             }
         }
         // 타겟 플레이어는 새 카드를 받음
-        giveNewCard(target, cardOpen, targetIndex);
+        //giveNewCard(target, cardOpen, targetIndex);
         return "endGame";
     }
 
