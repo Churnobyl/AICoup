@@ -1,0 +1,7 @@
+__pycache__/
+
+# yolov9
+yolov9/runs/
+
+# ML-Server
+ML-Server/media/detect
